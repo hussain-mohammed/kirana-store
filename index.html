@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kirana Store</title>
-    <!-- Use proper Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Configure Tailwind to remove the warning
         tailwind.config = {
             corePlugins: {
                 preflight: false,
@@ -26,7 +24,6 @@
             display: block;
         }
     </style>
-    <!-- Remove invalid favicon or use a valid one -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -40,7 +37,7 @@
         </div>
     </header>
 
-    <!-- ===== LANDING PAGE (Buttons Only) ===== -->
+    <!-- ===== LANDING PAGE ===== -->
     <div id="page-home" class="page active">
         <main class="w-full max-w-md mx-auto p-8">
             <div class="text-center mb-8">
@@ -82,12 +79,11 @@
 
     <!-- ===== CONTENT PAGES ===== -->
 
-    <!-- Sales Content Page (Your Original Working Code) -->
+    <!-- Sales Content Page -->
     <div id="page-sales" class="page">
         <main class="w-full max-w-md p-4 space-y-4">
             <h2 class="text-xl font-semibold text-gray-700">Products</h2>
             <div id="product-list" class="grid grid-cols-2 gap-4">
-                <!-- Products will be generated here by JavaScript -->
                 <div class="text-center py-8">
                     <p class="text-gray-500">Loading products...</p>
                 </div>
@@ -193,45 +189,45 @@
     </div>
 
     <!-- Stock Ledger Content Page -->
-<div id="page-ledger" class="page">
-    <main class="w-full max-w-md mx-auto p-4 space-y-6">
-        <h2 class="text-xl font-semibold text-gray-700">Stock Ledger</h2>
-        
-        <!-- Product Selection -->
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Select Product</label>
-            <select id="ledger-product" class="w-full p-2 border border-gray-300 rounded-lg">
-                <option value="">Select a product to view ledger</option>
-            </select>
-        </div>
-
-        <!-- Loading State -->
-        <div id="ledger-loading" class="bg-white p-6 rounded-lg shadow-lg text-center hidden">
-            <p class="text-gray-500">Loading stock ledger...</p>
-        </div>
-
-        <!-- Error State -->
-        <div id="ledger-error" class="bg-white p-6 rounded-lg shadow-lg text-center hidden">
-            <p class="text-red-500">Error loading stock ledger</p>
-        </div>
-
-        <!-- Ledger Display -->
-        <div id="ledger-content" class="bg-white p-6 rounded-lg shadow-lg hidden">
-            <h3 id="ledger-product-name" class="text-lg font-semibold mb-4"></h3>
-            <div id="ledger-summary" class="grid grid-cols-2 gap-4 mb-4">
-                <!-- Summary stats will go here -->
+    <div id="page-ledger" class="page">
+        <main class="w-full max-w-md mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">Stock Ledger</h2>
+            
+            <!-- Product Selection -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Product</label>
+                <select id="ledger-product" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <option value="">Select a product to view ledger</option>
+                </select>
             </div>
-            <div id="ledger-history" class="space-y-3">
-                <!-- Ledger history will go here -->
+
+            <!-- Loading State -->
+            <div id="ledger-loading" class="bg-white p-6 rounded-lg shadow-lg text-center hidden">
+                <p class="text-gray-500">Loading stock ledger...</p>
             </div>
-        </div>
-    </main>
-</div>
+
+            <!-- Error State -->
+            <div id="ledger-error" class="bg-white p-6 rounded-lg shadow-lg text-center hidden">
+                <p class="text-red-500">Error loading stock ledger</p>
+            </div>
+
+            <!-- Ledger Display -->
+            <div id="ledger-content" class="bg-white p-6 rounded-lg shadow-lg hidden">
+                <h3 id="ledger-product-name" class="text-lg font-semibold mb-4"></h3>
+                <div id="ledger-summary" class="grid grid-cols-2 gap-4 mb-4">
+                    <!-- Summary stats will go here -->
+                </div>
+                <div id="ledger-history" class="space-y-3">
+                    <!-- Ledger history will go here -->
+                </div>
+            </div>
+        </main>
+    </div>
 
 <script>
-    // ===== FIXED BACKEND CONFIGURATION =====
-    // Use relative paths for Vercel deployment
-    const backendURL = window.location.origin; // This will be your Vercel app URL
+    // ===== BACKEND CONFIGURATION =====
+    // Use relative paths - Vercel will proxy to your ngrok backend
+    const backendURL = window.location.origin;
     const WHATSAPP_NUMBER = "917075210801";
 
     // Global variables
@@ -251,31 +247,15 @@
 
     // ===== NAVIGATION FUNCTIONS =====
     function showContentPage(pageName) {
-        // Hide all pages
-        Object.values(pages).forEach(page => {
-            page.classList.remove('active');
-        });
-        
-        // Show selected content page
+        Object.values(pages).forEach(page => page.classList.remove('active'));
         pages[pageName].classList.add('active');
-        
-        // Show back button
         backButton.classList.remove('hidden');
-        
-        // Load page-specific data
         loadPageData(pageName);
     }
 
     function backToHome() {
-        // Hide all pages
-        Object.values(pages).forEach(page => {
-            page.classList.remove('active');
-        });
-        
-        // Show home page
+        Object.values(pages).forEach(page => page.classList.remove('active'));
         pages.home.classList.add('active');
-        
-        // Hide back button
         backButton.classList.add('hidden');
     }
 
@@ -304,14 +284,21 @@
     const cartTotalEl = document.getElementById('cart-total');
     const whatsappCheckoutButtonEl = document.getElementById('whatsapp-checkout-button');
 
-    // Enhanced fetch function for Vercel
+    // Fetch products through Vercel proxy
     async function fetchProducts() {
-        console.log(`🔍 Fetching products from: ${backendURL}/api/products`);
+        console.log(`🔍 Fetching from: ${backendURL}/api/products`);
         
         try {
-            const response = await fetch(`${backendURL}/api/products`);
+            const response = await fetch(`${backendURL}/api/products`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
             
-            console.log(`📊 Status: ${response.status}`);
+            console.log(`📊 Status: ${response.status}, Content-Type: ${response.headers.get('Content-Type')}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -328,7 +315,6 @@
             
         } catch (error) {
             console.error("💥 Fetch error:", error);
-            // Fallback to mock data
             loadMockProducts();
         }
     }
@@ -346,9 +332,8 @@
         ];
         renderProducts();
         
-        // Show info message
         productListEl.insertAdjacentHTML('beforebegin', 
-            '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">Using sample products - Backend not connected</div>'
+            '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">Using sample products</div>'
         );
     }
 
@@ -373,18 +358,13 @@
             </div>
         `).join('');
         
-        // Show cart button if we have products
         showCartButton();
     }
 
     function showCartButton() {
-        // Remove existing cart button if any
         const existingButton = document.querySelector('.view-cart-button');
-        if (existingButton) {
-            existingButton.remove();
-        }
+        if (existingButton) existingButton.remove();
         
-        // Add cart button
         const cartButton = document.createElement('button');
         cartButton.className = 'view-cart-button fixed bottom-4 right-4 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors z-10';
         cartButton.innerHTML = '🛒 View Cart';
@@ -401,7 +381,6 @@
         cart[productId] = (cart[productId] || 0) + 1;
         updateCartUI();
         
-        // Show success message
         const product = products.find(p => p.id === parseInt(productId));
         if (product) {
             showNotification(`Added ${product.name} to cart!`);
@@ -442,18 +421,47 @@
         }
 
         cartTotalEl.textContent = `₹${total.toFixed(2)}`;
-
-        // Update checkout button state
         whatsappCheckoutButtonEl.disabled = totalCount === 0;
         whatsappCheckoutButtonEl.className = totalCount === 0 
             ? "w-full mt-4 bg-gray-400 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed"
             : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
     }
 
+    // Record sale to database
+    async function recordSale(saleItems) {
+        try {
+            const response = await fetch(`${backendURL}/api/sales`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: JSON.stringify({
+                    items: saleItems,
+                    total: saleItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                    timestamp: new Date().toISOString()
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('✅ Sale recorded successfully:', result);
+                return result;
+            } else {
+                console.log('❌ Failed to record sale:', response.status);
+                throw new Error('Failed to record sale');
+            }
+        } catch (error) {
+            console.error('Error recording sale:', error);
+            throw error;
+        }
+    }
+
     function generateWhatsAppOrder() {
         const phoneNumber = WHATSAPP_NUMBER; 
         let message = "Hi, I would like to place an order:%0a%0a";
         let total = 0;
+        const saleItems = [];
 
         for (const productId in cart) {
             if (cart[productId] > 0) {
@@ -463,11 +471,24 @@
                     const itemTotal = quantity * product.price;
                     total += itemTotal;
                     message += `• ${quantity}x ${product.name} - ₹${itemTotal.toFixed(2)}%0a`;
+                    
+                    saleItems.push({
+                        product_id: product.id,
+                        product_name: product.name,
+                        quantity: quantity,
+                        price: product.price,
+                        total: itemTotal
+                    });
                 }
             }
         }
 
         message += `%0a*Total: ₹${total.toFixed(2)}*%0a%0aPlease confirm my order. Thank you!`;
+
+        // Record sale in database
+        recordSale(saleItems).catch(error => {
+            console.warn('⚠️ Sale recording failed, but continuing to WhatsApp:', error);
+        });
 
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
         window.open(whatsappUrl, '_blank');
@@ -492,7 +513,11 @@
         dropdown.innerHTML = '<option value="">Loading products...</option>';
         
         try {
-            const response = await fetch(`${backendURL}/api/products`);
+            const response = await fetch(`${backendURL}/api/products`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
             
             if (!response.ok) throw new Error('Failed to fetch products');
             
@@ -514,7 +539,40 @@
 
     async function loadPurchaseHistory() {
         const historyEl = document.getElementById('purchase-history');
-        historyEl.innerHTML = '<p class="text-gray-500 text-center">Purchase history requires backend connection</p>';
+        historyEl.innerHTML = '<p class="text-gray-500 text-center">Loading purchase history...</p>';
+        
+        try {
+            const response = await fetch(`${backendURL}/api/ledger/purchases`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch purchase history');
+            
+            const purchases = await response.json();
+            
+            if (purchases.length === 0) {
+                historyEl.innerHTML = '<p class="text-gray-500 text-center">No purchase history found</p>';
+                return;
+            }
+            
+            historyEl.innerHTML = purchases.slice(0, 10).map(purchase => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium">${purchase.product_name}</div>
+                        <div class="text-sm text-gray-500">${new Date(purchase.date).toLocaleDateString()}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium">${purchase.quantity} units</div>
+                        <div class="text-sm text-green-600">₹${purchase.total_cost.toFixed(2)}</div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading purchase history:', error);
+            historyEl.innerHTML = '<p class="text-red-500 text-center">Error loading purchase history</p>';
+        }
     }
 
     // ===== CREATE PRODUCT PAGE FUNCTIONS =====
@@ -524,9 +582,14 @@
 
     async function loadExistingProducts() {
         const productsEl = document.getElementById('existing-products');
+        productsEl.innerHTML = '<p class="text-gray-500 text-center">Loading products...</p>';
         
         try {
-            const response = await fetch(`${backendURL}/api/products`);
+            const response = await fetch(`${backendURL}/api/products`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
             
             if (!response.ok) throw new Error('Failed to fetch products');
             
@@ -541,16 +604,17 @@
                 <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <div>
                         <div class="font-medium">${product.name}</div>
-                        <div class="text-sm text-gray-500">Price: ₹${product.price.toFixed(2)}</div>
+                        <div class="text-sm text-gray-500">Stock: ${product.stock || 0}</div>
                     </div>
                     <div class="text-right">
-                        <div class="font-medium text-green-600">ID: ${product.id}</div>
+                        <div class="font-medium">₹${product.price.toFixed(2)}</div>
+                        <div class="text-xs text-gray-500">ID: ${product.id}</div>
                     </div>
                 </div>
             `).join('');
         } catch (error) {
             console.error('Error loading products:', error);
-            productsEl.innerHTML = '<p class="text-red-500 text-center">Error loading products - Backend not connected</p>';
+            productsEl.innerHTML = '<p class="text-red-500 text-center">Error loading products</p>';
         }
     }
 
@@ -569,91 +633,92 @@
 
     async function loadProductLedger(productId) {
         const ledgerContent = document.getElementById('ledger-content');
+        const ledgerLoading = document.getElementById('ledger-loading');
         const ledgerError = document.getElementById('ledger-error');
         
         ledgerContent.classList.add('hidden');
         ledgerError.classList.add('hidden');
-        
-        // Show loading
-        const loadingEl = document.getElementById('ledger-loading');
-        loadingEl.classList.remove('hidden');
+        ledgerLoading.classList.remove('hidden');
         
         try {
-            // For now, show mock data since backend might not be connected
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading
+            const response = await fetch(`${backendURL}/api/ledger/stock/${productId}`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
             
-            const product = products.find(p => p.id === parseInt(productId));
-            if (!product) throw new Error('Product not found');
+            if (!response.ok) throw new Error('Failed to fetch stock ledger');
             
-            document.getElementById('ledger-product-name').textContent = `${product.name} Stock Ledger`;
+            const ledger = await response.json();
             
-            // Mock summary data
+            document.getElementById('ledger-product-name').textContent = ledger.product_name;
+            
+            // Update summary
             document.getElementById('ledger-summary').innerHTML = `
                 <div class="text-center p-3 bg-blue-50 rounded-lg">
-                    <div class="text-2xl font-bold">25</div>
+                    <div class="text-2xl font-bold">${ledger.current_stock}</div>
                     <div class="text-sm text-gray-600">Current Stock</div>
                 </div>
                 <div class="text-center p-3 bg-green-50 rounded-lg">
-                    <div class="text-2xl font-bold">50</div>
+                    <div class="text-2xl font-bold">${ledger.total_purchases}</div>
                     <div class="text-sm text-gray-600">Total Purchases</div>
                 </div>
                 <div class="text-center p-3 bg-red-50 rounded-lg">
-                    <div class="text-2xl font-bold">25</div>
+                    <div class="text-2xl font-bold">${ledger.total_sales}</div>
                     <div class="text-sm text-gray-600">Total Sales</div>
                 </div>
                 <div class="text-center p-3 bg-yellow-50 rounded-lg">
-                    <div class="text-2xl font-bold">0</div>
+                    <div class="text-2xl font-bold">${ledger.opening_stock}</div>
                     <div class="text-sm text-gray-600">Opening Stock</div>
                 </div>
             `;
             
-            // Mock history data
-            document.getElementById('ledger-history').innerHTML = `
-                <div class="text-center p-4 text-gray-500">
-                    Stock ledger data requires backend connection<br>
-                    <span class="text-sm">Backend API needs to be deployed</span>
+            // Update history
+            document.getElementById('ledger-history').innerHTML = ledger.history.map(entry => `
+                <div class="flex justify-between items-center p-3 border-b">
+                    <div class="flex-1">
+                        <div class="font-medium">${entry.reference}</div>
+                        <div class="text-sm text-gray-500">${new Date(entry.date).toLocaleDateString()}</div>
+                        <div class="text-xs text-gray-400">${entry.details}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium ${entry.quantity > 0 ? 'text-green-600' : 'text-red-600'}">
+                            ${entry.quantity > 0 ? '+' : ''}${entry.quantity}
+                        </div>
+                        <div class="text-sm text-gray-600">Stock: ${entry.stock_after_transaction}</div>
+                    </div>
                 </div>
-            `;
+            `).join('');
             
-            // Hide loading, show content
-            loadingEl.classList.add('hidden');
+            ledgerLoading.classList.add('hidden');
             ledgerContent.classList.remove('hidden');
             
         } catch (error) {
             console.error('Error loading ledger:', error);
-            loadingEl.classList.add('hidden');
+            ledgerLoading.classList.add('hidden');
             ledgerError.classList.remove('hidden');
-            ledgerError.innerHTML = `<p class="text-red-500">Error loading stock ledger: Backend not connected</p>`;
+            ledgerError.innerHTML = `<p class="text-red-500">Error loading stock ledger: ${error.message}</p>`;
         }
     }
 
     // ===== UTILITY FUNCTIONS =====
     function showNotification(message) {
-        // Remove existing notification
         const existingNotification = document.querySelector('.notification');
-        if (existingNotification) {
-            existingNotification.remove();
-        }
+        if (existingNotification) existingNotification.remove();
         
-        // Create new notification
         const notification = document.createElement('div');
         notification.className = 'notification fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50';
         notification.textContent = message;
         
         document.body.appendChild(notification);
         
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
+        setTimeout(() => notification.remove(), 3000);
     }
 
     // ===== EVENT LISTENERS =====
     document.addEventListener('DOMContentLoaded', function() {
-        // Back button event listener
         backButton.addEventListener('click', backToHome);
 
-        // Cart event listeners
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('add-to-cart-btn')) {
                 const productId = e.target.dataset.id;
@@ -695,6 +760,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
                     },
                     body: JSON.stringify({
                         product_id: parseInt(productId),
@@ -709,10 +775,11 @@
                     await loadPurchaseHistory();
                     await loadProductDropdown('purchase-product');
                 } else {
-                    alert('Error recording purchase. Backend might not be connected.');
+                    const errorData = await response.json();
+                    alert('Error recording purchase: ' + (errorData.detail || 'Unknown error'));
                 }
             } catch (error) {
-                alert('Error recording purchase: Backend not connected. Please check your API deployment.');
+                alert('Error recording purchase: ' + error.message);
             }
         });
 
@@ -724,21 +791,17 @@
             const price = document.getElementById('product-price').value;
             const stock = document.getElementById('product-stock').value;
             
-            if (!name || !price) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
             try {
                 const response = await fetch(`${backendURL}/api/products`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
                     },
                     body: JSON.stringify({
                         name: name,
                         price: parseFloat(price),
-                        stock: parseInt(stock) || 0
+                        stock: parseInt(stock)
                     })
                 });
                 
@@ -747,14 +810,14 @@
                     document.getElementById('create-product-form').reset();
                     await loadExistingProducts();
                 } else {
-                    alert('Error creating product. Backend might not be connected.');
+                    const errorData = await response.json();
+                    alert('Error creating product: ' + (errorData.detail || 'Unknown error'));
                 }
             } catch (error) {
-                alert('Error creating product: Backend not connected. Please check your API deployment.');
+                alert('Error creating product: ' + error.message);
             }
         });
 
-        // Start on home page
         backToHome();
     });
 </script>
