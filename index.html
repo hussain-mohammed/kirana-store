@@ -226,7 +226,6 @@
 
 <script>
     // ===== BACKEND CONFIGURATION =====
-    // Use relative paths - Vercel will proxy to your ngrok backend
     const backendURL = window.location.origin;
     const WHATSAPP_NUMBER = "917075210801";
 
@@ -284,7 +283,7 @@
     const cartTotalEl = document.getElementById('cart-total');
     const whatsappCheckoutButtonEl = document.getElementById('whatsapp-checkout-button');
 
-    // Fetch products through Vercel proxy
+    // Fetch products
     async function fetchProducts() {
         console.log(`🔍 Fetching from: ${backendURL}/api/products`);
         
@@ -427,34 +426,48 @@
             : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
     }
 
-    // Record sale to database
+    // Record sale to database - FIXED ENDPOINT
     async function recordSale(saleItems) {
-        try {
-            const response = await fetch(`${backendURL}/api/sales`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                },
-                body: JSON.stringify({
-                    items: saleItems,
-                    total: saleItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-                    timestamp: new Date().toISOString()
-                })
-            });
+        console.log('📦 Recording sale items:', saleItems);
+        
+        // Try multiple possible endpoints
+        const endpoints = [
+            '/api/sales',
+            '/api/transaction/sales',
+            '/api/orders'
+        ];
 
-            if (response.ok) {
-                const result = await response.json();
-                console.log('✅ Sale recorded successfully:', result);
-                return result;
-            } else {
-                console.log('❌ Failed to record sale:', response.status);
-                throw new Error('Failed to record sale');
+        for (const endpoint of endpoints) {
+            try {
+                console.log(`🔄 Trying endpoint: ${endpoint}`);
+                const response = await fetch(`${backendURL}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({
+                        items: saleItems,
+                        total: saleItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                console.log(`📊 Response for ${endpoint}: ${response.status}`);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Sale recorded successfully:', result);
+                    return result;
+                }
+                
+                console.log(`❌ Endpoint ${endpoint} failed with status: ${response.status}`);
+            } catch (error) {
+                console.log(`💥 Error with endpoint ${endpoint}:`, error);
             }
-        } catch (error) {
-            console.error('Error recording sale:', error);
-            throw error;
         }
+        
+        throw new Error('All sale recording endpoints failed');
     }
 
     function generateWhatsAppOrder() {
@@ -486,9 +499,15 @@
         message += `%0a*Total: ₹${total.toFixed(2)}*%0a%0aPlease confirm my order. Thank you!`;
 
         // Record sale in database
-        recordSale(saleItems).catch(error => {
-            console.warn('⚠️ Sale recording failed, but continuing to WhatsApp:', error);
-        });
+        if (saleItems.length > 0) {
+            recordSale(saleItems).then(result => {
+                console.log('✅ Sale recorded in database:', result);
+                showNotification('Order recorded successfully!');
+            }).catch(error => {
+                console.warn('⚠️ Sale recording failed, but continuing to WhatsApp:', error);
+                showNotification('Order sent to WhatsApp (database recording failed)');
+            });
+        }
 
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
         window.open(whatsappUrl, '_blank');
@@ -498,8 +517,6 @@
         updateCartUI();
         cartModalEl.classList.add('hidden');
         cartModalEl.classList.remove('flex');
-        
-        showNotification('Order sent to WhatsApp!');
     }
 
     // ===== PURCHASE PAGE FUNCTIONS =====
@@ -542,30 +559,47 @@
         historyEl.innerHTML = '<p class="text-gray-500 text-center">Loading purchase history...</p>';
         
         try {
-            const response = await fetch(`${backendURL}/api/ledger/purchases`, {
-                headers: {
-                    'ngrok-skip-browser-warning': 'true'
+            // Try multiple endpoints for purchase history
+            const endpoints = [
+                '/api/ledger/purchases',
+                '/api/purchases',
+                '/api/transaction/purchases'
+            ];
+
+            let purchases = [];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${backendURL}${endpoint}`, {
+                        headers: {
+                            'ngrok-skip-browser-warning': 'true'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        purchases = await response.json();
+                        console.log(`✅ Loaded purchases from ${endpoint}`);
+                        break;
+                    }
+                } catch (error) {
+                    console.log(`❌ Failed to load from ${endpoint}:`, error);
                 }
-            });
-            
-            if (!response.ok) throw new Error('Failed to fetch purchase history');
-            
-            const purchases = await response.json();
+            }
             
             if (purchases.length === 0) {
-                historyEl.innerHTML = '<p class="text-gray-500 text-center">No purchase history found</p>';
+                historyEl.innerHTML = '<p class="text-gray-500 text-center">No purchase history found or backend not connected</p>';
                 return;
             }
             
             historyEl.innerHTML = purchases.slice(0, 10).map(purchase => `
                 <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <div>
-                        <div class="font-medium">${purchase.product_name}</div>
-                        <div class="text-sm text-gray-500">${new Date(purchase.date).toLocaleDateString()}</div>
+                        <div class="font-medium">${purchase.product_name || purchase.name}</div>
+                        <div class="text-sm text-gray-500">${new Date(purchase.date || purchase.timestamp).toLocaleDateString()}</div>
                     </div>
                     <div class="text-right">
                         <div class="font-medium">${purchase.quantity} units</div>
-                        <div class="text-sm text-green-600">₹${purchase.total_cost.toFixed(2)}</div>
+                        <div class="text-sm text-green-600">₹${(purchase.total_cost || purchase.amount).toFixed(2)}</div>
                     </div>
                 </div>
             `).join('');
@@ -618,6 +652,46 @@
         }
     }
 
+    // Create product - FIXED ENDPOINT
+    async function createProduct(productData) {
+        console.log('➕ Creating product:', productData);
+        
+        // Try multiple possible endpoints
+        const endpoints = [
+            '/api/products',
+            '/api/product/create',
+            '/api/inventory/products'
+        ];
+
+        for (const endpoint of endpoints) {
+            try {
+                console.log(`🔄 Trying endpoint: ${endpoint}`);
+                const response = await fetch(`${backendURL}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify(productData)
+                });
+
+                console.log(`📊 Response for ${endpoint}: ${response.status}`);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Product created successfully:', result);
+                    return result;
+                }
+                
+                console.log(`❌ Endpoint ${endpoint} failed with status: ${response.status}`);
+            } catch (error) {
+                console.log(`💥 Error with endpoint ${endpoint}:`, error);
+            }
+        }
+        
+        throw new Error('All product creation endpoints failed');
+    }
+
     // ===== STOCK LEDGER PAGE FUNCTIONS =====
     async function loadLedgerPage() {
         await loadProductDropdown('ledger-product');
@@ -641,54 +715,79 @@
         ledgerLoading.classList.remove('hidden');
         
         try {
-            const response = await fetch(`${backendURL}/api/ledger/stock/${productId}`, {
-                headers: {
-                    'ngrok-skip-browser-warning': 'true'
+            // Try multiple endpoints for ledger
+            const endpoints = [
+                `/api/ledger/stock/${productId}`,
+                `/api/stock/ledger/${productId}`,
+                `/api/inventory/ledger/${productId}`
+            ];
+
+            let ledger = null;
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${backendURL}${endpoint}`, {
+                        headers: {
+                            'ngrok-skip-browser-warning': 'true'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        ledger = await response.json();
+                        console.log(`✅ Loaded ledger from ${endpoint}`);
+                        break;
+                    }
+                } catch (error) {
+                    console.log(`❌ Failed to load from ${endpoint}:`, error);
                 }
-            });
+            }
             
-            if (!response.ok) throw new Error('Failed to fetch stock ledger');
+            if (!ledger) {
+                throw new Error('Could not load ledger from any endpoint');
+            }
             
-            const ledger = await response.json();
-            
-            document.getElementById('ledger-product-name').textContent = ledger.product_name;
+            document.getElementById('ledger-product-name').textContent = ledger.product_name || 'Product Ledger';
             
             // Update summary
             document.getElementById('ledger-summary').innerHTML = `
                 <div class="text-center p-3 bg-blue-50 rounded-lg">
-                    <div class="text-2xl font-bold">${ledger.current_stock}</div>
+                    <div class="text-2xl font-bold">${ledger.current_stock || 0}</div>
                     <div class="text-sm text-gray-600">Current Stock</div>
                 </div>
                 <div class="text-center p-3 bg-green-50 rounded-lg">
-                    <div class="text-2xl font-bold">${ledger.total_purchases}</div>
+                    <div class="text-2xl font-bold">${ledger.total_purchases || 0}</div>
                     <div class="text-sm text-gray-600">Total Purchases</div>
                 </div>
                 <div class="text-center p-3 bg-red-50 rounded-lg">
-                    <div class="text-2xl font-bold">${ledger.total_sales}</div>
+                    <div class="text-2xl font-bold">${ledger.total_sales || 0}</div>
                     <div class="text-sm text-gray-600">Total Sales</div>
                 </div>
                 <div class="text-center p-3 bg-yellow-50 rounded-lg">
-                    <div class="text-2xl font-bold">${ledger.opening_stock}</div>
+                    <div class="text-2xl font-bold">${ledger.opening_stock || 0}</div>
                     <div class="text-sm text-gray-600">Opening Stock</div>
                 </div>
             `;
             
             // Update history
-            document.getElementById('ledger-history').innerHTML = ledger.history.map(entry => `
-                <div class="flex justify-between items-center p-3 border-b">
-                    <div class="flex-1">
-                        <div class="font-medium">${entry.reference}</div>
-                        <div class="text-sm text-gray-500">${new Date(entry.date).toLocaleDateString()}</div>
-                        <div class="text-xs text-gray-400">${entry.details}</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-medium ${entry.quantity > 0 ? 'text-green-600' : 'text-red-600'}">
-                            ${entry.quantity > 0 ? '+' : ''}${entry.quantity}
+            if (ledger.history && ledger.history.length > 0) {
+                document.getElementById('ledger-history').innerHTML = ledger.history.map(entry => `
+                    <div class="flex justify-between items-center p-3 border-b">
+                        <div class="flex-1">
+                            <div class="font-medium">${entry.reference || 'Transaction'}</div>
+                            <div class="text-sm text-gray-500">${new Date(entry.date || entry.timestamp).toLocaleDateString()}</div>
+                            <div class="text-xs text-gray-400">${entry.details || ''}</div>
                         </div>
-                        <div class="text-sm text-gray-600">Stock: ${entry.stock_after_transaction}</div>
+                        <div class="text-right">
+                            <div class="font-medium ${entry.quantity > 0 ? 'text-green-600' : 'text-red-600'}">
+                                ${entry.quantity > 0 ? '+' : ''}${entry.quantity}
+                            </div>
+                            <div class="text-sm text-gray-600">Stock: ${entry.stock_after_transaction || entry.balance}</div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            } else {
+                document.getElementById('ledger-history').innerHTML = '<p class="text-gray-500 text-center">No transaction history available</p>';
+            }
             
             ledgerLoading.classList.add('hidden');
             ledgerContent.classList.remove('hidden');
@@ -756,34 +855,54 @@
             }
             
             try {
-                const response = await fetch(`${backendURL}/api/purchases`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    body: JSON.stringify({
-                        product_id: parseInt(productId),
-                        quantity: parseInt(quantity),
-                        unit_cost: parseFloat(unitCost)
-                    })
-                });
+                // Try multiple endpoints for purchase recording
+                const endpoints = [
+                    '/api/purchases',
+                    '/api/transaction/purchases',
+                    '/api/inventory/purchases'
+                ];
+
+                let success = false;
                 
-                if (response.ok) {
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(`${backendURL}${endpoint}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'ngrok-skip-browser-warning': 'true'
+                            },
+                            body: JSON.stringify({
+                                product_id: parseInt(productId),
+                                quantity: parseInt(quantity),
+                                unit_cost: parseFloat(unitCost)
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            success = true;
+                            console.log(`✅ Purchase recorded via ${endpoint}`);
+                            break;
+                        }
+                    } catch (error) {
+                        console.log(`❌ Failed to record purchase via ${endpoint}:`, error);
+                    }
+                }
+                
+                if (success) {
                     alert('Purchase recorded successfully!');
                     document.getElementById('purchase-form').reset();
                     await loadPurchaseHistory();
                     await loadProductDropdown('purchase-product');
                 } else {
-                    const errorData = await response.json();
-                    alert('Error recording purchase: ' + (errorData.detail || 'Unknown error'));
+                    alert('Error recording purchase: No working endpoint found');
                 }
             } catch (error) {
                 alert('Error recording purchase: ' + error.message);
             }
         });
 
-        // Create product form handler
+        // Create product form handler - UPDATED
         document.getElementById('create-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -791,30 +910,25 @@
             const price = document.getElementById('product-price').value;
             const stock = document.getElementById('product-stock').value;
             
+            if (!name || !price) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
             try {
-                const response = await fetch(`${backendURL}/api/products`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    body: JSON.stringify({
-                        name: name,
-                        price: parseFloat(price),
-                        stock: parseInt(stock)
-                    })
-                });
+                const productData = {
+                    name: name,
+                    price: parseFloat(price),
+                    stock: parseInt(stock) || 0
+                };
                 
-                if (response.ok) {
-                    alert('Product created successfully!');
-                    document.getElementById('create-product-form').reset();
-                    await loadExistingProducts();
-                } else {
-                    const errorData = await response.json();
-                    alert('Error creating product: ' + (errorData.detail || 'Unknown error'));
-                }
+                await createProduct(productData);
+                alert('Product created successfully!');
+                document.getElementById('create-product-form').reset();
+                await loadExistingProducts();
+                
             } catch (error) {
-                alert('Error creating product: ' + error.message);
+                alert('Error creating product: No working endpoint found. Please check your backend API.');
             }
         });
 
