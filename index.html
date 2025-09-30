@@ -979,6 +979,56 @@
 
         // Debug function to test endpoints
         window.testEndpoints = testBackendEndpoints;
+
+
+    // Add this function to test your backend endpoints
+async function testBackendEndpoints() {
+    console.log("🔍 Testing backend endpoints...");
+    
+    const endpoints = [
+        '/api/products',
+        '/api/products/',
+        '/api/purchases',
+        '/api/purchases/',
+        '/api/sales',
+        '/api/sales/',
+        '/api/orders',
+        '/api/orders/'
+    ];
+    
+    for (const endpoint of endpoints) {
+        try {
+            console.log(`Testing: ${endpoint}`);
+            
+            // Test GET first
+            let response = await fetch(endpoint, {
+                method: 'GET',
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            console.log(`GET ${endpoint} - Status: ${response.status}`);
+            
+            // Test POST if GET works
+            if (response.ok) {
+                response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({ test: true })
+                });
+                console.log(`POST ${endpoint} - Status: ${response.status}`);
+            }
+            
+        } catch (error) {
+            console.log(`❌ ${endpoint} - Error: ${error.message}`);
+        }
+    }
+}
+
+// Run this in console: testBackendEndpoints()    
     </script>
 </body>
 </html>
