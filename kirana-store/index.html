@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirana Store Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f7fafc;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .cart-item-remove {
+            transition: all 0.3s ease;
+        }
+        .cart-item-remove:hover {
+            transform: scale(1.1);
+            background-color: #fef2f2;
+        }
+    </style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="w-full bg-white shadow-sm p-4 sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Kirana Store Management</h1>
+            <button id="back-to-home" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors hidden">
+                ← Back to Home
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== LANDING PAGE (Buttons Only) ===== -->
+    <div id="page-home" class="page active">
+        <main class="w-full max-w-md mx-auto p-8">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome to Kirana Store</h2>
+                <p class="text-gray-600">Choose an action to get started</p>
+            </div>
+            
+            <div class="space-y-4">
+                <button onclick="showContentPage('sales')" class="w-full p-6 bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">🛍️ Sales</div>
+                        <p class="text-blue-100">Sell products to customers and process orders</p>
+                    </div>
+                </button>
+                
+                <button onclick="showContentPage('purchase')" class="w-full p-6 bg-green-500 text-white rounded-xl shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-105">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">📦 Purchase</div>
+                        <p class="text-green-100">Record product purchases from suppliers</p>
+                    </div>
+                </button>
+                
+                <button onclick="showContentPage('create')" class="w-full p-6 bg-purple-500 text-white rounded-xl shadow-lg hover:bg-purple-600 transition-all duration-300 transform hover:scale-105">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">➕ Create Product</div>
+                        <p class="text-purple-100">Add new products to your store inventory</p>
+                    </div>
+                </button>
+                
+                <button onclick="showContentPage('ledger')" class="w-full p-6 bg-orange-500 text-white rounded-xl shadow-lg hover:bg-orange-600 transition-all duration-300 transform hover:scale-105">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">📊 Stock Ledger</div>
+                        <p class="text-orange-100">View stock history and track inventory</p>
+                    </div>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== CONTENT PAGES ===== -->
+
+    <!-- Sales Content Page with Cart -->
+    <div id="page-sales" class="page">
+        <main class="w-full max-w-md mx-auto p-4 space-y-4">
+            <!-- Cart Button in Sales Header -->
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-700">Products for Sale</h2>
+                <button id="cart-button-sales" class="relative text-gray-600 hover:text-gray-800 p-2 rounded-lg transition-all duration-300 transform hover:scale-105">
+                    <!-- Cart Icon (SVG) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5.4M7 13l-2.293 2.293c-.63.63-.182 1.953.946 1.953H17M14 17a1 1 0 100 2 1 1 0 000-2zm4-1a1 1 0 100 2 1 1 0 000-2z" />
+                    </svg>
+                    <span id="cart-count-sales" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">0</span>
+                </button>
+            </div>
+
+            <div id="product-list" class="grid grid-cols-2 gap-4">
+                <div class="text-center py-8">
+                    <p class="text-gray-500">Loading products...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Cart Modal -->
+        <div id="cart-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-20">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">Your Cart</h3>
+                    <button id="close-modal-button" class="text-gray-400 hover:text-gray-600">&times;</button>
+                </div>
+                <div id="cart-items" class="space-y-3 max-h-64 overflow-y-auto">
+                    <!-- Cart items will be generated here -->
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex justify-between font-bold text-lg text-gray-800">
+                        <span>Total:</span>
+                        <span id="cart-total">₹0.00</span>
+                    </div>
+                    <button id="whatsapp-checkout-button" class="w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300">
+                        Checkout on WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Content Page -->
+    <div id="page-purchase" class="page">
+        <main class="w-full max-w-md mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">Purchase Products</h2>
+            
+            <!-- Purchase Form -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-4">Record New Purchase</h3>
+                <form id="purchase-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                        <select id="purchase-product" class="w-full p-2 border border-gray-300 rounded-lg" required>
+                            <option value="">Select Product</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                        <input type="number" id="purchase-quantity" class="w-full p-2 border border-gray-300 rounded-lg" min="1" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Unit Cost (₹)</label>
+                        <input type="number" id="purchase-unit-cost" class="w-full p-2 border border-gray-300 rounded-lg" step="0.01" min="0.01" required>
+                    </div>
+                    <button type="submit" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                        Record Purchase
+                    </button>
+                </form>
+            </div>
+
+            <!-- Recent Purchases -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-4">Recent Purchases</h3>
+                <div id="purchase-history" class="space-y-3">
+                    <!-- Purchase history will be loaded here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Product Content Page -->
+    <div id="page-create" class="page">
+        <main class="w-full max-w-md mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">Create New Product</h2>
+            
+            <!-- Product Creation Form -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <form id="create-product-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                        <input type="text" id="product-name" class="w-full p-2 border border-gray-300 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                        <input type="number" id="product-price" class="w-full p-2 border border-gray-300 rounded-lg" step="0.01" min="0.01" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Initial Stock</label>
+                        <input type="number" id="product-stock" class="w-full p-2 border border-gray-300 rounded-lg" min="0" value="0">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                        Create Product
+                    </button>
+                </form>
+            </div>
+
+            <!-- Existing Products -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-4">Existing Products</h3>
+                <div id="existing-products" class="space-y-3">
+                    <!-- Existing products will be loaded here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Stock Ledger Content Page -->
+    <div id="page-ledger" class="page">
+        <main class="w-full max-w-md mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">Stock Ledger</h2>
+            
+            <!-- Product Selection -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Product</label>
+                <select id="ledger-product" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <option value="">Select a product to view ledger</option>
+                </select>
+            </div>
+
+            <!-- Loading State -->
+            <div id="ledger-loading" class="bg-white p-6 rounded-lg shadow-lg text-center hidden">
+                <p class="text-gray-500">Loading stock ledger...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="ledger-error" class="bg-white p-6 rounded-lg shadow-lg text-center hidden">
+                <p class="text-red-500">Error loading stock ledger</p>
+            </div>
+
+            <!-- Ledger Display -->
+            <div id="ledger-content" class="bg-white p-6 rounded-lg shadow-lg hidden">
+                <h3 id="ledger-product-name" class="text-lg font-semibold mb-4"></h3>
+                <div id="ledger-summary" class="grid grid-cols-2 gap-4 mb-4">
+                    <!-- Summary stats will go here -->
+                </div>
+                <div id="ledger-history" class="space-y-3">
+                    <!-- Ledger history will go here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Backend configuration
+        const backendURL = "/api";
+        const WHATSAPP_NUMBER = "917075210801";
+
+        // Global variables
+        let products = [];
+        let cart = {};
+
+        // DOM Elements for navigation
+        const pages = {
+            home: document.getElementById('page-home'),
+            sales: document.getElementById('page-sales'),
+            purchase: document.getElementById('page-purchase'),
+            create: document.getElementById('page-create'),
+            ledger: document.getElementById('page-ledger')
+        };
+
+        const backButton = document.getElementById('back-to-home');
+
+        // DOM Elements for sales page
+        const productListEl = document.getElementById('product-list');
+        const cartModalEl = document.getElementById('cart-modal');
+        const closeModalButtonEl = document.getElementById('close-modal-button');
+        const cartItemsEl = document.getElementById('cart-items');
+        const cartTotalEl = document.getElementById('cart-total');
+        const cartCountEl = document.getElementById('cart-count-sales');
+        const whatsappCheckoutButtonEl = document.getElementById('whatsapp-checkout-button');
+        const cartButtonEl = document.getElementById('cart-button-sales');
+
+        // ===== NAVIGATION FUNCTIONS =====
+        function showContentPage(pageName) {
+            // Hide all pages
+            Object.values(pages).forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show selected content page
+            pages[pageName].classList.add('active');
+            
+            // Show back button
+            backButton.classList.remove('hidden');
+            
+            // Load page-specific data
+            loadPageData(pageName);
+        }
+
+        function backToHome() {
+            // Hide all pages
+            Object.values(pages).forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show home page
+            pages.home.classList.add('active');
+            
+            // Hide back button
+            backButton.classList.add('hidden');
+        }
+
+        function loadPageData(pageName) {
+            switch(pageName) {
+                case 'sales':
+                    fetchProducts();
+                    break;
+                case 'purchase':
+                    loadPurchasePage();
+                    break;
+                case 'create':
+                    loadCreatePage();
+                    break;
+                case 'ledger':
+                    loadLedgerPage();
+                    break;
+            }
+        }
+
+        // ===== SALES PAGE FUNCTIONS =====
+        async function fetchProducts() {
+            console.log(`🔍 Fetching from: ${backendURL}/products`);
+            
+            try {
+                const response = await fetch(`${backendURL}/products`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    mode: 'cors'
+                });
+                
+                console.log(`📊 Status: ${response.status}, Content-Type: ${response.headers.get('Content-Type')}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const contentType = response.headers.get('Content-Type') || '';
+                if (!contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('❌ Expected JSON but got:', text.substring(0, 200));
+                    
+                    if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+                        console.log('🔄 Backend returned HTML, using mock data');
+                        loadMockProducts();
+                        return;
+                    }
+                    throw new Error(`Expected JSON but got: ${contentType}`);
+                }
+                
+                products = await response.json();
+                console.log("✅ Products fetched:", products.length, "items");
+                
+                if (!Array.isArray(products) || products.length === 0) {
+                    throw new Error("No products received");
+                }
+                
+                renderProducts();
+                
+            } catch (error) {
+                console.error("💥 Fetch error:", error);
+                loadMockProducts();
+            }
+        }
+
+        function loadMockProducts() {
+            console.log('🔄 Loading mock products');
+            products = [
+                {id: 1, name: "Apple", price: 100.00, imageUrl: "https://placehold.co/400x400/81c784/ffffff?text=Apple"},
+                {id: 2, name: "Banana", price: 50.00, imageUrl: "https://placehold.co/400x400/fff176/ffffff?text=Banana"},
+                {id: 3, name: "Orange", price: 80.00, imageUrl: "https://placehold.co/400x400/ffb74d/ffffff?text=Orange"},
+                {id: 4, name: "Milk", price: 65.00, imageUrl: "https://placehold.co/400x400/b0e0e6/ffffff?text=Milk"},
+                {id: 5, name: "Bread", price: 40.00, imageUrl: "https://placehold.co/400x400/d7ccc8/ffffff?text=Bread"},
+                {id: 6, name: "Eggs", price: 90.00, imageUrl: "https://placehold.co/400x400/fff9c4/ffffff?text=Eggs"},
+            ];
+            renderProducts();
+            
+            productListEl.insertAdjacentHTML('beforebegin', 
+                '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">Using sample products</div>'
+            );
+        }
+
+        function renderProducts() {
+            if (!products || products.length === 0) {
+                productListEl.innerHTML = '<p class="text-center text-gray-500">No products available</p>';
+                return;
+            }
+            
+            productListEl.innerHTML = products.map(product => `
+                <div class="bg-white p-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                    <img src="${product.imageUrl}" alt="${product.name}" 
+                         class="w-full h-28 object-cover rounded-md mb-2"
+                         onerror="this.src='https://placehold.co/400x400/cccccc/ffffff?text=Product'">
+                    <h4 class="text-sm font-semibold text-gray-700">${product.name}</h4>
+                    <p class="text-lg font-bold text-gray-800 my-1">₹${product.price.toFixed(2)}</p>
+                    <button class="add-to-cart-btn mt-2 w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors duration-300" 
+                            data-id="${product.id}">
+                        Add to Cart
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Cart functions
+        function addToCart(productId) {
+            cart[productId] = (cart[productId] || 0) + 1;
+            updateCartUI();
+        }
+
+        function removeFromCart(productId) {
+            if (cart[productId] && cart[productId] > 0) {
+                cart[productId]--;
+                if (cart[productId] === 0) {
+                    delete cart[productId];
+                }
+                updateCartUI();
+            }
+        }
+
+        function removeAllFromCart(productId) {
+            delete cart[productId];
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            cartItemsEl.innerHTML = '';
+            let total = 0;
+            let totalCount = 0;
+
+            if (Object.keys(cart).length === 0) {
+                cartItemsEl.innerHTML = `
+                    <div class="text-center py-6 text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5.4M7 13l-2.293 2.293c-.63.63-.182 1.953.946 1.953H17M14 17a1 1 0 100 2 1 1 0 000-2zm4-1a1 1 0 100 2 1 1 0 000-2z" />
+                        </svg>
+                        <p>Your cart is empty</p>
+                    </div>
+                `;
+            } else {
+                for (const productId in cart) {
+                    if (cart[productId] > 0) {
+                        const product = products.find(p => p.id === parseInt(productId));
+                        if (product) {
+                            const quantity = cart[productId];
+                            const itemTotal = quantity * product.price;
+                            total += itemTotal;
+                            totalCount += quantity;
+
+                            const cartItem = document.createElement('div');
+                            cartItem.className = "flex justify-between items-center bg-gray-50 p-3 rounded-lg";
+                            cartItem.innerHTML = `
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-800">${product.name}</div>
+                                    <div class="text-sm text-gray-600">₹${product.price.toFixed(2)} × ${quantity}</div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="font-semibold text-gray-800">₹${itemTotal.toFixed(2)}</span>
+                                    <div class="flex space-x-1">
+                                        <button class="cart-item-remove p-1 text-red-500 hover:text-red-700 rounded-full" data-id="${product.id}" data-action="remove-one">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
+                                        <button class="cart-item-remove p-1 text-red-600 hover:text-red-800 rounded-full" data-id="${product.id}" data-action="remove-all">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                            cartItemsEl.appendChild(cartItem);
+                        }
+                    }
+                }
+            }
+
+            cartTotalEl.textContent = `₹${total.toFixed(2)}`;
+            cartCountEl.textContent = totalCount;
+
+            whatsappCheckoutButtonEl.disabled = totalCount === 0;
+            whatsappCheckoutButtonEl.className = totalCount === 0 
+                ? "w-full mt-4 bg-gray-400 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed"
+                : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
+        }
+
+        // Sales recording function - FIXED VERSION
+        async function recordSale() {
+    try {
+        const saleItems = [];
+        
+        for (const productId in cart) {
+            if (cart[productId] > 0) {
+                const product = products.find(p => p.id === parseInt(productId));
+                if (product) {
+                    saleItems.push({
+                        product_id: parseInt(productId),
+                        quantity: parseInt(cart[productId]),
+                        unit_price: parseFloat(product.price)
+                    });
+                }
+            }
+        }
+        
+        if (saleItems.length === 0) {
+            console.error("No items in cart to record");
+            return false;
+        }
+        
+        console.log("📦 Recording sale items:", saleItems);
+        
+        // Try different data formats based on common backend expectations
+        
+        // Option 1: Try with individual sales (one by one)
+        let allSuccess = true;
+        
+        for (const item of saleItems) {
+            try {
+                const response = await fetch(`${backendURL}/sales/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({
+                        product_id: item.product_id,
+                        quantity: item.quantity,
+                        unit_price: item.unit_price
+                    })
+                });
+                
+                console.log(`📊 Response for product ${item.product_id}:`, response.status);
+                
+                if (!response.ok) {
+                    const errorDetail = await response.json();
+                    console.error(`❌ Failed for product ${item.product_id}:`, errorDetail);
+                    allSuccess = false;
+                    
+                    // Try alternative field names
+                    console.log("🔄 Trying alternative field names...");
+                    const response2 = await fetch(`${backendURL}/sales/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        },
+                        body: JSON.stringify({
+                            product_id: item.product_id,
+                            quantity: item.quantity,
+                            price: item.unit_price  // Try 'price' instead of 'unit_price'
+                        })
+                    });
+                    
+                    if (response2.ok) {
+                        console.log(`✅ Sale recorded with alternative fields for product ${item.product_id}`);
+                        allSuccess = true;
+                    } else {
+                        const errorDetail2 = await response2.json();
+                        console.error(`❌ Alternative also failed:`, errorDetail2);
+                    }
+                } else {
+                    console.log(`✅ Sale recorded successfully for product ${item.product_id}`);
+                }
+            } catch (error) {
+                console.error(`💥 Network error for product ${item.product_id}:`, error);
+                allSuccess = false;
+            }
+        }
+        
+        return allSuccess;
+        
+    } catch (error) {
+        console.error("💥 Error recording sale:", error);
+        return false;
+    }
+}
+
+        // WhatsApp checkout function - FIXED VERSION
+        async function generateWhatsAppOrder() {
+            if (Object.keys(cart).length === 0) {
+                alert("Your cart is empty!");
+                return;
+            }
+
+            // Show loading state
+            const originalText = whatsappCheckoutButtonEl.textContent;
+            whatsappCheckoutButtonEl.textContent = 'Processing...';
+            whatsappCheckoutButtonEl.disabled = true;
+
+            try {
+                // First record the sale in database
+                const saleRecorded = await recordSale();
+                
+                if (!saleRecorded) {
+                    alert("There was an error processing your order. Please try again.");
+                    return;
+                }
+
+                // Then generate WhatsApp message
+                const phoneNumber = WHATSAPP_NUMBER; 
+                let message = "Hi, I would like to place an order:%0a%0a";
+                let total = 0;
+
+                for (const productId in cart) {
+                    if (cart[productId] > 0) {
+                        const product = products.find(p => p.id === parseInt(productId));
+                        if (product) {
+                            const quantity = cart[productId];
+                            const itemTotal = quantity * product.price;
+                            total += itemTotal;
+                            message += `${quantity}x ${product.name} (₹${product.price.toFixed(2)} each)%0a`;
+                        }
+                    }
+                }
+
+                message += `%0a*Total: ₹${total.toFixed(2)}*`;
+
+                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+                
+                // Clear cart after successful recording
+                cart = {};
+                updateCartUI();
+                
+                // Open WhatsApp
+                window.open(whatsappUrl, '_blank');
+                
+                // Close cart modal
+                cartModalEl.classList.remove('flex');
+                cartModalEl.classList.add('hidden');
+                
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('There was an error processing your order. Please try again.');
+            } finally {
+                // Restore button state
+                whatsappCheckoutButtonEl.textContent = originalText;
+                whatsappCheckoutButtonEl.disabled = false;
+            }
+        }
+
+        // ===== PURCHASE PAGE FUNCTIONS =====
+        async function loadPurchasePage() {
+            await loadProductDropdown('purchase-product');
+            await loadPurchaseHistory();
+        }
+
+        async function loadProductDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.innerHTML = '<option value="">Loading products...</option>';
+            
+            try {
+                const response = await fetch(`${backendURL}/products`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch products');
+                
+                const products = await response.json();
+                
+                dropdown.innerHTML = '<option value="">Select Product</option>';
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = `${product.name} (Stock: ${product.stock || 0})`;
+                    dropdown.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Error loading products:', error);
+                dropdown.innerHTML = '<option value="">Error loading products</option>';
+            }
+        }
+
+        async function loadPurchaseHistory() {
+            const historyEl = document.getElementById('purchase-history');
+            historyEl.innerHTML = '<p class="text-gray-500 text-center">Loading purchase history...</p>';
+            
+            try {
+                const response = await fetch(`${backendURL}/ledger/purchases`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch purchase history');
+                
+                const purchases = await response.json();
+                
+                if (purchases.length === 0) {
+                    historyEl.innerHTML = '<p class="text-gray-500 text-center">No purchase history found</p>';
+                    return;
+                }
+                
+                historyEl.innerHTML = purchases.slice(0, 10).map(purchase => `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <div class="font-medium">${purchase.product_name}</div>
+                            <div class="text-sm text-gray-500">${new Date(purchase.date).toLocaleDateString()}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium">${purchase.quantity} units</div>
+                            <div class="text-sm text-green-600">₹${purchase.total_cost.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading purchase history:', error);
+                historyEl.innerHTML = '<p class="text-red-500 text-center">Error loading purchase history</p>';
+            }
+        }
+
+        // ===== CREATE PRODUCT PAGE FUNCTIONS =====
+        async function loadCreatePage() {
+            await loadExistingProducts();
+        }
+
+        async function loadExistingProducts() {
+            const productsEl = document.getElementById('existing-products');
+            productsEl.innerHTML = '<p class="text-gray-500 text-center">Loading products...</p>';
+            
+            try {
+                const response = await fetch(`${backendURL}/products`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch products');
+                
+                const products = await response.json();
+                
+                if (products.length === 0) {
+                    productsEl.innerHTML = '<p class="text-gray-500 text-center">No products found. Create your first product!</p>';
+                    return;
+                }
+                
+                productsEl.innerHTML = products.map(product => `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <div class="font-medium">${product.name}</div>
+                            <div class="text-sm text-gray-500">Stock: ${product.stock || 0}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium">₹${product.price.toFixed(2)}</div>
+                            <div class="text-xs text-gray-500">ID: ${product.id}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading products:', error);
+                productsEl.innerHTML = '<p class="text-red-500 text-center">Error loading products</p>';
+            }
+        }
+
+        // ===== STOCK LEDGER PAGE FUNCTIONS =====
+        async function loadLedgerPage() {
+            await loadProductDropdown('ledger-product');
+            document.getElementById('ledger-product').addEventListener('change', async (e) => {
+                const productId = e.target.value;
+                if (productId) {
+                    await loadProductLedger(productId);
+                } else {
+                    document.getElementById('ledger-content').classList.add('hidden');
+                }
+            });
+        }
+
+        async function loadProductLedger(productId) {
+            const ledgerContent = document.getElementById('ledger-content');
+            const ledgerLoading = document.getElementById('ledger-loading');
+            const ledgerError = document.getElementById('ledger-error');
+            
+            ledgerContent.classList.add('hidden');
+            ledgerError.classList.add('hidden');
+            
+            if (ledgerLoading) ledgerLoading.classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`${backendURL}/ledger/stock/${productId}`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch stock ledger');
+                
+                const ledger = await response.json();
+                
+                document.getElementById('ledger-product-name').textContent = ledger.product_name;
+                
+                document.getElementById('ledger-summary').innerHTML = `
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold">${ledger.current_stock}</div>
+                        <div class="text-sm text-gray-600">Current Stock</div>
+                    </div>
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold">${ledger.total_purchases}</div>
+                        <div class="text-sm text-gray-600">Total Purchases</div>
+                    </div>
+                    <div class="text-center p-3 bg-red-50 rounded-lg">
+                        <div class="text-2xl font-bold">${ledger.total_sales}</div>
+                        <div class="text-sm text-gray-600">Total Sales</div>
+                    </div>
+                    <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                        <div class="text-2xl font-bold">${ledger.opening_stock}</div>
+                        <div class="text-sm text-gray-600">Opening Stock</div>
+                    </div>
+                `;
+                
+                document.getElementById('ledger-history').innerHTML = ledger.history.map(entry => `
+                    <div class="flex justify-between items-center p-3 border-b">
+                        <div class="flex-1">
+                            <div class="font-medium">${entry.reference}</div>
+                            <div class="text-sm text-gray-500">${new Date(entry.date).toLocaleDateString()}</div>
+                            <div class="text-xs text-gray-400">${entry.details}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium ${entry.quantity > 0 ? 'text-green-600' : 'text-red-600'}">
+                                ${entry.quantity > 0 ? '+' : ''}${entry.quantity}
+                            </div>
+                            <div class="text-sm text-gray-600">Stock: ${entry.stock_after_transaction}</div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                if (ledgerLoading) ledgerLoading.classList.add('hidden');
+                ledgerContent.classList.remove('hidden');
+                ledgerError.classList.add('hidden');
+                
+            } catch (error) {
+                console.error('Error loading ledger:', error);
+                if (ledgerLoading) ledgerLoading.classList.add('hidden');
+                ledgerContent.classList.add('hidden');
+                if (ledgerError) {
+                    ledgerError.classList.remove('hidden');
+                    ledgerError.innerHTML = `<p class="text-red-500">Error loading stock ledger: ${error.message}</p>`;
+                }
+            }
+        }
+
+        // ===== EVENT LISTENERS =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Back button event listener
+            backButton.addEventListener('click', backToHome);
+
+            // Cart event listeners
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('add-to-cart-btn')) {
+                    const productId = e.target.dataset.id;
+                    addToCart(productId);
+                }
+                
+                // Handle remove item buttons
+                if (e.target.closest('.cart-item-remove')) {
+                    const button = e.target.closest('.cart-item-remove');
+                    const productId = button.dataset.id;
+                    const action = button.dataset.action;
+                    
+                    if (action === 'remove-one') {
+                        removeFromCart(productId);
+                    } else if (action === 'remove-all') {
+                        removeAllFromCart(productId);
+                    }
+                }
+            });
+
+            cartButtonEl.addEventListener('click', () => {
+                cartModalEl.classList.remove('hidden');
+                cartModalEl.classList.add('flex');
+            });
+
+            document.getElementById('close-modal-button').addEventListener('click', () => {
+                cartModalEl.classList.remove('flex');
+                cartModalEl.classList.add('hidden');
+            });
+
+            document.getElementById('whatsapp-checkout-button').addEventListener('click', generateWhatsAppOrder);
+
+            // Purchase form handler
+            document.getElementById('purchase-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const productId = document.getElementById('purchase-product').value;
+                const quantity = document.getElementById('purchase-quantity').value;
+                const unitCost = document.getElementById('purchase-unit-cost').value;
+                
+                if (!productId) {
+                    alert('Please select a product');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${backendURL}/purchases/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        },
+                        body: JSON.stringify({
+                            product_id: parseInt(productId),
+                            quantity: parseInt(quantity),
+                            unit_cost: parseFloat(unitCost)
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        alert('Purchase recorded successfully!');
+                        document.getElementById('purchase-form').reset();
+                        await loadPurchaseHistory();
+                        await loadProductDropdown('purchase-product');
+                    } else {
+                        const errorData = await response.json();
+                        alert('Error recording purchase: ' + (errorData.detail || 'Unknown error'));
+                    }
+                } catch (error) {
+                    alert('Error recording purchase: ' + error.message);
+                }
+            });
+
+            // Create product form handler
+            document.getElementById('create-product-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('product-name').value;
+                const price = document.getElementById('product-price').value;
+                const stock = document.getElementById('product-stock').value;
+                
+                try {
+                    const response = await fetch(`${backendURL}/products/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        },
+                        body: JSON.stringify({
+                            name: name,
+                            price: parseFloat(price),
+                            stock: parseInt(stock)
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        alert('Product created successfully!');
+                        document.getElementById('create-product-form').reset();
+                        await loadExistingProducts();
+                    } else {
+                        const errorData = await response.json();
+                        alert('Error creating product: ' + (errorData.detail || 'Unknown error'));
+                    }
+                } catch (error) {
+                    alert('Error creating product: ' + error.message);
+                }
+            });
+
+            // Start on home page
+            backToHome();
+        });
+    </script>
+</body>
+</html>
