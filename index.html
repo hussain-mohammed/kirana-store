@@ -226,7 +226,8 @@
 
 <script>
     // ===== BACKEND CONFIGURATION =====
-    const backendURL = window.location.origin;
+    // Use your ngrok backend directly since proxy isn't working
+    const backendURL = "https://nonnitric-ably-candra.ngrok-free.dev";
     const WHATSAPP_NUMBER = "917075210801";
 
     // Global variables
@@ -301,7 +302,7 @@
             }
             
             renderProducts();
-            showCartButton(); // ADDED: Show cart button after products load
+            showCartButton();
             
         } catch (error) {
             console.error("💥 Fetch error:", error);
@@ -320,7 +321,7 @@
             {id: 6, name: "Eggs", price: 90.00, imageUrl: "https://placehold.co/400x400/fff9c4/ffffff?text=Eggs"},
         ];
         renderProducts();
-        showCartButton(); // ADDED: Show cart button for mock products too
+        showCartButton();
     }
 
     function renderProducts() {
@@ -345,15 +346,12 @@
         `).join('');
     }
 
-    // ADDED: Function to show cart button
     function showCartButton() {
-        // Remove existing cart button if any
         const existingButton = document.querySelector('.view-cart-button');
         if (existingButton) {
             existingButton.remove();
         }
         
-        // Add cart button
         const cartButton = document.createElement('button');
         cartButton.className = 'view-cart-button fixed bottom-4 right-4 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors z-10';
         cartButton.innerHTML = '🛒 View Cart';
@@ -365,7 +363,6 @@
         document.getElementById('page-sales').appendChild(cartButton);
     }
 
-    // Cart functions
     function addToCart(productId) {
         cart[productId] = (cart[productId] || 0) + 1;
         updateCartUI();
@@ -420,12 +417,10 @@
             : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
     }
 
-    // Record sale
     async function recordSale(saleItems) {
         console.log('📦 Recording sale items:', saleItems);
         
         try {
-            // Record each product sale individually
             for (const item of saleItems) {
                 const response = await fetch(`${backendURL}/sales/`, {
                     method: 'POST',
@@ -487,7 +482,6 @@
 
         message += `%0a*Total: ₹${total.toFixed(2)}*%0a%0aPlease confirm my order. Thank you!`;
 
-        // Record sale in database
         if (saleItems.length > 0) {
             recordSale(saleItems).then(result => {
                 console.log('✅ Sales recorded in database:', result);
@@ -501,7 +495,6 @@
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
         window.open(whatsappUrl, '_blank');
         
-        // Clear cart after order
         cart = {};
         updateCartUI();
         document.getElementById('cart-modal').classList.add('hidden');
@@ -624,7 +617,6 @@
         }
     }
 
-    // Create product
     async function createProduct(productData) {
         console.log('➕ Creating product:', productData);
         
@@ -690,7 +682,6 @@
             
             document.getElementById('ledger-product-name').textContent = ledger.product_name;
             
-            // Update summary
             document.getElementById('ledger-summary').innerHTML = `
                 <div class="text-center p-3 bg-blue-50 rounded-lg">
                     <div class="text-2xl font-bold">${ledger.current_stock}</div>
@@ -710,7 +701,6 @@
                 </div>
             `;
             
-            // Update history
             document.getElementById('ledger-history').innerHTML = ledger.history.map(entry => `
                 <div class="flex justify-between items-center p-3 border-b">
                     <div class="flex-1">
@@ -756,10 +746,8 @@
 
     // ===== EVENT LISTENERS =====
     document.addEventListener('DOMContentLoaded', function() {
-        // Back button event listener
         backButton.addEventListener('click', backToHome);
 
-        // Cart event listeners
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('add-to-cart-btn')) {
                 const productId = e.target.dataset.id;
@@ -783,7 +771,6 @@
 
         document.getElementById('whatsapp-checkout-button').addEventListener('click', generateWhatsAppOrder);
 
-        // Purchase form handler
         document.getElementById('purchase-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -824,7 +811,6 @@
             }
         });
 
-        // Create product form handler
         document.getElementById('create-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -848,7 +834,6 @@
             }
         });
 
-        // Start on home page
         backToHome();
     });
 </script>
