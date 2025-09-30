@@ -213,6 +213,9 @@ origins = [
     "http://nonnitric-ably-candra.ngrok-free.dev",
     "https://*.ngrok-free.dev",
     "http://*.ngrok-free.dev",
+      "https://kirana-store-seven.vercel.app",  # Add your Vercel frontend
+    "https://*.vercel.app",
+    "https://kirana-store-backend.onrender.com",  # Add your Render backend
     "*"
 ]
 
@@ -720,4 +723,5 @@ async def health_check(db: Session = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
