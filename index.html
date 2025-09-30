@@ -327,6 +327,8 @@
                     mode: 'cors'
                 });
                 
+                console.log(`📊 Status: ${response.status}, Content-Type: ${response.headers.get('Content-Type')}`);
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -480,8 +482,115 @@
                 : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
         }
 
-        // WhatsApp checkout function - SIMPLE VERSION (NO SALES RECORDING)
-        function generateWhatsAppOrder() {
+        // Sales recording function - UPDATED with multiple endpoint attempts
+        async function recordSale() {
+            try {
+                const saleItems = [];
+                
+                for (const productId in cart) {
+                    if (cart[productId] > 0) {
+                        const product = products.find(p => p.id === parseInt(productId));
+                        if (product) {
+                            saleItems.push({
+                                product_id: parseInt(productId),
+                                quantity: parseInt(cart[productId]),
+                                unit_price: parseFloat(product.price)
+                            });
+                        }
+                    }
+                }
+                
+                if (saleItems.length === 0) {
+                    console.error("No items in cart to record");
+                    return false;
+                }
+                
+                console.log("📦 Recording sale items:", saleItems);
+                
+                // Try different endpoint patterns
+                const endpointsToTry = [
+                    '/api/sales',
+                    '/api/sales/',
+                    '/api/orders',
+                    '/api/orders/',
+                    '/api/transaction/sales',
+                    '/api/transaction/sales/'
+                ];
+                
+                let success = false;
+                
+                for (const endpoint of endpointsToTry) {
+                    try {
+                        console.log(`Trying endpoint: ${endpoint}`);
+                        
+                        // Try with individual sales first
+                        let allIndividualSuccess = true;
+                        
+                        for (const item of saleItems) {
+                            const response = await fetch(endpoint, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'ngrok-skip-browser-warning': 'true'
+                                },
+                                body: JSON.stringify({
+                                    product_id: item.product_id,
+                                    quantity: item.quantity,
+                                    unit_price: item.unit_price
+                                })
+                            });
+                            
+                            console.log(`Response for product ${item.product_id}:`, response.status);
+                            
+                            if (!response.ok) {
+                                console.error(`❌ Failed for product ${item.product_id}`);
+                                allIndividualSuccess = false;
+                                
+                                // Try with different field names
+                                const response2 = await fetch(endpoint, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'ngrok-skip-browser-warning': 'true'
+                                    },
+                                    body: JSON.stringify({
+                                        product_id: item.product_id,
+                                        quantity: item.quantity,
+                                        price: item.unit_price
+                                    })
+                                });
+                                
+                                if (response2.ok) {
+                                    console.log(`✅ Sale recorded with alternative fields for product ${item.product_id}`);
+                                    allIndividualSuccess = true;
+                                }
+                            } else {
+                                console.log(`✅ Sale recorded for product ${item.product_id}`);
+                            }
+                        }
+                        
+                        if (allIndividualSuccess) {
+                            console.log(`✅ All sales recorded via ${endpoint}`);
+                            success = true;
+                            break;
+                        }
+                        
+                    } catch (error) {
+                        console.log(`💥 ${endpoint} failed:`, error.message);
+                        continue;
+                    }
+                }
+                
+                return success;
+                
+            } catch (error) {
+                console.error("💥 Error recording sale:", error);
+                return false;
+            }
+        }
+
+        // WhatsApp checkout function with sales recording
+        async function generateWhatsAppOrder() {
             if (Object.keys(cart).length === 0) {
                 alert("Your cart is empty!");
                 return;
@@ -489,11 +598,22 @@
 
             // Show loading state
             const originalText = whatsappCheckoutButtonEl.textContent;
-            whatsappCheckoutButtonEl.textContent = 'Opening WhatsApp...';
+            whatsappCheckoutButtonEl.textContent = 'Processing...';
             whatsappCheckoutButtonEl.disabled = true;
 
             try {
-                console.log("🔄 Generating WhatsApp order...");
+                console.log("🔄 Starting checkout process...");
+                
+                // First record the sale in database
+                const saleRecorded = await recordSale();
+                
+                if (!saleRecorded) {
+                    console.warn("⚠️ Sale recording failed, but continuing to WhatsApp");
+                    // Don't block the user, just show a warning
+                    if (!confirm("Sale recording failed, but you can still send the order via WhatsApp. Continue?")) {
+                        return;
+                    }
+                }
 
                 // Generate WhatsApp message
                 const phoneNumber = WHATSAPP_NUMBER; 
@@ -529,7 +649,7 @@
                 
             } catch (error) {
                 console.error('💥 Checkout error:', error);
-                alert('There was an error opening WhatsApp. Please try again.');
+                alert('There was an error processing your order. Please try again.');
             } finally {
                 // Restore button state
                 whatsappCheckoutButtonEl.textContent = 'Checkout on WhatsApp';
@@ -856,6 +976,9 @@
             // Start on home page
             backToHome();
         });
+
+        // Debug function to test endpoints
+        window.testEndpoints = testBackendEndpoints;
     </script>
 </body>
 </html>
