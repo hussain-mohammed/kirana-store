@@ -327,8 +327,6 @@
                     mode: 'cors'
                 });
                 
-                console.log(`📊 Status: ${response.status}, Content-Type: ${response.headers.get('Content-Type')}`);
-                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -482,99 +480,8 @@
                 : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
         }
 
-        // Sales recording function - FIXED VERSION
-        async function recordSale() {
-    try {
-        const saleItems = [];
-        
-        for (const productId in cart) {
-            if (cart[productId] > 0) {
-                const product = products.find(p => p.id === parseInt(productId));
-                if (product) {
-                    saleItems.push({
-                        product_id: parseInt(productId),
-                        quantity: parseInt(cart[productId]),
-                        unit_price: parseFloat(product.price)
-                    });
-                }
-            }
-        }
-        
-        if (saleItems.length === 0) {
-            console.error("No items in cart to record");
-            return false;
-        }
-        
-        console.log("📦 Recording sale items:", saleItems);
-        
-        // Try different data formats based on common backend expectations
-        
-        // Option 1: Try with individual sales (one by one)
-        let allSuccess = true;
-        
-        for (const item of saleItems) {
-            try {
-                const response = await fetch(`${backendURL}/sales/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    body: JSON.stringify({
-                        product_id: item.product_id,
-                        quantity: item.quantity,
-                        unit_price: item.unit_price
-                    })
-                });
-                
-                console.log(`📊 Response for product ${item.product_id}:`, response.status);
-                
-                if (!response.ok) {
-                    const errorDetail = await response.json();
-                    console.error(`❌ Failed for product ${item.product_id}:`, errorDetail);
-                    allSuccess = false;
-                    
-                    // Try alternative field names
-                    console.log("🔄 Trying alternative field names...");
-                    const response2 = await fetch(`${backendURL}/sales/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'ngrok-skip-browser-warning': 'true'
-                        },
-                        body: JSON.stringify({
-                            product_id: item.product_id,
-                            quantity: item.quantity,
-                            price: item.unit_price  // Try 'price' instead of 'unit_price'
-                        })
-                    });
-                    
-                    if (response2.ok) {
-                        console.log(`✅ Sale recorded with alternative fields for product ${item.product_id}`);
-                        allSuccess = true;
-                    } else {
-                        const errorDetail2 = await response2.json();
-                        console.error(`❌ Alternative also failed:`, errorDetail2);
-                    }
-                } else {
-                    console.log(`✅ Sale recorded successfully for product ${item.product_id}`);
-                }
-            } catch (error) {
-                console.error(`💥 Network error for product ${item.product_id}:`, error);
-                allSuccess = false;
-            }
-        }
-        
-        return allSuccess;
-        
-    } catch (error) {
-        console.error("💥 Error recording sale:", error);
-        return false;
-    }
-}
-
-        // WhatsApp checkout function - FIXED VERSION
-        async function generateWhatsAppOrder() {
+        // WhatsApp checkout function - SIMPLE VERSION (NO SALES RECORDING)
+        function generateWhatsAppOrder() {
             if (Object.keys(cart).length === 0) {
                 alert("Your cart is empty!");
                 return;
@@ -582,19 +489,13 @@
 
             // Show loading state
             const originalText = whatsappCheckoutButtonEl.textContent;
-            whatsappCheckoutButtonEl.textContent = 'Processing...';
+            whatsappCheckoutButtonEl.textContent = 'Opening WhatsApp...';
             whatsappCheckoutButtonEl.disabled = true;
 
             try {
-                // First record the sale in database
-                const saleRecorded = await recordSale();
-                
-                if (!saleRecorded) {
-                    alert("There was an error processing your order. Please try again.");
-                    return;
-                }
+                console.log("🔄 Generating WhatsApp order...");
 
-                // Then generate WhatsApp message
+                // Generate WhatsApp message
                 const phoneNumber = WHATSAPP_NUMBER; 
                 let message = "Hi, I would like to place an order:%0a%0a";
                 let total = 0;
@@ -606,16 +507,16 @@
                             const quantity = cart[productId];
                             const itemTotal = quantity * product.price;
                             total += itemTotal;
-                            message += `${quantity}x ${product.name} (₹${product.price.toFixed(2)} each)%0a`;
+                            message += `• ${quantity}x ${product.name} - ₹${itemTotal.toFixed(2)}%0a`;
                         }
                     }
                 }
 
-                message += `%0a*Total: ₹${total.toFixed(2)}*`;
+                message += `%0a*Total: ₹${total.toFixed(2)}*%0a%0aPlease confirm availability and delivery time.`;
 
                 const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
                 
-                // Clear cart after successful recording
+                // Clear cart
                 cart = {};
                 updateCartUI();
                 
@@ -627,11 +528,11 @@
                 cartModalEl.classList.add('hidden');
                 
             } catch (error) {
-                console.error('Checkout error:', error);
-                alert('There was an error processing your order. Please try again.');
+                console.error('💥 Checkout error:', error);
+                alert('There was an error opening WhatsApp. Please try again.');
             } finally {
                 // Restore button state
-                whatsappCheckoutButtonEl.textContent = originalText;
+                whatsappCheckoutButtonEl.textContent = 'Checkout on WhatsApp';
                 whatsappCheckoutButtonEl.disabled = false;
             }
         }
