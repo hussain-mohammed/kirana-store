@@ -233,7 +233,7 @@
     let products = [];
     let cart = {};
 
-    // DOM Elements for navigation
+    // DOM Elements
     const pages = {
         home: document.getElementById('page-home'),
         sales: document.getElementById('page-sales'),
@@ -276,23 +276,13 @@
     }
 
     // ===== SALES PAGE FUNCTIONS =====
-    const productListEl = document.getElementById('product-list');
-    const cartModalEl = document.getElementById('cart-modal');
-    const closeModalButtonEl = document.getElementById('close-modal-button');
-    const cartItemsEl = document.getElementById('cart-items');
-    const cartTotalEl = document.getElementById('cart-total');
-    const whatsappCheckoutButtonEl = document.getElementById('whatsapp-checkout-button');
-
-    // Fetch products
     async function fetchProducts() {
-        console.log(`🔍 Fetching from: ${backendURL}/api/products`);
+        console.log(`🔍 Fetching from: ${backendURL}/products`);
         
         try {
-            const response = await fetch(`${backendURL}/api/products`, {
-                method: 'GET',
+            const response = await fetch(`${backendURL}/products`, {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json',
                     'ngrok-skip-browser-warning': 'true'
                 }
             });
@@ -318,7 +308,6 @@
         }
     }
 
-    // Fallback to mock data
     function loadMockProducts() {
         console.log('🔄 Loading mock products');
         products = [
@@ -330,14 +319,10 @@
             {id: 6, name: "Eggs", price: 90.00, imageUrl: "https://placehold.co/400x400/fff9c4/ffffff?text=Eggs"},
         ];
         renderProducts();
-        
-        productListEl.insertAdjacentHTML('beforebegin', 
-            '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">Using sample products</div>'
-        );
     }
 
-    // Render products
     function renderProducts() {
+        const productListEl = document.getElementById('product-list');
         if (!products || products.length === 0) {
             productListEl.innerHTML = '<p class="text-center text-gray-500">No products available</p>';
             return;
@@ -356,23 +341,6 @@
                 </button>
             </div>
         `).join('');
-        
-        showCartButton();
-    }
-
-    function showCartButton() {
-        const existingButton = document.querySelector('.view-cart-button');
-        if (existingButton) existingButton.remove();
-        
-        const cartButton = document.createElement('button');
-        cartButton.className = 'view-cart-button fixed bottom-4 right-4 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors z-10';
-        cartButton.innerHTML = '🛒 View Cart';
-        cartButton.onclick = () => {
-            cartModalEl.classList.remove('hidden');
-            cartModalEl.classList.add('flex');
-        };
-        
-        document.getElementById('page-sales').appendChild(cartButton);
     }
 
     // Cart functions
@@ -387,6 +355,10 @@
     }
 
     function updateCartUI() {
+        const cartItemsEl = document.getElementById('cart-items');
+        const cartTotalEl = document.getElementById('cart-total');
+        const whatsappCheckoutButtonEl = document.getElementById('whatsapp-checkout-button');
+        
         cartItemsEl.innerHTML = '';
         let total = 0;
         let totalCount = 0;
@@ -426,48 +398,43 @@
             : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
     }
 
-    // Record sale to database - FIXED ENDPOINT
+    // Record sale - CORRECTED ENDPOINT
     async function recordSale(saleItems) {
         console.log('📦 Recording sale items:', saleItems);
         
-        // Try multiple possible endpoints
-        const endpoints = [
-            '/api/sales',
-            '/api/transaction/sales',
-            '/api/orders'
-        ];
-
-        for (const endpoint of endpoints) {
-            try {
-                console.log(`🔄 Trying endpoint: ${endpoint}`);
-                const response = await fetch(`${backendURL}${endpoint}`, {
+        try {
+            // Record each product sale individually (as per your backend)
+            for (const item of saleItems) {
+                const response = await fetch(`${backendURL}/sales/`, {  // NOTE: /sales/ not /api/sales
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'ngrok-skip-browser-warning': 'true'
                     },
                     body: JSON.stringify({
-                        items: saleItems,
-                        total: saleItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-                        timestamp: new Date().toISOString()
+                        product_id: item.product_id,
+                        quantity: item.quantity
                     })
                 });
 
-                console.log(`📊 Response for ${endpoint}: ${response.status}`);
+                console.log(`📊 Response for product ${item.product_id}: ${response.status}`);
                 
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('✅ Sale recorded successfully:', result);
-                    return result;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.log(`❌ Failed for product ${item.product_id}:`, errorData);
+                    throw new Error(`Failed to record sale for ${item.product_name}`);
                 }
                 
-                console.log(`❌ Endpoint ${endpoint} failed with status: ${response.status}`);
-            } catch (error) {
-                console.log(`💥 Error with endpoint ${endpoint}:`, error);
+                const result = await response.json();
+                console.log(`✅ Sale recorded for ${item.product_name}:`, result);
             }
+            
+            return { message: "All sales recorded successfully" };
+            
+        } catch (error) {
+            console.error('Error recording sale:', error);
+            throw error;
         }
-        
-        throw new Error('All sale recording endpoints failed');
     }
 
     function generateWhatsAppOrder() {
@@ -501,7 +468,7 @@
         // Record sale in database
         if (saleItems.length > 0) {
             recordSale(saleItems).then(result => {
-                console.log('✅ Sale recorded in database:', result);
+                console.log('✅ Sales recorded in database:', result);
                 showNotification('Order recorded successfully!');
             }).catch(error => {
                 console.warn('⚠️ Sale recording failed, but continuing to WhatsApp:', error);
@@ -515,8 +482,8 @@
         // Clear cart after order
         cart = {};
         updateCartUI();
-        cartModalEl.classList.add('hidden');
-        cartModalEl.classList.remove('flex');
+        document.getElementById('cart-modal').classList.add('hidden');
+        document.getElementById('cart-modal').classList.remove('flex');
     }
 
     // ===== PURCHASE PAGE FUNCTIONS =====
@@ -530,7 +497,7 @@
         dropdown.innerHTML = '<option value="">Loading products...</option>';
         
         try {
-            const response = await fetch(`${backendURL}/api/products`, {
+            const response = await fetch(`${backendURL}/products`, {  // NOTE: /products not /api/products
                 headers: {
                     'ngrok-skip-browser-warning': 'true'
                 }
@@ -559,47 +526,30 @@
         historyEl.innerHTML = '<p class="text-gray-500 text-center">Loading purchase history...</p>';
         
         try {
-            // Try multiple endpoints for purchase history
-            const endpoints = [
-                '/api/ledger/purchases',
-                '/api/purchases',
-                '/api/transaction/purchases'
-            ];
-
-            let purchases = [];
-            
-            for (const endpoint of endpoints) {
-                try {
-                    const response = await fetch(`${backendURL}${endpoint}`, {
-                        headers: {
-                            'ngrok-skip-browser-warning': 'true'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        purchases = await response.json();
-                        console.log(`✅ Loaded purchases from ${endpoint}`);
-                        break;
-                    }
-                } catch (error) {
-                    console.log(`❌ Failed to load from ${endpoint}:`, error);
+            const response = await fetch(`${backendURL}/ledger/purchases`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
                 }
-            }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch purchase history');
+            
+            const purchases = await response.json();
             
             if (purchases.length === 0) {
-                historyEl.innerHTML = '<p class="text-gray-500 text-center">No purchase history found or backend not connected</p>';
+                historyEl.innerHTML = '<p class="text-gray-500 text-center">No purchase history found</p>';
                 return;
             }
             
             historyEl.innerHTML = purchases.slice(0, 10).map(purchase => `
                 <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <div>
-                        <div class="font-medium">${purchase.product_name || purchase.name}</div>
-                        <div class="text-sm text-gray-500">${new Date(purchase.date || purchase.timestamp).toLocaleDateString()}</div>
+                        <div class="font-medium">${purchase.product_name}</div>
+                        <div class="text-sm text-gray-500">${new Date(purchase.date).toLocaleDateString()}</div>
                     </div>
                     <div class="text-right">
                         <div class="font-medium">${purchase.quantity} units</div>
-                        <div class="text-sm text-green-600">₹${(purchase.total_cost || purchase.amount).toFixed(2)}</div>
+                        <div class="text-sm text-green-600">₹${purchase.total_cost.toFixed(2)}</div>
                     </div>
                 </div>
             `).join('');
@@ -619,7 +569,7 @@
         productsEl.innerHTML = '<p class="text-gray-500 text-center">Loading products...</p>';
         
         try {
-            const response = await fetch(`${backendURL}/api/products`, {
+            const response = await fetch(`${backendURL}/products`, {
                 headers: {
                     'ngrok-skip-browser-warning': 'true'
                 }
@@ -652,44 +602,35 @@
         }
     }
 
-    // Create product - FIXED ENDPOINT
+    // Create product - CORRECTED ENDPOINT
     async function createProduct(productData) {
         console.log('➕ Creating product:', productData);
         
-        // Try multiple possible endpoints
-        const endpoints = [
-            '/api/products',
-            '/api/product/create',
-            '/api/inventory/products'
-        ];
+        try {
+            const response = await fetch(`${backendURL}/products/`, {  // NOTE: /products/ not /api/products
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: JSON.stringify(productData)
+            });
 
-        for (const endpoint of endpoints) {
-            try {
-                console.log(`🔄 Trying endpoint: ${endpoint}`);
-                const response = await fetch(`${backendURL}${endpoint}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    body: JSON.stringify(productData)
-                });
-
-                console.log(`📊 Response for ${endpoint}: ${response.status}`);
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('✅ Product created successfully:', result);
-                    return result;
-                }
-                
-                console.log(`❌ Endpoint ${endpoint} failed with status: ${response.status}`);
-            } catch (error) {
-                console.log(`💥 Error with endpoint ${endpoint}:`, error);
+            console.log(`📊 Response: ${response.status}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to create product');
             }
+            
+            const result = await response.json();
+            console.log('✅ Product created successfully:', result);
+            return result;
+            
+        } catch (error) {
+            console.error('Error creating product:', error);
+            throw error;
         }
-        
-        throw new Error('All product creation endpoints failed');
     }
 
     // ===== STOCK LEDGER PAGE FUNCTIONS =====
@@ -715,79 +656,54 @@
         ledgerLoading.classList.remove('hidden');
         
         try {
-            // Try multiple endpoints for ledger
-            const endpoints = [
-                `/api/ledger/stock/${productId}`,
-                `/api/stock/ledger/${productId}`,
-                `/api/inventory/ledger/${productId}`
-            ];
-
-            let ledger = null;
-            
-            for (const endpoint of endpoints) {
-                try {
-                    const response = await fetch(`${backendURL}${endpoint}`, {
-                        headers: {
-                            'ngrok-skip-browser-warning': 'true'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        ledger = await response.json();
-                        console.log(`✅ Loaded ledger from ${endpoint}`);
-                        break;
-                    }
-                } catch (error) {
-                    console.log(`❌ Failed to load from ${endpoint}:`, error);
+            const response = await fetch(`${backendURL}/ledger/stock/${productId}`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
                 }
-            }
+            });
             
-            if (!ledger) {
-                throw new Error('Could not load ledger from any endpoint');
-            }
+            if (!response.ok) throw new Error('Failed to fetch stock ledger');
             
-            document.getElementById('ledger-product-name').textContent = ledger.product_name || 'Product Ledger';
+            const ledger = await response.json();
+            
+            document.getElementById('ledger-product-name').textContent = ledger.product_name;
             
             // Update summary
             document.getElementById('ledger-summary').innerHTML = `
                 <div class="text-center p-3 bg-blue-50 rounded-lg">
-                    <div class="text-2xl font-bold">${ledger.current_stock || 0}</div>
+                    <div class="text-2xl font-bold">${ledger.current_stock}</div>
                     <div class="text-sm text-gray-600">Current Stock</div>
                 </div>
                 <div class="text-center p-3 bg-green-50 rounded-lg">
-                    <div class="text-2xl font-bold">${ledger.total_purchases || 0}</div>
+                    <div class="text-2xl font-bold">${ledger.total_purchases}</div>
                     <div class="text-sm text-gray-600">Total Purchases</div>
                 </div>
                 <div class="text-center p-3 bg-red-50 rounded-lg">
-                    <div class="text-2xl font-bold">${ledger.total_sales || 0}</div>
+                    <div class="text-2xl font-bold">${ledger.total_sales}</div>
                     <div class="text-sm text-gray-600">Total Sales</div>
                 </div>
                 <div class="text-center p-3 bg-yellow-50 rounded-lg">
-                    <div class="text-2xl font-bold">${ledger.opening_stock || 0}</div>
+                    <div class="text-2xl font-bold">${ledger.opening_stock}</div>
                     <div class="text-sm text-gray-600">Opening Stock</div>
                 </div>
             `;
             
             // Update history
-            if (ledger.history && ledger.history.length > 0) {
-                document.getElementById('ledger-history').innerHTML = ledger.history.map(entry => `
-                    <div class="flex justify-between items-center p-3 border-b">
-                        <div class="flex-1">
-                            <div class="font-medium">${entry.reference || 'Transaction'}</div>
-                            <div class="text-sm text-gray-500">${new Date(entry.date || entry.timestamp).toLocaleDateString()}</div>
-                            <div class="text-xs text-gray-400">${entry.details || ''}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-medium ${entry.quantity > 0 ? 'text-green-600' : 'text-red-600'}">
-                                ${entry.quantity > 0 ? '+' : ''}${entry.quantity}
-                            </div>
-                            <div class="text-sm text-gray-600">Stock: ${entry.stock_after_transaction || entry.balance}</div>
-                        </div>
+            document.getElementById('ledger-history').innerHTML = ledger.history.map(entry => `
+                <div class="flex justify-between items-center p-3 border-b">
+                    <div class="flex-1">
+                        <div class="font-medium">${entry.reference}</div>
+                        <div class="text-sm text-gray-500">${new Date(entry.date).toLocaleDateString()}</div>
+                        <div class="text-xs text-gray-400">${entry.details}</div>
                     </div>
-                `).join('');
-            } else {
-                document.getElementById('ledger-history').innerHTML = '<p class="text-gray-500 text-center">No transaction history available</p>';
-            }
+                    <div class="text-right">
+                        <div class="font-medium ${entry.quantity > 0 ? 'text-green-600' : 'text-red-600'}">
+                            ${entry.quantity > 0 ? '+' : ''}${entry.quantity}
+                        </div>
+                        <div class="text-sm text-gray-600">Stock: ${entry.stock_after_transaction}</div>
+                    </div>
+                </div>
+            `).join('');
             
             ledgerLoading.classList.add('hidden');
             ledgerContent.classList.remove('hidden');
@@ -811,13 +727,17 @@
         
         document.body.appendChild(notification);
         
-        setTimeout(() => notification.remove(), 3000);
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
     }
 
     // ===== EVENT LISTENERS =====
     document.addEventListener('DOMContentLoaded', function() {
+        // Back button event listener
         backButton.addEventListener('click', backToHome);
 
+        // Cart event listeners
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('add-to-cart-btn')) {
                 const productId = e.target.dataset.id;
@@ -834,12 +754,12 @@
             }
         });
 
-        closeModalButtonEl.addEventListener('click', () => {
-            cartModalEl.classList.add('hidden');
-            cartModalEl.classList.remove('flex');
+        document.getElementById('close-modal-button').addEventListener('click', () => {
+            document.getElementById('cart-modal').classList.add('hidden');
+            document.getElementById('cart-modal').classList.remove('flex');
         });
 
-        whatsappCheckoutButtonEl.addEventListener('click', generateWhatsAppOrder);
+        document.getElementById('whatsapp-checkout-button').addEventListener('click', generateWhatsAppOrder);
 
         // Purchase form handler
         document.getElementById('purchase-form').addEventListener('submit', async (e) => {
@@ -855,54 +775,34 @@
             }
             
             try {
-                // Try multiple endpoints for purchase recording
-                const endpoints = [
-                    '/api/purchases',
-                    '/api/transaction/purchases',
-                    '/api/inventory/purchases'
-                ];
-
-                let success = false;
+                const response = await fetch(`${backendURL}/purchases/`, {  // NOTE: /purchases/ not /api/purchases
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({
+                        product_id: parseInt(productId),
+                        quantity: parseInt(quantity),
+                        unit_cost: parseFloat(unitCost)
+                    })
+                });
                 
-                for (const endpoint of endpoints) {
-                    try {
-                        const response = await fetch(`${backendURL}${endpoint}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'ngrok-skip-browser-warning': 'true'
-                            },
-                            body: JSON.stringify({
-                                product_id: parseInt(productId),
-                                quantity: parseInt(quantity),
-                                unit_cost: parseFloat(unitCost)
-                            })
-                        });
-                        
-                        if (response.ok) {
-                            success = true;
-                            console.log(`✅ Purchase recorded via ${endpoint}`);
-                            break;
-                        }
-                    } catch (error) {
-                        console.log(`❌ Failed to record purchase via ${endpoint}:`, error);
-                    }
-                }
-                
-                if (success) {
+                if (response.ok) {
                     alert('Purchase recorded successfully!');
                     document.getElementById('purchase-form').reset();
                     await loadPurchaseHistory();
                     await loadProductDropdown('purchase-product');
                 } else {
-                    alert('Error recording purchase: No working endpoint found');
+                    const errorData = await response.json();
+                    alert('Error recording purchase: ' + (errorData.detail || 'Unknown error'));
                 }
             } catch (error) {
                 alert('Error recording purchase: ' + error.message);
             }
         });
 
-        // Create product form handler - UPDATED
+        // Create product form handler
         document.getElementById('create-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -910,28 +810,23 @@
             const price = document.getElementById('product-price').value;
             const stock = document.getElementById('product-stock').value;
             
-            if (!name || !price) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
             try {
-                const productData = {
+                await createProduct({
                     name: name,
                     price: parseFloat(price),
                     stock: parseInt(stock) || 0
-                };
+                });
                 
-                await createProduct(productData);
                 alert('Product created successfully!');
                 document.getElementById('create-product-form').reset();
                 await loadExistingProducts();
                 
             } catch (error) {
-                alert('Error creating product: No working endpoint found. Please check your backend API.');
+                alert('Error creating product: ' + error.message);
             }
         });
 
+        // Start on home page
         backToHome();
     });
 </script>
