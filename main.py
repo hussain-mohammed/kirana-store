@@ -215,7 +215,8 @@ origins = [
     "http://*.ngrok-free.dev",
       "https://kirana-store-seven.vercel.app",  # Add your Vercel frontend
     "https://*.vercel.app",
-    "https://kirana-store-backend.onrender.com",  # Add your Render backend
+    "https://kirana-store-backend.onrender.com",
+    "https://kirana-store-docker.onrender.com",
     "*"
 ]
 
