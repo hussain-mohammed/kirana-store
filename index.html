@@ -244,20 +244,21 @@
 
     const backButton = document.getElementById('back-to-home');
 
-    // ===== TIME FORMATTING UTILITY =====
+    // ===== CORRECT TIME FORMATTING UTILITY =====
     function formatDateTime(utcDateString) {
-        // Create date object from UTC string
+        // Create date object from UTC string - JavaScript automatically handles UTC to local conversion
         const date = new Date(utcDateString);
         
-        // Convert to local time by adding the timezone offset
-        // This ensures we display the correct local time
-        const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+        // Debug: Show what's happening
+        console.log(`🕒 UTC from DB: ${utcDateString}`);
+        console.log(`🕒 Local time: ${date.toString()}`);
+        console.log(`🕒 Formatted: ${date.toLocaleString()}`);
         
         return {
-            date: localDate.toLocaleDateString(),
-            time: localDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            full: localDate.toLocaleString(),
-            datetime: localDate
+            date: date.toLocaleDateString(),
+            time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            full: date.toLocaleString(),
+            datetime: date
         };
     }
 
@@ -626,7 +627,6 @@
             
             historyEl.innerHTML = purchases.slice(0, 10).map(purchase => {
                 const formatted = formatDateTime(purchase.date);
-                console.log(`🕒 UTC: ${purchase.date} → Local: ${formatted.time}`);
                 return `
                     <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                         <div class="flex-1">
