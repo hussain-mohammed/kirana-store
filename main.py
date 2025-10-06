@@ -342,7 +342,8 @@ def record_sale(sale: SaleCreate, db: Session = Depends(get_db)):
     db_sale = Sale(
         product_id=sale.product_id,
         quantity=sale.quantity,
-        total_amount=total_amount
+        total_amount=total_amount,
+        sale_date=datetime.datetime.now(ist)
     )
     product.stock -= sale.quantity
     
@@ -362,7 +363,8 @@ def record_purchase(purchase: PurchaseCreate, db: Session = Depends(get_db)):
     db_purchase = Purchase(
         product_id=purchase.product_id,
         quantity=purchase.quantity,
-        total_cost=total_cost
+        total_cost=total_cost,
+        purchase_date=datetime.datetime.now(ist)
     )
     product.stock += purchase.quantity
     
