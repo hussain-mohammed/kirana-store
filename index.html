@@ -226,7 +226,6 @@
 
 <script>
     // ===== BACKEND CONFIGURATION =====
-    // Use your ngrok backend directly since proxy isn't working
     const backendURL = "https://kirana-store-maoc.onrender.com";
     const WHATSAPP_NUMBER = "917075210801";
 
@@ -244,6 +243,16 @@
     };
 
     const backButton = document.getElementById('back-to-home');
+
+    // ===== TIME FORMATTING UTILITY =====
+    function formatDateTime(utcDateString) {
+        const date = new Date(utcDateString);
+        return {
+            date: date.toLocaleDateString(),
+            time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            full: date.toLocaleString()
+        };
+    }
 
     // ===== NAVIGATION FUNCTIONS =====
     function showContentPage(pageName) {
@@ -303,6 +312,7 @@
             
             renderProducts();
             showCartButton();
+            await loadSalesHistory(); // Load sales history on sales page
             
         } catch (error) {
             console.error("💥 Fetch error:", error);
@@ -501,6 +511,56 @@
         document.getElementById('cart-modal').classList.remove('flex');
     }
 
+    // ===== SALES HISTORY DISPLAY =====
+    async function loadSalesHistory() {
+        try {
+            const response = await fetch(`${backendURL}/ledger/sales`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (response.ok) {
+                const sales = await response.json();
+                
+                // Create sales history display if it doesn't exist
+                let salesHistoryEl = document.getElementById('sales-history');
+                if (!salesHistoryEl) {
+                    salesHistoryEl = document.createElement('div');
+                    salesHistoryEl.id = 'sales-history';
+                    salesHistoryEl.className = 'bg-white p-6 rounded-lg shadow-lg mt-6';
+                    salesHistoryEl.innerHTML = '<h3 class="text-lg font-semibold mb-4">Recent Sales</h3><div id="sales-history-content"></div>';
+                    document.getElementById('page-sales').querySelector('main').appendChild(salesHistoryEl);
+                }
+                
+                const salesContentEl = document.getElementById('sales-history-content');
+                if (sales.length === 0) {
+                    salesContentEl.innerHTML = '<p class="text-gray-500 text-center">No sales history found</p>';
+                    return;
+                }
+                
+                salesContentEl.innerHTML = sales.slice(0, 10).map(sale => {
+                    const formatted = formatDateTime(sale.date);
+                    return `
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg mb-2">
+                            <div class="flex-1">
+                                <div class="font-medium">${sale.product_name}</div>
+                                <div class="text-sm text-gray-500">${formatted.date}</div>
+                                <div class="text-xs text-gray-400">${formatted.time}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium">${sale.quantity} units</div>
+                                <div class="text-sm text-blue-600">₹${sale.total_amount.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } catch (error) {
+            console.error('Error loading sales history:', error);
+        }
+    }
+
     // ===== PURCHASE PAGE FUNCTIONS =====
     async function loadPurchasePage() {
         await loadProductDropdown('purchase-product');
@@ -536,6 +596,7 @@
         }
     }
 
+    // ===== ENHANCED PURCHASE HISTORY =====
     async function loadPurchaseHistory() {
         const historyEl = document.getElementById('purchase-history');
         historyEl.innerHTML = '<p class="text-gray-500 text-center">Loading purchase history...</p>';
@@ -556,18 +617,22 @@
                 return;
             }
             
-            historyEl.innerHTML = purchases.slice(0, 10).map(purchase => `
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <div class="font-medium">${purchase.product_name}</div>
-                        <div class="text-sm text-gray-500">${new Date(purchase.date).toLocaleDateString()}</div>
+            historyEl.innerHTML = purchases.slice(0, 10).map(purchase => {
+                const formatted = formatDateTime(purchase.date);
+                return `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="font-medium">${purchase.product_name}</div>
+                            <div class="text-sm text-gray-500">${formatted.date}</div>
+                            <div class="text-xs text-gray-400">${formatted.time}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium">${purchase.quantity} units</div>
+                            <div class="text-sm text-green-600">₹${purchase.total_cost.toFixed(2)}</div>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <div class="font-medium">${purchase.quantity} units</div>
-                        <div class="text-sm text-green-600">₹${purchase.total_cost.toFixed(2)}</div>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         } catch (error) {
             console.error('Error loading purchase history:', error);
             historyEl.innerHTML = '<p class="text-red-500 text-center">Error loading purchase history</p>';
@@ -701,21 +766,24 @@
                 </div>
             `;
             
-            document.getElementById('ledger-history').innerHTML = ledger.history.map(entry => `
-                <div class="flex justify-between items-center p-3 border-b">
-                    <div class="flex-1">
-                        <div class="font-medium">${entry.reference}</div>
-                        <div class="text-sm text-gray-500">${new Date(entry.date).toLocaleDateString()}</div>
-                        <div class="text-xs text-gray-400">${entry.details}</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-medium ${entry.quantity > 0 ? 'text-green-600' : 'text-red-600'}">
-                            ${entry.quantity > 0 ? '+' : ''}${entry.quantity}
+            document.getElementById('ledger-history').innerHTML = ledger.history.map(entry => {
+                const formatted = formatDateTime(entry.date);
+                return `
+                    <div class="flex justify-between items-center p-3 border-b">
+                        <div class="flex-1">
+                            <div class="font-medium">${entry.reference}</div>
+                            <div class="text-sm text-gray-500">${formatted.date}</div>
+                            <div class="text-xs text-gray-400">${formatted.time} - ${entry.details}</div>
                         </div>
-                        <div class="text-sm text-gray-600">Stock: ${entry.stock_after_transaction}</div>
+                        <div class="text-right">
+                            <div class="font-medium ${entry.quantity > 0 ? 'text-green-600' : 'text-red-600'}">
+                                ${entry.quantity > 0 ? '+' : ''}${entry.quantity}
+                            </div>
+                            <div class="text-sm text-gray-600">Stock: ${entry.stock_after_transaction}</div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
             
             ledgerLoading.classList.add('hidden');
             ledgerContent.classList.remove('hidden');
