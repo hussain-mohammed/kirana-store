@@ -1,4 +1,5 @@
 import datetime
+import pytz
 import os
 from contextlib import asynccontextmanager
 from typing import List, Optional, Any, Dict
@@ -27,6 +28,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # --- Database Models ---
+ist = pytz.timezone('Asia/Kolkata')
+
 class Product(Base):
     """Represents a product in the store."""
     __tablename__ = "products"
@@ -44,7 +47,7 @@ class Sale(Base):
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, nullable=False)
     total_amount = Column(Float, nullable=False)
-    sale_date = Column(DateTime, default=datetime.datetime.now)
+    sale_date = Column(DateTime, default=lambda: datetime.datetime.now(ist))
     product = relationship("Product")
 
 class Purchase(Base):
@@ -55,7 +58,7 @@ class Purchase(Base):
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, nullable=False)
     total_cost = Column(Float, nullable=False)
-    purchase_date = Column(DateTime, default=datetime.datetime.now)
+    purchase_date = Column(DateTime, default=lambda: datetime.datetime.now(ist))
     product = relationship("Product")
 
 # --- Pydantic Models for API Requests/Responses ---
