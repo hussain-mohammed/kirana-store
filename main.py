@@ -216,6 +216,7 @@ origins = [
       "https://kirana-store-seven.vercel.app",  # Add your Vercel frontend
     "https://*.vercel.app",
     "https://kirana-store-backend.onrender.com",
+    "https://kirana-store-maoc.onrender.com",
     "https://kirana-store-docker.onrender.com",
     "*"
 ]
