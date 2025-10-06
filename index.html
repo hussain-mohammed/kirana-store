@@ -244,21 +244,22 @@
 
     const backButton = document.getElementById('back-to-home');
 
-    // ===== CORRECT TIME FORMATTING UTILITY =====
+    // ===== PROPER TIME FORMATTING UTILITY =====
     function formatDateTime(utcDateString) {
-        // Create date object from UTC string - JavaScript automatically handles UTC to local conversion
-        const date = new Date(utcDateString);
+        // Parse the UTC date string manually
+        const utcDate = new Date(utcDateString);
         
-        // Debug: Show what's happening
-        console.log(`🕒 UTC from DB: ${utcDateString}`);
-        console.log(`🕒 Local time: ${date.toString()}`);
-        console.log(`🕒 Formatted: ${date.toLocaleString()}`);
+        // Convert to IST (UTC+5:30) - This is the key fix
+        const istDate = new Date(utcDate.getTime() + (5.5 * 60 * 60 * 1000));
         
         return {
-            date: date.toLocaleDateString(),
-            time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            full: date.toLocaleString(),
-            datetime: date
+            date: istDate.toLocaleDateString('en-IN'),
+            time: istDate.toLocaleTimeString('en-IN', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            }),
+            full: istDate.toLocaleString('en-IN')
         };
     }
 
@@ -320,7 +321,7 @@
             
             renderProducts();
             showCartButton();
-            await loadSalesHistory(); // Load sales history on sales page
+            await loadSalesHistory();
             
         } catch (error) {
             console.error("💥 Fetch error:", error);
@@ -531,7 +532,6 @@
             if (response.ok) {
                 const sales = await response.json();
                 
-                // Create sales history display if it doesn't exist
                 let salesHistoryEl = document.getElementById('sales-history');
                 if (!salesHistoryEl) {
                     salesHistoryEl = document.createElement('div');
@@ -604,7 +604,7 @@
         }
     }
 
-    // ===== ENHANCED PURCHASE HISTORY =====
+    // ===== FIXED PURCHASE HISTORY =====
     async function loadPurchaseHistory() {
         const historyEl = document.getElementById('purchase-history');
         historyEl.innerHTML = '<p class="text-gray-500 text-center">Loading purchase history...</p>';
@@ -627,6 +627,7 @@
             
             historyEl.innerHTML = purchases.slice(0, 10).map(purchase => {
                 const formatted = formatDateTime(purchase.date);
+                console.log(`🕒 UTC from DB: ${purchase.date} → IST: ${formatted.time}`);
                 return `
                     <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                         <div class="flex-1">
