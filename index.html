@@ -314,56 +314,44 @@
     const backButton = document.getElementById('back-to-home');
 
     // ===== IMPROVED TIME FORMATTING UTILITY =====
-    function formatDateTime(utcDateString) {
-        if (!utcDateString) {
-            return { date: 'N/A', time: 'N/A', full: 'N/A' };
+    // ===== CORRECTED TIME FORMATTING UTILITY =====
+function formatDateTime(dateString) {
+    if (!dateString) {
+        return { date: 'N/A', time: 'N/A', full: 'N/A' };
+    }
+    
+    try {
+        const dateObj = new Date(dateString);
+        
+        if (isNaN(dateObj.getTime())) {
+            console.warn('Invalid date:', dateString);
+            return { date: 'Invalid Date', time: 'Invalid Date', full: 'Invalid Date' };
         }
         
-        try {
-            // Parse the date string - handle different formats
-            let dateObj;
-            
-            if (typeof utcDateString === 'string') {
-                // Try parsing as ISO string first
-                dateObj = new Date(utcDateString);
-                
-                // If that fails, try parsing with Date constructor
-                if (isNaN(dateObj.getTime())) {
-                    dateObj = new Date(utcDateString.replace(' ', 'T'));
-                }
-            } else {
-                dateObj = new Date(utcDateString);
-            }
-            
-            // Check if the date is valid
-            if (isNaN(dateObj.getTime())) {
-                console.warn('Invalid date:', utcDateString);
-                return { date: 'Invalid Date', time: 'Invalid Date', full: 'Invalid Date' };
-            }
-            
-            // Convert to IST (UTC+5:30)
-            const istDate = new Date(dateObj.getTime() + (5.5 * 60 * 60 * 1000));
-            
-            return {
-                date: istDate.toLocaleDateString('en-IN'),
-                time: istDate.toLocaleTimeString('en-IN', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    hour12: false 
-                }),
-                full: istDate.toLocaleString('en-IN')
-            };
-        } catch (error) {
-            console.error('Error formatting date:', error, utcDateString);
-            return { date: 'Error', time: 'Error', full: 'Error' };
-        }
+        // Format as Indian date format without timezone conversion
+        const day = dateObj.getDate().toString().padStart(2, '0');
+        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        const year = dateObj.getFullYear().toString().slice(-2);
+        
+        const hours = dateObj.getHours().toString().padStart(2, '0');
+        const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+        
+        return {
+            date: `${day}/${month}/${year}`,
+            time: `${hours}:${minutes}`,
+            full: `${day}/${month}/${year} ${hours}:${minutes}`
+        };
+    } catch (error) {
+        console.error('Error formatting date:', error, dateString);
+        return { date: 'Error', time: 'Error', full: 'Error' };
     }
+}
 
-    // ===== NAVIGATION FUNCTIONS =====
-    function showContentPage(pageName) {
-        Object.values(pages).forEach(page => page.classList.remove('active'));
-        pages[pageName].classList.add('active');
-        backButton.classList.remove('hidden');
+// ===== NAVIGATION FUNCTIONS =====
+function showContentPage(pageName) {
+    Object.values(pages).forEach(page => page.classList.remove('active'));
+    pages[pageName].classList.add('active');
+    backButton.classList.remove('hidden');
         loadPageData(pageName);
     }
 
