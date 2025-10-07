@@ -85,7 +85,7 @@ class SaleResponse(BaseModel):
     product_id: int
     quantity: int
     total_amount: float
-    sale_date: datetime.datetime
+    sale_date: datetime
 
 class PurchaseCreate(BaseModel):
     product_id: int
@@ -97,7 +97,7 @@ class PurchaseResponse(BaseModel):
     product_id: int
     quantity: int
     total_cost: float
-    purchase_date: datetime.datetime
+    purchase_date: datetime
 
 class OrderItem(BaseModel):
     product_name: str
