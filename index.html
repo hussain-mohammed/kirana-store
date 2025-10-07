@@ -15,13 +15,22 @@
     <style>
         body {
             font-family: "Inter", sans-serif;
-            background-color: #f7fafc;
         }
         .page {
             display: none;
         }
         .page.active {
             display: block;
+        }
+        /* Beautiful gradient background */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
     </style>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
@@ -38,36 +47,36 @@
     </header>
 
     <!-- ===== LANDING PAGE ===== -->
-    <div id="page-home" class="page active">
+    <div id="page-home" class="page active gradient-bg">
         <main class="w-full max-w-md mx-auto p-8">
-            <div class="text-center mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome to Kirana Store</h2>
-                <p class="text-gray-600">Choose an action to get started</p>
+            <div class="text-center mb-8 glass-effect rounded-2xl p-8 text-white">
+                <h2 class="text-3xl font-bold mb-4">Welcome to Kirana Store</h2>
+                <p class="text-blue-100 text-lg">Manage your store efficiently with our comprehensive tools</p>
             </div>
             
             <div class="space-y-4">
-                <button onclick="showContentPage('sales')" class="w-full p-6 bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105">
+                <button onclick="showContentPage('sales')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300 transform border border-white border-opacity-20">
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">🛍️ Sales</div>
                         <p class="text-blue-100">Sell products to customers and process orders</p>
                     </div>
                 </button>
                 
-                <button onclick="showContentPage('purchase')" class="w-full p-6 bg-green-500 text-white rounded-xl shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-105">
+                <button onclick="showContentPage('purchase')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300 transform border border-white border-opacity-20">
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">📦 Purchase</div>
                         <p class="text-green-100">Record product purchases from suppliers</p>
                     </div>
                 </button>
                 
-                <button onclick="showContentPage('create')" class="w-full p-6 bg-purple-500 text-white rounded-xl shadow-lg hover:bg-purple-600 transition-all duration-300 transform hover:scale-105">
+                <button onclick="showContentPage('create')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300 transform border border-white border-opacity-20">
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">➕ Create Product</div>
                         <p class="text-purple-100">Add new products to your store inventory</p>
                     </div>
                 </button>
                 
-                <button onclick="showContentPage('ledger')" class="w-full p-6 bg-orange-500 text-white rounded-xl shadow-lg hover:bg-orange-600 transition-all duration-300 transform hover:scale-105">
+                <button onclick="showContentPage('ledger')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300 transform border border-white border-opacity-20">
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">📊 Stock Ledger</div>
                         <p class="text-orange-100">View stock history and track inventory</p>
@@ -75,21 +84,21 @@
                 </button>
 
                 <!-- NEW BUTTON: All Products Stock Ledger -->
-                <button onclick="showContentPage('all-products-ledger')" class="w-full p-6 bg-teal-500 text-white rounded-xl shadow-lg hover:bg-teal-600 transition-all duration-300 transform hover:scale-105">
+                <button onclick="showContentPage('all-products-ledger')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300 transform border border-white border-opacity-20">
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">📋 All Products Stock</div>
                         <p class="text-teal-100">View complete stock details for all products</p>
                     </div>
                 </button>
 
-                <button onclick="showContentPage('sales-ledger')" class="w-full p-6 bg-red-500 text-white rounded-xl shadow-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-105">
+                <button onclick="showContentPage('sales-ledger')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300 transform border border-white border-opacity-20">
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">📋 Sales Ledger</div>
                         <p class="text-red-100">View and manage all sales records</p>
                     </div>
                 </button>
                 
-                <button onclick="showContentPage('purchase-ledger')" class="w-full p-6 bg-indigo-500 text-white rounded-xl shadow-lg hover:bg-indigo-600 transition-all duration-300 transform hover:scale-105">
+                <button onclick="showContentPage('purchase-ledger')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300 transform border border-white border-opacity-20">
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">📋 Purchase Ledger</div>
                         <p class="text-indigo-100">View and manage all purchase records</p>
@@ -114,10 +123,10 @@
 
         <!-- Cart Modal -->
         <div id="cart-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-20">
-            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-semibold text-gray-800">Your Cart</h3>
-                    <button id="close-modal-button" class="text-gray-400 hover:text-gray-600">&times;</button>
+                    <button id="close-modal-button" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                 </div>
                 <div id="cart-items" class="space-y-3">
                     <!-- Cart items will be generated here by JavaScript -->
@@ -381,6 +390,13 @@
                             <tbody id="sales-ledger-table-body">
                                 <!-- Sales records will be populated here -->
                             </tbody>
+                            <tfoot>
+                                <tr class="bg-gray-50 font-bold">
+                                    <td colspan="5" class="border border-gray-200 px-4 py-2 text-right">Total:</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-green-600" id="sales-total-amount">₹0.00</td>
+                                    <td class="border border-gray-200 px-4 py-2"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -455,6 +471,13 @@
                             <tbody id="purchase-ledger-table-body">
                                 <!-- Purchase records will be populated here -->
                             </tbody>
+                            <tfoot>
+                                <tr class="bg-gray-50 font-bold">
+                                    <td colspan="5" class="border border-gray-200 px-4 py-2 text-right">Total:</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-green-600" id="purchase-total-cost">₹0.00</td>
+                                    <td class="border border-gray-200 px-4 py-2"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -735,6 +758,7 @@
 
     function displayFilteredSalesData(salesData) {
         const tableBodyEl = document.getElementById('sales-ledger-table-body');
+        const totalAmountEl = document.getElementById('sales-total-amount');
         
         if (salesData.length === 0) {
             tableBodyEl.innerHTML = `
@@ -744,13 +768,17 @@
                     </td>
                 </tr>
             `;
+            totalAmountEl.textContent = '₹0.00';
             return;
         }
+        
+        let totalAmount = 0;
         
         tableBodyEl.innerHTML = salesData.map(sale => {
             const formatted = formatDateTime(sale.date);
             const saleId = sale.sale_id || sale.id;
             const price = sale.unit_price || (sale.total_amount / sale.quantity) || 0;
+            totalAmount += sale.total_amount;
             
             return `
                 <tr class="hover:bg-gray-50">
@@ -772,6 +800,8 @@
                 </tr>
             `;
         }).join('');
+        
+        totalAmountEl.textContent = `₹${totalAmount.toFixed(2)}`;
     }
 
     function applySalesFilters() {
@@ -852,6 +882,7 @@
 
     function displayFilteredPurchaseData(purchasesData) {
         const tableBodyEl = document.getElementById('purchase-ledger-table-body');
+        const totalCostEl = document.getElementById('purchase-total-cost');
         
         if (purchasesData.length === 0) {
             tableBodyEl.innerHTML = `
@@ -861,13 +892,17 @@
                     </td>
                 </tr>
             `;
+            totalCostEl.textContent = '₹0.00';
             return;
         }
+        
+        let totalCost = 0;
         
         tableBodyEl.innerHTML = purchasesData.map(purchase => {
             const formatted = formatDateTime(purchase.date);
             const purchaseId = purchase.purchase_id || purchase.id;
             const unitCost = purchase.unit_cost || (purchase.total_cost / purchase.quantity) || 0;
+            totalCost += purchase.total_cost;
             
             return `
                 <tr class="hover:bg-gray-50">
@@ -889,6 +924,8 @@
                 </tr>
             `;
         }).join('');
+        
+        totalCostEl.textContent = `₹${totalCost.toFixed(2)}`;
     }
 
     function applyPurchaseFilters() {
@@ -926,6 +963,84 @@
         document.getElementById('purchase-date-to').value = '';
         document.getElementById('purchase-product-filter').value = '';
         displayFilteredPurchaseData(allPurchasesData);
+    }
+
+    // ===== UPDATED CART FUNCTIONS WITH +/- BUTTONS =====
+    function updateCartUI() {
+        const cartItemsEl = document.getElementById('cart-items');
+        const cartTotalEl = document.getElementById('cart-total');
+        const whatsappCheckoutButtonEl = document.getElementById('whatsapp-checkout-button');
+        
+        cartItemsEl.innerHTML = '';
+        let total = 0;
+        let totalCount = 0;
+
+        for (const productId in cart) {
+            if (cart[productId] > 0) {
+                const product = products.find(p => p.id === parseInt(productId));
+                if (product) {
+                    const quantity = cart[productId];
+                    const itemTotal = quantity * product.price;
+                    total += itemTotal;
+                    totalCount += quantity;
+
+                    const cartItem = document.createElement('div');
+                    cartItem.className = "flex justify-between items-center p-3 bg-gray-50 rounded-lg";
+                    cartItem.innerHTML = `
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-800">${product.name}</div>
+                            <div class="text-sm text-gray-600">₹${product.price.toFixed(2)} each</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="decrease-quantity w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors" 
+                                    data-id="${product.id}">
+                                -
+                            </button>
+                            <span class="quantity-display w-8 text-center font-medium">${quantity}</span>
+                            <button class="increase-quantity w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors" 
+                                    data-id="${product.id}">
+                                +
+                            </button>
+                        </div>
+                        <div class="text-right ml-4">
+                            <div class="font-medium text-gray-800">₹${itemTotal.toFixed(2)}</div>
+                            <button class="remove-item text-xs text-red-500 hover:text-red-700 mt-1" data-id="${product.id}">
+                                Remove
+                            </button>
+                        </div>
+                    `;
+                    cartItemsEl.appendChild(cartItem);
+                }
+            }
+        }
+
+        cartTotalEl.textContent = `₹${total.toFixed(2)}`;
+        whatsappCheckoutButtonEl.disabled = totalCount === 0;
+        whatsappCheckoutButtonEl.className = totalCount === 0 
+            ? "w-full mt-4 bg-gray-400 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed"
+            : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
+    }
+
+    function addToCart(productId) {
+        cart[productId] = (cart[productId] || 0) + 1;
+        updateCartUI();
+        
+        const product = products.find(p => p.id === parseInt(productId));
+        if (product) {
+            showNotification(`Added ${product.name} to cart!`);
+        }
+    }
+
+    function increaseQuantity(productId) {
+        cart[productId] = (cart[productId] || 0) + 1;
+        updateCartUI();
+    }
+
+    function decreaseQuantity(productId) {
+        if (cart[productId] > 1) {
+            cart[productId] -= 1;
+            updateCartUI();
+        }
     }
 
     // ===== SALES PAGE FUNCTIONS =====
@@ -1014,60 +1129,6 @@
         };
         
         document.getElementById('page-sales').appendChild(cartButton);
-    }
-
-    function addToCart(productId) {
-        cart[productId] = (cart[productId] || 0) + 1;
-        updateCartUI();
-        
-        const product = products.find(p => p.id === parseInt(productId));
-        if (product) {
-            showNotification(`Added ${product.name} to cart!`);
-        }
-    }
-
-    function updateCartUI() {
-        const cartItemsEl = document.getElementById('cart-items');
-        const cartTotalEl = document.getElementById('cart-total');
-        const whatsappCheckoutButtonEl = document.getElementById('whatsapp-checkout-button');
-        
-        cartItemsEl.innerHTML = '';
-        let total = 0;
-        let totalCount = 0;
-
-        for (const productId in cart) {
-            if (cart[productId] > 0) {
-                const product = products.find(p => p.id === parseInt(productId));
-                if (product) {
-                    const quantity = cart[productId];
-                    const itemTotal = quantity * product.price;
-                    total += itemTotal;
-                    totalCount += quantity;
-
-                    const cartItem = document.createElement('div');
-                    cartItem.className = "flex justify-between items-center p-2 bg-gray-50 rounded";
-                    cartItem.innerHTML = `
-                        <div class="flex-1">
-                            <div class="font-medium">${product.name}</div>
-                            <div class="text-sm text-gray-500">₹${product.price.toFixed(2)} × ${quantity}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-medium">₹${itemTotal.toFixed(2)}</div>
-                            <button class="remove-item text-xs text-red-500 hover:text-red-700 mt-1" data-id="${product.id}">
-                                Remove
-                            </button>
-                        </div>
-                    `;
-                    cartItemsEl.appendChild(cartItem);
-                }
-            }
-        }
-
-        cartTotalEl.textContent = `₹${total.toFixed(2)}`;
-        whatsappCheckoutButtonEl.disabled = totalCount === 0;
-        whatsappCheckoutButtonEl.className = totalCount === 0 
-            ? "w-full mt-4 bg-gray-400 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed"
-            : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
     }
 
     async function recordSale(saleItems) {
@@ -1511,6 +1572,16 @@
             if (e.target.classList.contains('add-to-cart-btn')) {
                 const productId = e.target.dataset.id;
                 addToCart(productId);
+            }
+            
+            if (e.target.classList.contains('increase-quantity')) {
+                const productId = e.target.dataset.id;
+                increaseQuantity(productId);
+            }
+            
+            if (e.target.classList.contains('decrease-quantity')) {
+                const productId = e.target.dataset.id;
+                decreaseQuantity(productId);
             }
             
             if (e.target.classList.contains('remove-item')) {
