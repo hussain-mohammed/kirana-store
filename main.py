@@ -122,7 +122,7 @@ class WhatsAppOrderRequest(BaseModel):
 
 class PurchaseLedgerEntry(BaseModel):
     purchase_id: int
-    date: datetime.datetime
+    date: datetime
     product_id: int
     product_name: str
     quantity: int
@@ -132,7 +132,7 @@ class PurchaseLedgerEntry(BaseModel):
 
 class SalesLedgerEntry(BaseModel):
     sale_id: int
-    date: datetime.datetime
+    date: datetime
     product_id: int
     product_name: str
     quantity: int
@@ -141,7 +141,7 @@ class SalesLedgerEntry(BaseModel):
     customer_info: Optional[str] = None
 
 class ProductStockHistory(BaseModel):
-    date: datetime.datetime
+    date: datetime
     transaction_type: str  # "PURCHASE", "SALE", "OPENING"
     reference: str
     quantity: int
