@@ -372,6 +372,84 @@ def record_purchase(purchase: PurchaseCreate, db: Session = Depends(get_db)):
     db.refresh(db_purchase)
     return db_purchase
 
+# --- ADD DELETE ENDPOINTS FOR SALES AND PURCHASES ---
+
+@app.delete("/sales/{sale_id}", status_code=status.HTTP_200_OK)
+def delete_sale(sale_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a sale record and restore product stock.
+    """
+    try:
+        # Find the sale record
+        db_sale = db.query(Sale).filter(Sale.id == sale_id).first()
+        if not db_sale:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sale record not found")
+        
+        # Find the product
+        product = db.query(Product).filter(Product.id == db_sale.product_id).first()
+        if not product:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+        
+        # Restore the stock
+        product.stock += db_sale.quantity
+        
+        # Delete the sale record
+        db.delete(db_sale)
+        db.commit()
+        
+        return {
+            "status": "success",
+            "message": f"Sale record deleted successfully. Restored {db_sale.quantity} units to {product.name} stock.",
+            "sale_id": sale_id
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error deleting sale: {str(e)}")
+
+@app.delete("/purchases/{purchase_id}", status_code=status.HTTP_200_OK)
+def delete_purchase(purchase_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a purchase record and adjust product stock.
+    """
+    try:
+        # Find the purchase record
+        db_purchase = db.query(Purchase).filter(Purchase.id == purchase_id).first()
+        if not db_purchase:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase record not found")
+        
+        # Find the product
+        product = db.query(Product).filter(Product.id == db_purchase.product_id).first()
+        if not product:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+        
+        # Check if we have enough stock to remove
+        if product.stock < db_purchase.quantity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Cannot delete purchase. Current stock ({product.stock}) is less than purchase quantity ({db_purchase.quantity})"
+            )
+        
+        # Remove the purchased stock
+        product.stock -= db_purchase.quantity
+        
+        # Delete the purchase record
+        db.delete(db_purchase)
+        db.commit()
+        
+        return {
+            "status": "success",
+            "message": f"Purchase record deleted successfully. Removed {db_purchase.quantity} units from {product.name} stock.",
+            "purchase_id": purchase_id
+        }
+        
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error deleting purchase: {str(e)}")
+
 # --- API Endpoint for WhatsApp Orders ---
 @app.post("/whatsapp-order/", status_code=status.HTTP_200_OK)
 def process_whatsapp_order(order_request: WhatsAppOrderRequest, db: Session = Depends(get_db)):
