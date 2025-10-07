@@ -314,53 +314,149 @@
         </main>
     </div>
 
-    <!-- Sales Ledger Page -->
+    <!-- UPDATED: Sales Ledger Page -->
     <div id="page-sales-ledger" class="page">
-        <main class="w-full max-w-md mx-auto p-4 space-y-6">
+        <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Sales Ledger</h2>
             
             <div class="bg-white p-6 rounded-lg shadow-lg">
-                <h3 class="text-lg font-semibold mb-4">All Sales Records</h3>
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">All Sales Records</h3>
+                    <button onclick="loadSalesLedger()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
+                        <input type="date" id="sales-date-from" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
+                        <input type="date" id="sales-date-to" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                        <select id="sales-product-filter" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="">All Products</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end mb-4">
+                    <button onclick="applySalesFilters()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        Apply Filters
+                    </button>
+                    <button onclick="clearSalesFilters()" class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                        Clear
+                    </button>
+                </div>
                 
                 <!-- Loading State -->
-                <div id="sales-ledger-loading" class="text-center py-4">
+                <div id="sales-ledger-loading" class="text-center py-8">
                     <p class="text-gray-500">Loading sales records...</p>
                 </div>
 
                 <!-- Error State -->
-                <div id="sales-ledger-error" class="text-center py-4 hidden">
+                <div id="sales-ledger-error" class="text-center py-8 hidden">
                     <p class="text-red-500">Error loading sales records</p>
                 </div>
 
-                <!-- Sales Records -->
-                <div id="sales-ledger-content" class="space-y-3">
-                    <!-- Sales records will be loaded here -->
+                <!-- Sales Records Table -->
+                <div id="sales-ledger-content" class="hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-gray-200">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Date & Time</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">ID</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Product</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Units</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Price (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Total Amount (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-ledger-table-body">
+                                <!-- Sales records will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Purchase Ledger Page -->
+    <!-- UPDATED: Purchase Ledger Page -->
     <div id="page-purchase-ledger" class="page">
-        <main class="w-full max-w-md mx-auto p-4 space-y-6">
+        <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Purchase Ledger</h2>
             
             <div class="bg-white p-6 rounded-lg shadow-lg">
-                <h3 class="text-lg font-semibold mb-4">All Purchase Records</h3>
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">All Purchase Records</h3>
+                    <button onclick="loadPurchaseLedger()" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
+                        <input type="date" id="purchase-date-from" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
+                        <input type="date" id="purchase-date-to" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                        <select id="purchase-product-filter" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="">All Products</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end mb-4">
+                    <button onclick="applyPurchaseFilters()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        Apply Filters
+                    </button>
+                    <button onclick="clearPurchaseFilters()" class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                        Clear
+                    </button>
+                </div>
                 
                 <!-- Loading State -->
-                <div id="purchase-ledger-loading" class="text-center py-4">
+                <div id="purchase-ledger-loading" class="text-center py-8">
                     <p class="text-gray-500">Loading purchase records...</p>
                 </div>
 
                 <!-- Error State -->
-                <div id="purchase-ledger-error" class="text-center py-4 hidden">
+                <div id="purchase-ledger-error" class="text-center py-8 hidden">
                     <p class="text-red-500">Error loading purchase records</p>
                 </div>
 
-                <!-- Purchase Records -->
-                <div id="purchase-ledger-content" class="space-y-3">
-                    <!-- Purchase records will be loaded here -->
+                <!-- Purchase Records Table -->
+                <div id="purchase-ledger-content" class="hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-gray-200">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Date & Time</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">ID</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Product</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Units</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Unit Cost (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Total Cost (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchase-ledger-table-body">
+                                <!-- Purchase records will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
@@ -374,6 +470,8 @@
     // Global variables
     let products = [];
     let cart = {};
+    let allSalesData = [];
+    let allPurchasesData = [];
 
     // DOM Elements
     const pages = {
@@ -569,6 +667,265 @@
             errorEl.classList.remove('hidden');
             errorEl.innerHTML = `<p class="text-red-500">Error loading products stock data: ${error.message}</p>`;
         }
+    }
+
+    // ===== UPDATED: SALES LEDGER FUNCTIONS =====
+    async function loadSalesLedger() {
+        const loadingEl = document.getElementById('sales-ledger-loading');
+        const errorEl = document.getElementById('sales-ledger-error');
+        const contentEl = document.getElementById('sales-ledger-content');
+        
+        loadingEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        contentEl.classList.add('hidden');
+        
+        try {
+            const response = await fetch(`${backendURL}/ledger/sales`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch sales ledger');
+            
+            allSalesData = await response.json();
+            console.log('📊 Sales data received:', allSalesData);
+            
+            // Load product dropdown for filter
+            await loadProductDropdownForFilter('sales-product-filter');
+            
+            // Display all data initially
+            displayFilteredSalesData(allSalesData);
+            
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+            
+        } catch (error) {
+            console.error('Error loading sales ledger:', error);
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<p class="text-red-500">Error loading sales records: ${error.message}</p>`;
+        }
+    }
+
+    async function loadProductDropdownForFilter(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        
+        try {
+            const response = await fetch(`${backendURL}/products`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (response.ok) {
+                const products = await response.json();
+                dropdown.innerHTML = '<option value="">All Products</option>';
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = product.name;
+                    dropdown.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading products for filter:', error);
+        }
+    }
+
+    function displayFilteredSalesData(salesData) {
+        const tableBodyEl = document.getElementById('sales-ledger-table-body');
+        
+        if (salesData.length === 0) {
+            tableBodyEl.innerHTML = `
+                <tr>
+                    <td colspan="7" class="border border-gray-200 px-4 py-4 text-center text-gray-500">
+                        No sales records found
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tableBodyEl.innerHTML = salesData.map(sale => {
+            const formatted = formatDateTime(sale.date);
+            const saleId = sale.sale_id || sale.id;
+            const price = sale.unit_price || (sale.total_amount / sale.quantity) || 0;
+            
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="border border-gray-200 px-4 py-2">
+                        <div class="text-sm font-medium">${formatted.date}</div>
+                        <div class="text-xs text-gray-500">${formatted.time}</div>
+                    </td>
+                    <td class="border border-gray-200 px-4 py-2 text-sm">${saleId}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium">${sale.product_name}</td>
+                    <td class="border border-gray-200 px-4 py-2">${sale.quantity}</td>
+                    <td class="border border-gray-200 px-4 py-2">₹${price.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium">₹${sale.total_amount.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2">
+                        <button class="delete-sale text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors" 
+                                data-id="${saleId}">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function applySalesFilters() {
+        const dateFrom = document.getElementById('sales-date-from').value;
+        const dateTo = document.getElementById('sales-date-to').value;
+        const productId = document.getElementById('sales-product-filter').value;
+        
+        let filteredData = allSalesData;
+        
+        // Filter by date range
+        if (dateFrom) {
+            filteredData = filteredData.filter(sale => {
+                const saleDate = new Date(sale.date).toISOString().split('T')[0];
+                return saleDate >= dateFrom;
+            });
+        }
+        
+        if (dateTo) {
+            filteredData = filteredData.filter(sale => {
+                const saleDate = new Date(sale.date).toISOString().split('T')[0];
+                return saleDate <= dateTo;
+            });
+        }
+        
+        // Filter by product
+        if (productId) {
+            filteredData = filteredData.filter(sale => sale.product_id == productId);
+        }
+        
+        displayFilteredSalesData(filteredData);
+    }
+
+    function clearSalesFilters() {
+        document.getElementById('sales-date-from').value = '';
+        document.getElementById('sales-date-to').value = '';
+        document.getElementById('sales-product-filter').value = '';
+        displayFilteredSalesData(allSalesData);
+    }
+
+    // ===== UPDATED: PURCHASE LEDGER FUNCTIONS =====
+    async function loadPurchaseLedger() {
+        const loadingEl = document.getElementById('purchase-ledger-loading');
+        const errorEl = document.getElementById('purchase-ledger-error');
+        const contentEl = document.getElementById('purchase-ledger-content');
+        
+        loadingEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        contentEl.classList.add('hidden');
+        
+        try {
+            const response = await fetch(`${backendURL}/ledger/purchases`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch purchase ledger');
+            
+            allPurchasesData = await response.json();
+            console.log('📊 Purchases data received:', allPurchasesData);
+            
+            // Load product dropdown for filter
+            await loadProductDropdownForFilter('purchase-product-filter');
+            
+            // Display all data initially
+            displayFilteredPurchaseData(allPurchasesData);
+            
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+            
+        } catch (error) {
+            console.error('Error loading purchase ledger:', error);
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<p class="text-red-500">Error loading purchase records: ${error.message}</p>`;
+        }
+    }
+
+    function displayFilteredPurchaseData(purchasesData) {
+        const tableBodyEl = document.getElementById('purchase-ledger-table-body');
+        
+        if (purchasesData.length === 0) {
+            tableBodyEl.innerHTML = `
+                <tr>
+                    <td colspan="7" class="border border-gray-200 px-4 py-4 text-center text-gray-500">
+                        No purchase records found
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tableBodyEl.innerHTML = purchasesData.map(purchase => {
+            const formatted = formatDateTime(purchase.date);
+            const purchaseId = purchase.purchase_id || purchase.id;
+            const unitCost = purchase.unit_cost || (purchase.total_cost / purchase.quantity) || 0;
+            
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="border border-gray-200 px-4 py-2">
+                        <div class="text-sm font-medium">${formatted.date}</div>
+                        <div class="text-xs text-gray-500">${formatted.time}</div>
+                    </td>
+                    <td class="border border-gray-200 px-4 py-2 text-sm">${purchaseId}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium">${purchase.product_name}</td>
+                    <td class="border border-gray-200 px-4 py-2">${purchase.quantity}</td>
+                    <td class="border border-gray-200 px-4 py-2">₹${unitCost.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium">₹${purchase.total_cost.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2">
+                        <button class="delete-purchase text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors" 
+                                data-id="${purchaseId}">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function applyPurchaseFilters() {
+        const dateFrom = document.getElementById('purchase-date-from').value;
+        const dateTo = document.getElementById('purchase-date-to').value;
+        const productId = document.getElementById('purchase-product-filter').value;
+        
+        let filteredData = allPurchasesData;
+        
+        // Filter by date range
+        if (dateFrom) {
+            filteredData = filteredData.filter(purchase => {
+                const purchaseDate = new Date(purchase.date).toISOString().split('T')[0];
+                return purchaseDate >= dateFrom;
+            });
+        }
+        
+        if (dateTo) {
+            filteredData = filteredData.filter(purchase => {
+                const purchaseDate = new Date(purchase.date).toISOString().split('T')[0];
+                return purchaseDate <= dateTo;
+            });
+        }
+        
+        // Filter by product
+        if (productId) {
+            filteredData = filteredData.filter(purchase => purchase.product_id == productId);
+        }
+        
+        displayFilteredPurchaseData(filteredData);
+    }
+
+    function clearPurchaseFilters() {
+        document.getElementById('purchase-date-from').value = '';
+        document.getElementById('purchase-date-to').value = '';
+        document.getElementById('purchase-product-filter').value = '';
+        displayFilteredPurchaseData(allPurchasesData);
     }
 
     // ===== SALES PAGE FUNCTIONS =====
@@ -1079,136 +1436,6 @@
             ledgerLoading.classList.add('hidden');
             ledgerError.classList.remove('hidden');
             ledgerError.innerHTML = `<p class="text-red-500">Error loading stock ledger: ${error.message}</p>`;
-        }
-    }
-
-    // ===== IMPROVED: SALES LEDGER FUNCTIONS =====
-    async function loadSalesLedger() {
-        const loadingEl = document.getElementById('sales-ledger-loading');
-        const errorEl = document.getElementById('sales-ledger-error');
-        const contentEl = document.getElementById('sales-ledger-content');
-        
-        loadingEl.classList.remove('hidden');
-        errorEl.classList.add('hidden');
-        contentEl.innerHTML = '';
-        
-        try {
-            const response = await fetch(`${backendURL}/ledger/sales`, {
-                headers: {
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-            
-            if (!response.ok) throw new Error('Failed to fetch sales ledger');
-            
-            const sales = await response.json();
-            console.log('📊 Sales data received:', sales);
-            
-            if (sales.length === 0) {
-                contentEl.innerHTML = '<p class="text-gray-500 text-center">No sales records found</p>';
-                loadingEl.classList.add('hidden');
-                return;
-            }
-            
-            contentEl.innerHTML = sales.map(sale => {
-                // Debug log to see what data we're getting
-                console.log('Sale record:', sale);
-                
-                const formatted = formatDateTime(sale.date);
-                // Use sale_id or id, whichever is available
-                const saleId = sale.sale_id || sale.id;
-                
-                return `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div class="flex-1">
-                            <div class="font-medium">${sale.product_name}</div>
-                            <div class="text-sm text-gray-500">${formatted.date} at ${formatted.time}</div>
-                            <div class="text-xs text-gray-400">ID: ${saleId}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-medium">${sale.quantity} units</div>
-                            <div class="text-sm text-blue-600">₹${sale.total_amount.toFixed(2)}</div>
-                            <button class="delete-sale mt-1 text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors" 
-                                    data-id="${saleId}">
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            loadingEl.classList.add('hidden');
-            
-        } catch (error) {
-            console.error('Error loading sales ledger:', error);
-            loadingEl.classList.add('hidden');
-            errorEl.classList.remove('hidden');
-            errorEl.innerHTML = `<p class="text-red-500">Error loading sales records: ${error.message}</p>`;
-        }
-    }
-
-    // ===== IMPROVED: PURCHASE LEDGER FUNCTIONS =====
-    async function loadPurchaseLedger() {
-        const loadingEl = document.getElementById('purchase-ledger-loading');
-        const errorEl = document.getElementById('purchase-ledger-error');
-        const contentEl = document.getElementById('purchase-ledger-content');
-        
-        loadingEl.classList.remove('hidden');
-        errorEl.classList.add('hidden');
-        contentEl.innerHTML = '';
-        
-        try {
-            const response = await fetch(`${backendURL}/ledger/purchases`, {
-                headers: {
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-            
-            if (!response.ok) throw new Error('Failed to fetch purchase ledger');
-            
-            const purchases = await response.json();
-            console.log('📊 Purchases data received:', purchases);
-            
-            if (purchases.length === 0) {
-                contentEl.innerHTML = '<p class="text-gray-500 text-center">No purchase records found</p>';
-                loadingEl.classList.add('hidden');
-                return;
-            }
-            
-            contentEl.innerHTML = purchases.map(purchase => {
-                // Debug log to see what data we're getting
-                console.log('Purchase record:', purchase);
-                
-                const formatted = formatDateTime(purchase.date);
-                // Use purchase_id or id, whichever is available
-                const purchaseId = purchase.purchase_id || purchase.id;
-                
-                return `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div class="flex-1">
-                            <div class="font-medium">${purchase.product_name}</div>
-                            <div class="text-sm text-gray-500">${formatted.date} at ${formatted.time}</div>
-                            <div class="text-xs text-gray-400">ID: ${purchaseId}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-medium">${purchase.quantity} units</div>
-                            <div class="text-sm text-green-600">₹${purchase.total_cost.toFixed(2)}</div>
-                            <button class="delete-purchase mt-1 text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors" 
-                                    data-id="${purchaseId}">
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            loadingEl.classList.add('hidden');
-            
-        } catch (error) {
-            console.error('Error loading purchase ledger:', error);
-            loadingEl.classList.add('hidden');
-            errorEl.classList.remove('hidden');
-            errorEl.innerHTML = `<p class="text-red-500">Error loading purchase records: ${error.message}</p>`;
         }
     }
 
