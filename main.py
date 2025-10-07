@@ -1,5 +1,4 @@
-import datetime
-import pytz
+from datetime import datetime, timezone, timedelta
 import os
 from contextlib import asynccontextmanager
 from typing import List, Optional, Any, Dict
@@ -28,7 +27,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # --- Database Models ---
-ist = pytz.timezone('Asia/Kolkata')
+IST = timezone(timedelta(hours=5, minutes=30))
 
 class Product(Base):
     """Represents a product in the store."""
@@ -47,7 +46,7 @@ class Sale(Base):
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, nullable=False)
     total_amount = Column(Float, nullable=False)
-    sale_date = Column(DateTime, default=lambda: datetime.datetime.now(ist))
+    sale_date = Column(DateTime, default=lambda: datetime.now(IST))
     product = relationship("Product")
 
 class Purchase(Base):
@@ -58,7 +57,7 @@ class Purchase(Base):
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, nullable=False)
     total_cost = Column(Float, nullable=False)
-    purchase_date = Column(DateTime, default=lambda: datetime.datetime.now(ist))
+    purchase_date = Column(DateTime, default=lambda: datetime.now(IST))
     product = relationship("Product")
 
 # --- Pydantic Models for API Requests/Responses ---
@@ -343,7 +342,7 @@ def record_sale(sale: SaleCreate, db: Session = Depends(get_db)):
         product_id=sale.product_id,
         quantity=sale.quantity,
         total_amount=total_amount,
-        sale_date=datetime.datetime.now(ist)
+        sale_date=datetime.now(IST)
     )
     product.stock -= sale.quantity
     
@@ -364,7 +363,7 @@ def record_purchase(purchase: PurchaseCreate, db: Session = Depends(get_db)):
         product_id=purchase.product_id,
         quantity=purchase.quantity,
         total_cost=total_cost,
-        purchase_date=datetime.datetime.now(ist)
+        purchase_date=datetime.now(IST)
     )
     product.stock += purchase.quantity
     
