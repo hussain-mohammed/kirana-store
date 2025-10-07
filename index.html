@@ -73,6 +73,21 @@
                         <p class="text-orange-100">View stock history and track inventory</p>
                     </div>
                 </button>
+
+                <!-- NEW BUTTONS -->
+                <button onclick="showContentPage('sales-ledger')" class="w-full p-6 bg-red-500 text-white rounded-xl shadow-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-105">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">📋 Sales Ledger</div>
+                        <p class="text-red-100">View and manage all sales records</p>
+                    </div>
+                </button>
+                
+                <button onclick="showContentPage('purchase-ledger')" class="w-full p-6 bg-indigo-500 text-white rounded-xl shadow-lg hover:bg-indigo-600 transition-all duration-300 transform hover:scale-105">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">📋 Purchase Ledger</div>
+                        <p class="text-indigo-100">View and manage all purchase records</p>
+                    </div>
+                </button>
             </div>
         </main>
     </div>
@@ -224,6 +239,58 @@
         </main>
     </div>
 
+    <!-- NEW: Sales Ledger Page -->
+    <div id="page-sales-ledger" class="page">
+        <main class="w-full max-w-md mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">Sales Ledger</h2>
+            
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-4">All Sales Records</h3>
+                
+                <!-- Loading State -->
+                <div id="sales-ledger-loading" class="text-center py-4">
+                    <p class="text-gray-500">Loading sales records...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="sales-ledger-error" class="text-center py-4 hidden">
+                    <p class="text-red-500">Error loading sales records</p>
+                </div>
+
+                <!-- Sales Records -->
+                <div id="sales-ledger-content" class="space-y-3">
+                    <!-- Sales records will be loaded here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- NEW: Purchase Ledger Page -->
+    <div id="page-purchase-ledger" class="page">
+        <main class="w-full max-w-md mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">Purchase Ledger</h2>
+            
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-4">All Purchase Records</h3>
+                
+                <!-- Loading State -->
+                <div id="purchase-ledger-loading" class="text-center py-4">
+                    <p class="text-gray-500">Loading purchase records...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="purchase-ledger-error" class="text-center py-4 hidden">
+                    <p class="text-red-500">Error loading purchase records</p>
+                </div>
+
+                <!-- Purchase Records -->
+                <div id="purchase-ledger-content" class="space-y-3">
+                    <!-- Purchase records will be loaded here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
 <script>
     // ===== BACKEND CONFIGURATION =====
     const backendURL = "https://kirana-store-maoc.onrender.com";
@@ -239,7 +306,9 @@
         sales: document.getElementById('page-sales'),
         purchase: document.getElementById('page-purchase'),
         create: document.getElementById('page-create'),
-        ledger: document.getElementById('page-ledger')
+        ledger: document.getElementById('page-ledger'),
+        'sales-ledger': document.getElementById('page-sales-ledger'),
+        'purchase-ledger': document.getElementById('page-purchase-ledger')
     };
 
     const backButton = document.getElementById('back-to-home');
@@ -290,6 +359,12 @@
                 break;
             case 'ledger':
                 loadLedgerPage();
+                break;
+            case 'sales-ledger':
+                loadSalesLedger();
+                break;
+            case 'purchase-ledger':
+                loadPurchaseLedger();
                 break;
         }
     }
@@ -805,6 +880,155 @@
         }
     }
 
+    // ===== NEW: SALES LEDGER FUNCTIONS =====
+    async function loadSalesLedger() {
+        const loadingEl = document.getElementById('sales-ledger-loading');
+        const errorEl = document.getElementById('sales-ledger-error');
+        const contentEl = document.getElementById('sales-ledger-content');
+        
+        loadingEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        contentEl.innerHTML = '';
+        
+        try {
+            const response = await fetch(`${backendURL}/ledger/sales`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch sales ledger');
+            
+            const sales = await response.json();
+            
+            if (sales.length === 0) {
+                contentEl.innerHTML = '<p class="text-gray-500 text-center">No sales records found</p>';
+                loadingEl.classList.add('hidden');
+                return;
+            }
+            
+            contentEl.innerHTML = sales.map(sale => {
+                const formatted = formatDateTime(sale.date);
+                return `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="font-medium">${sale.product_name}</div>
+                            <div class="text-sm text-gray-500">${formatted.date} at ${formatted.time}</div>
+                            <div class="text-xs text-gray-400">ID: ${sale.id}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium">${sale.quantity} units</div>
+                            <div class="text-sm text-blue-600">₹${sale.total_amount.toFixed(2)}</div>
+                            <button class="delete-sale mt-1 text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors" 
+                                    data-id="${sale.id}" data-type="sale">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            loadingEl.classList.add('hidden');
+            
+        } catch (error) {
+            console.error('Error loading sales ledger:', error);
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<p class="text-red-500">Error loading sales records: ${error.message}</p>`;
+        }
+    }
+
+    // ===== NEW: PURCHASE LEDGER FUNCTIONS =====
+    async function loadPurchaseLedger() {
+        const loadingEl = document.getElementById('purchase-ledger-loading');
+        const errorEl = document.getElementById('purchase-ledger-error');
+        const contentEl = document.getElementById('purchase-ledger-content');
+        
+        loadingEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        contentEl.innerHTML = '';
+        
+        try {
+            const response = await fetch(`${backendURL}/ledger/purchases`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch purchase ledger');
+            
+            const purchases = await response.json();
+            
+            if (purchases.length === 0) {
+                contentEl.innerHTML = '<p class="text-gray-500 text-center">No purchase records found</p>';
+                loadingEl.classList.add('hidden');
+                return;
+            }
+            
+            contentEl.innerHTML = purchases.map(purchase => {
+                const formatted = formatDateTime(purchase.date);
+                return `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="font-medium">${purchase.product_name}</div>
+                            <div class="text-sm text-gray-500">${formatted.date} at ${formatted.time}</div>
+                            <div class="text-xs text-gray-400">ID: ${purchase.id}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium">${purchase.quantity} units</div>
+                            <div class="text-sm text-green-600">₹${purchase.total_cost.toFixed(2)}</div>
+                            <button class="delete-purchase mt-1 text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors" 
+                                    data-id="${purchase.id}" data-type="purchase">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            loadingEl.classList.add('hidden');
+            
+        } catch (error) {
+            console.error('Error loading purchase ledger:', error);
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<p class="text-red-500">Error loading purchase records: ${error.message}</p>`;
+        }
+    }
+
+    // ===== DELETE FUNCTIONS =====
+    async function deleteRecord(recordId, recordType) {
+        if (!confirm(`Are you sure you want to delete this ${recordType} record? This action cannot be undone.`)) {
+            return;
+        }
+        
+        try {
+            const endpoint = recordType === 'sale' ? 'sales' : 'purchases';
+            const response = await fetch(`${backendURL}/${endpoint}/${recordId}`, {
+                method: 'DELETE',
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (response.ok) {
+                showNotification(`${recordType.charAt(0).toUpperCase() + recordType.slice(1)} record deleted successfully!`);
+                
+                // Reload the current ledger page
+                if (recordType === 'sale') {
+                    await loadSalesLedger();
+                } else {
+                    await loadPurchaseLedger();
+                }
+            } else {
+                throw new Error(`Failed to delete ${recordType} record`);
+            }
+        } catch (error) {
+            console.error(`Error deleting ${recordType}:`, error);
+            alert(`Error deleting ${recordType} record: ${error.message}`);
+        }
+    }
+
     // ===== UTILITY FUNCTIONS =====
     function showNotification(message) {
         const existingNotification = document.querySelector('.notification');
@@ -838,6 +1062,17 @@
                     updateCartUI();
                     showNotification('Item removed from cart');
                 }
+            }
+            
+            // NEW: Handle delete buttons for sales and purchases
+            if (e.target.classList.contains('delete-sale')) {
+                const recordId = e.target.dataset.id;
+                deleteRecord(recordId, 'sale');
+            }
+            
+            if (e.target.classList.contains('delete-purchase')) {
+                const recordId = e.target.dataset.id;
+                deleteRecord(recordId, 'purchase');
             }
         });
 

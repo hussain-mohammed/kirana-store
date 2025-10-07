@@ -708,7 +708,7 @@ async def root():
     return {
         "message": "Kirana Store API is running", 
         "status": "active",
-        "timestamp": datetime.datetime.now().isoformat()
+        "timestamp": datetime.now(IST).isoformat()
     }
 
 @app.get("/health")
@@ -718,7 +718,7 @@ async def health_check(db: Session = Depends(get_db)):
         return {
             "status": "healthy", 
             "database": "connected",
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now(IST).isoformat()
         }
     except Exception as e:
         return {
