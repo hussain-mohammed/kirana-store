@@ -74,7 +74,14 @@
                     </div>
                 </button>
 
-                <!-- NEW BUTTONS -->
+                <!-- NEW BUTTON: All Products Stock Ledger -->
+                <button onclick="showContentPage('all-products-ledger')" class="w-full p-6 bg-teal-500 text-white rounded-xl shadow-lg hover:bg-teal-600 transition-all duration-300 transform hover:scale-105">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">📋 All Products Stock</div>
+                        <p class="text-teal-100">View complete stock details for all products</p>
+                    </div>
+                </button>
+
                 <button onclick="showContentPage('sales-ledger')" class="w-full p-6 bg-red-500 text-white rounded-xl shadow-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-105">
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">📋 Sales Ledger</div>
@@ -239,7 +246,75 @@
         </main>
     </div>
 
-    <!-- NEW: Sales Ledger Page -->
+    <!-- NEW: All Products Stock Ledger Page -->
+    <div id="page-all-products-ledger" class="page">
+        <main class="w-full max-w-4xl mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">All Products Stock Ledger</h2>
+            
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Complete Stock Overview</h3>
+                    <button onclick="loadAllProductsLedger()" class="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors">
+                        Refresh
+                    </button>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="all-products-ledger-loading" class="text-center py-8">
+                    <p class="text-gray-500">Loading all products stock data...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="all-products-ledger-error" class="text-center py-8 hidden">
+                    <p class="text-red-500">Error loading products stock data</p>
+                </div>
+
+                <!-- All Products Stock Content -->
+                <div id="all-products-ledger-content" class="hidden">
+                    <!-- Summary Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="total-products">0</div>
+                            <div class="text-sm text-gray-600">Total Products</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green-600" id="total-stock">0</div>
+                            <div class="text-sm text-gray-600">Total Stock</div>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-orange-600" id="low-stock-count">0</div>
+                            <div class="text-sm text-gray-600">Low Stock Items</div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="out-of-stock-count">0</div>
+                            <div class="text-sm text-gray-600">Out of Stock</div>
+                        </div>
+                    </div>
+
+                    <!-- Products Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-gray-200">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Product Name</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Current Stock</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Price (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Stock Value (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Last Updated</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-products-ledger-table-body">
+                                <!-- Products will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Sales Ledger Page -->
     <div id="page-sales-ledger" class="page">
         <main class="w-full max-w-md mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Sales Ledger</h2>
@@ -265,7 +340,7 @@
         </main>
     </div>
 
-    <!-- NEW: Purchase Ledger Page -->
+    <!-- Purchase Ledger Page -->
     <div id="page-purchase-ledger" class="page">
         <main class="w-full max-w-md mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Purchase Ledger</h2>
@@ -307,51 +382,51 @@
         purchase: document.getElementById('page-purchase'),
         create: document.getElementById('page-create'),
         ledger: document.getElementById('page-ledger'),
+        'all-products-ledger': document.getElementById('page-all-products-ledger'),
         'sales-ledger': document.getElementById('page-sales-ledger'),
         'purchase-ledger': document.getElementById('page-purchase-ledger')
     };
 
     const backButton = document.getElementById('back-to-home');
 
-    // ===== IMPROVED TIME FORMATTING UTILITY =====
     // ===== CORRECTED TIME FORMATTING UTILITY =====
-function formatDateTime(dateString) {
-    if (!dateString) {
-        return { date: 'N/A', time: 'N/A', full: 'N/A' };
-    }
-    
-    try {
-        const dateObj = new Date(dateString);
-        
-        if (isNaN(dateObj.getTime())) {
-            console.warn('Invalid date:', dateString);
-            return { date: 'Invalid Date', time: 'Invalid Date', full: 'Invalid Date' };
+    function formatDateTime(dateString) {
+        if (!dateString) {
+            return { date: 'N/A', time: 'N/A', full: 'N/A' };
         }
         
-        // Format as Indian date format without timezone conversion
-        const day = dateObj.getDate().toString().padStart(2, '0');
-        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-        const year = dateObj.getFullYear().toString().slice(-2);
-        
-        const hours = dateObj.getHours().toString().padStart(2, '0');
-        const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-        
-        return {
-            date: `${day}/${month}/${year}`,
-            time: `${hours}:${minutes}`,
-            full: `${day}/${month}/${year} ${hours}:${minutes}`
-        };
-    } catch (error) {
-        console.error('Error formatting date:', error, dateString);
-        return { date: 'Error', time: 'Error', full: 'Error' };
+        try {
+            const dateObj = new Date(dateString);
+            
+            if (isNaN(dateObj.getTime())) {
+                console.warn('Invalid date:', dateString);
+                return { date: 'Invalid Date', time: 'Invalid Date', full: 'Invalid Date' };
+            }
+            
+            // Format as Indian date format without timezone conversion
+            const day = dateObj.getDate().toString().padStart(2, '0');
+            const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            const year = dateObj.getFullYear().toString().slice(-2);
+            
+            const hours = dateObj.getHours().toString().padStart(2, '0');
+            const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+            
+            return {
+                date: `${day}/${month}/${year}`,
+                time: `${hours}:${minutes}`,
+                full: `${day}/${month}/${year} ${hours}:${minutes}`
+            };
+        } catch (error) {
+            console.error('Error formatting date:', error, dateString);
+            return { date: 'Error', time: 'Error', full: 'Error' };
+        }
     }
-}
 
-// ===== NAVIGATION FUNCTIONS =====
-function showContentPage(pageName) {
-    Object.values(pages).forEach(page => page.classList.remove('active'));
-    pages[pageName].classList.add('active');
-    backButton.classList.remove('hidden');
+    // ===== NAVIGATION FUNCTIONS =====
+    function showContentPage(pageName) {
+        Object.values(pages).forEach(page => page.classList.remove('active'));
+        pages[pageName].classList.add('active');
+        backButton.classList.remove('hidden');
         loadPageData(pageName);
     }
 
@@ -375,12 +450,124 @@ function showContentPage(pageName) {
             case 'ledger':
                 loadLedgerPage();
                 break;
+            case 'all-products-ledger':
+                loadAllProductsLedger();
+                break;
             case 'sales-ledger':
                 loadSalesLedger();
                 break;
             case 'purchase-ledger':
                 loadPurchaseLedger();
                 break;
+        }
+    }
+
+    // ===== NEW: ALL PRODUCTS LEDGER FUNCTIONS =====
+    async function loadAllProductsLedger() {
+        const loadingEl = document.getElementById('all-products-ledger-loading');
+        const errorEl = document.getElementById('all-products-ledger-error');
+        const contentEl = document.getElementById('all-products-ledger-content');
+        const tableBodyEl = document.getElementById('all-products-ledger-table-body');
+        
+        loadingEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        contentEl.classList.add('hidden');
+        tableBodyEl.innerHTML = '';
+        
+        try {
+            // Fetch all products
+            const response = await fetch(`${backendURL}/products`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch products');
+            
+            const products = await response.json();
+            
+            if (!Array.isArray(products) || products.length === 0) {
+                throw new Error('No products found');
+            }
+            
+            // Calculate summary statistics
+            let totalStock = 0;
+            let lowStockCount = 0;
+            let outOfStockCount = 0;
+            let totalStockValue = 0;
+            
+            // Sort products by stock level (lowest first)
+            products.sort((a, b) => (a.stock || 0) - (b.stock || 0));
+            
+            // Generate table rows
+            tableBodyEl.innerHTML = products.map(product => {
+                const stock = product.stock || 0;
+                const price = product.price || 0;
+                const stockValue = stock * price;
+                const lastUpdated = product.last_updated || product.created_at || product.updated_at;
+                const formattedDate = formatDateTime(lastUpdated);
+                
+                totalStock += stock;
+                totalStockValue += stockValue;
+                
+                // Determine stock status
+                let status = '';
+                let statusClass = '';
+                
+                if (stock === 0) {
+                    outOfStockCount++;
+                    status = 'Out of Stock';
+                    statusClass = 'bg-red-100 text-red-800';
+                } else if (stock <= 10) {
+                    lowStockCount++;
+                    status = 'Low Stock';
+                    statusClass = 'bg-yellow-100 text-yellow-800';
+                } else {
+                    status = 'In Stock';
+                    statusClass = 'bg-green-100 text-green-800';
+                }
+                
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="border border-gray-200 px-4 py-2 font-medium">${product.name}</td>
+                        <td class="border border-gray-200 px-4 py-2 ${stock <= 10 ? 'text-red-600 font-bold' : ''}">${stock}</td>
+                        <td class="border border-gray-200 px-4 py-2">₹${price.toFixed(2)}</td>
+                        <td class="border border-gray-200 px-4 py-2">₹${stockValue.toFixed(2)}</td>
+                        <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">${formattedDate.date}<br><span class="text-xs">${formattedDate.time}</span></td>
+                        <td class="border border-gray-200 px-4 py-2">
+                            <span class="px-2 py-1 rounded-full text-xs ${statusClass}">${status}</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Update summary statistics
+            document.getElementById('total-products').textContent = products.length;
+            document.getElementById('total-stock').textContent = totalStock;
+            document.getElementById('low-stock-count').textContent = lowStockCount;
+            document.getElementById('out-of-stock-count').textContent = outOfStockCount;
+            
+            // Add total row
+            tableBodyEl.innerHTML += `
+                <tr class="bg-gray-50 font-bold">
+                    <td class="border border-gray-200 px-4 py-2">TOTAL</td>
+                    <td class="border border-gray-200 px-4 py-2">${totalStock}</td>
+                    <td class="border border-gray-200 px-4 py-2">-</td>
+                    <td class="border border-gray-200 px-4 py-2">₹${totalStockValue.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2">-</td>
+                    <td class="border border-gray-200 px-4 py-2">-</td>
+                </tr>
+            `;
+            
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+            
+        } catch (error) {
+            console.error('Error loading all products ledger:', error);
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<p class="text-red-500">Error loading products stock data: ${error.message}</p>`;
         }
     }
 
