@@ -793,11 +793,11 @@ async function loadAllProductsLedger() {
         const dateTo = document.getElementById('stock-date-to').value;
         const productId = document.getElementById('stock-product-filter').value;
         
-        // Build query parameters
+        // Build query parameters - ONLY include dates if they have values
         const params = new URLSearchParams();
-        if (dateFrom) params.append('date_from', dateFrom);
-        if (dateTo) params.append('date_to', dateTo);
-        if (productId) params.append('product_id', productId);
+        if (dateFrom && dateFrom.trim() !== '') params.append('date_from', dateFrom);
+        if (dateTo && dateTo.trim() !== '') params.append('date_to', dateTo);
+        if (productId && productId.trim() !== '') params.append('product_id', productId);
         
         const url = `${backendURL}/products/stock-snapshot?${params.toString()}`;
         
@@ -824,11 +824,6 @@ async function loadAllProductsLedger() {
                 errorMessage = `Server error: ${response.status} ${response.statusText}`;
             }
             
-            // Special handling for 422 (validation error)
-            if (response.status === 422) {
-                errorMessage = "Invalid date format. Please check your date inputs and try again.";
-            }
-            
             throw new Error(errorMessage);
         }
         
@@ -843,7 +838,7 @@ async function loadAllProductsLedger() {
             return;
         }
         
-        // Load product dropdown for filter
+        // Load product dropdown for filter (if not already loaded)
         await loadProductDropdownForFilter('stock-product-filter');
         
         // Display the filtered data
@@ -860,16 +855,29 @@ async function loadAllProductsLedger() {
             <div class="text-center">
                 <p class="text-red-500 font-semibold">Error loading products stock data</p>
                 <p class="text-gray-600 mt-2">${error.message}</p>
-                <p class="text-sm text-gray-500 mt-4">
-                    Please check your date formats and try again.<br>
-                    Use format: YYYY-MM-DD (e.g., 2024-01-15)
-                </p>
-                <button onclick="clearStockFilters()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                <button onclick="clearStockFiltersAndReload()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                     Clear Filters & Retry
                 </button>
             </div>
         `;
     }
+}
+
+// NEW: Separate function for clear button that actually works
+function clearStockFiltersAndReload() {
+    document.getElementById('stock-date-from').value = '';
+    document.getElementById('stock-date-to').value = '';
+    document.getElementById('stock-product-filter').value = '';
+    loadAllProductsLedger();
+}
+
+// Update the existing functions to use the new clear function
+function applyStockFilters() {
+    loadAllProductsLedger();
+}
+
+function clearStockFilters() {
+    clearStockFiltersAndReload();
 }
 
 // ===== SALES LEDGER FUNCTIONS =====
@@ -1468,34 +1476,36 @@ async function loadSalesLedger() {
         await loadPurchaseHistory();
     }
 
-    async function loadProductDropdown(dropdownId) {
-        const dropdown = document.getElementById(dropdownId);
-        dropdown.innerHTML = '<option value="">Loading products...</option>';
+    // ===== ADD THIS FUNCTION TO YOUR EXISTING JAVASCRIPT =====
+async function loadProductDropdownForFilter(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) {
+        console.error(`Dropdown with ID '${dropdownId}' not found`);
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${backendURL}/products`, {
+            headers: {
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
         
-        try {
-            const response = await fetch(`${backendURL}/products`, {
-                headers: {
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-            
-            if (!response.ok) throw new Error('Failed to fetch products');
-            
+        if (response.ok) {
             const products = await response.json();
-            
-            dropdown.innerHTML = '<option value="">Select Product</option>';
+            dropdown.innerHTML = '<option value="">All Products</option>';
             products.forEach(product => {
                 const option = document.createElement('option');
                 option.value = product.id;
-                option.textContent = `${product.name} (₹${product.price.toFixed(2)})`;
+                option.textContent = product.name;
                 dropdown.appendChild(option);
             });
-            
-        } catch (error) {
-            console.error('Error loading products:', error);
-            dropdown.innerHTML = '<option value="">Error loading products</option>';
         }
+    } catch (error) {
+        console.error('Error loading products for filter:', error);
+        dropdown.innerHTML = '<option value="">Error loading products</option>';
     }
+}
 
     // ===== FIXED PURCHASE HISTORY =====
     async function loadPurchaseHistory() {

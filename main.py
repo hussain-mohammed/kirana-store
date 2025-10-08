@@ -814,8 +814,8 @@ def get_products_stock_snapshot(
         
         products = query.all()
         
-        # If no date filters, return current stock
-        if not date_from and not date_to:
+        # If no date filters or empty date strings, return current stock
+        if (not date_from or date_from.strip() == "") and (not date_to or date_to.strip() == ""):
             print("🔄 No date filters - returning current stock")
             snapshots = []
             for product in products:
@@ -839,51 +839,31 @@ def get_products_stock_snapshot(
             # Convert date strings to datetime objects with better error handling
             date_from_dt = None
             date_to_dt = None
+            date_parse_error = False
             
-            if date_from:
+            if date_from and date_from.strip() != "":
                 try:
-                    # Try multiple date formats
-                    if 'T' in date_from:
-                        # ISO format with time
-                        date_from_dt = datetime.datetime.fromisoformat(date_from.replace('Z', '+00:00'))
-                    else:
-                        # Simple date format (YYYY-MM-DD)
-                        date_from_dt = datetime.datetime.strptime(date_from, '%Y-%m-%d')
+                    # Simple YYYY-MM-DD format only
+                    date_from_dt = datetime.datetime.strptime(date_from.strip(), '%Y-%m-%d')
                     print(f"   Date From parsed: {date_from_dt}")
-                except ValueError as e:
-                    print(f"❌ Error parsing date_from {date_from}: {e}")
-                    # Try alternative format
-                    try:
-                        date_from_dt = datetime.datetime.fromisoformat(date_from)
-                        print(f"   Date From parsed with alternative: {date_from_dt}")
-                    except:
-                        print(f"❌ Could not parse date_from {date_from}")
-                        continue
+                except Exception as e:
+                    print(f"❌ Invalid date_from format: {date_from}. Expected YYYY-MM-DD")
+                    date_parse_error = True
             
-            if date_to:
+            if date_to and date_to.strip() != "":
                 try:
-                    if 'T' in date_to:
-                        # ISO format with time
-                        date_to_dt = datetime.datetime.fromisoformat(date_to.replace('Z', '+00:00'))
-                    else:
-                        # Simple date format (YYYY-MM-DD)
-                        date_to_dt = datetime.datetime.strptime(date_to, '%Y-%m-%d')
-                        # Include the entire end date (up to 23:59:59)
-                        date_to_dt = date_to_dt.replace(hour=23, minute=59, second=59)
+                    # Simple YYYY-MM-DD format only
+                    date_to_dt = datetime.datetime.strptime(date_to.strip(), '%Y-%m-%d')
+                    # Include the entire end date
+                    date_to_dt = date_to_dt.replace(hour=23, minute=59, second=59)
                     print(f"   Date To parsed: {date_to_dt}")
-                except ValueError as e:
-                    print(f"❌ Error parsing date_to {date_to}: {e}")
-                    # Try alternative format
-                    try:
-                        date_to_dt = datetime.datetime.fromisoformat(date_to)
-                        print(f"   Date To parsed with alternative: {date_to_dt}")
-                    except:
-                        print(f"❌ Could not parse date_to {date_to}")
-                        continue
+                except Exception as e:
+                    print(f"❌ Invalid date_to format: {date_to}. Expected YYYY-MM-DD")
+                    date_parse_error = True
             
-            # If we couldn't parse dates but they were provided, skip historical calculation
-            if (date_from and not date_from_dt) or (date_to and not date_to_dt):
-                print("❌ Could not parse dates, using current stock")
+            # If we have date parse errors, return current stock for this product
+            if date_parse_error:
+                print("❌ Date parse error, using current stock")
                 snapshots.append(ProductStockSnapshot(
                     product_id=product.id,
                     product_name=product.name,
@@ -967,7 +947,6 @@ def get_products_stock_snapshot(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error generating stock data: {str(e)}")
-
 
 # --- SMS Endpoint ---
 @app.post("/sms")
