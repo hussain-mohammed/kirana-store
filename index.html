@@ -777,7 +777,7 @@ async function deleteProduct(productId, productName) {
     }
 }
 
-// ===== UPDATED: ALL PRODUCTS LEDGER FUNCTIONS WITH PROPER DATE FILTERING =====
+// ===== UPDATED: ALL PRODUCTS LEDGER FUNCTIONS =====
 async function loadAllProductsLedger() {
     const loadingEl = document.getElementById('all-products-ledger-loading');
     const errorEl = document.getElementById('all-products-ledger-error');
@@ -811,9 +811,25 @@ async function loadAllProductsLedger() {
         });
         
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`❌ Server response: ${response.status} - ${errorText}`);
-            throw new Error(`Failed to fetch stock data: ${response.status}`);
+            let errorMessage = `Failed to fetch stock data: ${response.status}`;
+            
+            // Try to get more detailed error information
+            try {
+                const errorData = await response.json();
+                if (errorData.detail) {
+                    errorMessage = errorData.detail;
+                }
+            } catch (e) {
+                // If we can't parse JSON, use the status text
+                errorMessage = `Server error: ${response.status} ${response.statusText}`;
+            }
+            
+            // Special handling for 422 (validation error)
+            if (response.status === 422) {
+                errorMessage = "Invalid date format. Please check your date inputs and try again.";
+            }
+            
+            throw new Error(errorMessage);
         }
         
         allStockData = await response.json();
@@ -841,145 +857,19 @@ async function loadAllProductsLedger() {
         loadingEl.classList.add('hidden');
         errorEl.classList.remove('hidden');
         errorEl.innerHTML = `
-            <p class="text-red-500">Error loading products stock data: ${error.message}</p>
-            <p class="text-sm text-gray-500 mt-2">Please check your backend server and try again.</p>
+            <div class="text-center">
+                <p class="text-red-500 font-semibold">Error loading products stock data</p>
+                <p class="text-gray-600 mt-2">${error.message}</p>
+                <p class="text-sm text-gray-500 mt-4">
+                    Please check your date formats and try again.<br>
+                    Use format: YYYY-MM-DD (e.g., 2024-01-15)
+                </p>
+                <button onclick="clearStockFilters()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Clear Filters & Retry
+                </button>
+            </div>
         `;
     }
-}
-
-function displayFilteredStockData(stockData) {
-    const tableBodyEl = document.getElementById('all-products-ledger-table-body');
-    
-    // Get current filter values for display
-    const dateFrom = document.getElementById('stock-date-from').value;
-    const dateTo = document.getElementById('stock-date-to').value;
-    const productFilter = document.getElementById('stock-product-filter');
-    const selectedProduct = productFilter.options[productFilter.selectedIndex]?.text || 'All Products';
-    
-    if (stockData.length === 0) {
-        let message = 'No stock data found';
-        if (dateFrom || dateTo || productFilter.value) {
-            message += ' for the selected filters';
-        }
-        
-        tableBodyEl.innerHTML = `
-            <tr>
-                <td colspan="6" class="border border-gray-200 px-4 py-8 text-center text-gray-500">
-                    <div class="text-lg">${message}</div>
-                    ${dateFrom || dateTo ? `
-                        <div class="text-sm mt-2">
-                            Date Range: ${dateFrom || 'Any'} to ${dateTo || 'Any'}<br>
-                            Product: ${selectedProduct}
-                        </div>
-                    ` : ''}
-                </td>
-            </tr>
-        `;
-        
-        // Reset summary stats
-        document.getElementById('total-products').textContent = '0';
-        document.getElementById('total-stock').textContent = '0';
-        document.getElementById('low-stock-count').textContent = '0';
-        document.getElementById('out-of-stock-count').textContent = '0';
-        return;
-    }
-    
-    // Calculate summary statistics
-    let totalStock = 0;
-    let lowStockCount = 0;
-    let outOfStockCount = 0;
-    let totalStockValue = 0;
-    
-    // Sort products by stock level (lowest first)
-    stockData.sort((a, b) => (a.stock || 0) - (b.stock || 0));
-    
-    // Generate table rows
-    tableBodyEl.innerHTML = stockData.map(product => {
-        const stock = product.stock || 0;
-        const price = product.price || 0;
-        const stockValue = stock * price;
-        const lastUpdated = product.last_updated;
-        const formattedDate = formatDateTime(lastUpdated);
-        
-        totalStock += stock;
-        totalStockValue += stockValue;
-        
-        // Determine stock status
-        let status = '';
-        let statusClass = '';
-        let statusText = '';
-        
-        if (stock === 0) {
-            outOfStockCount++;
-            status = 'Out of Stock';
-            statusClass = 'bg-red-100 text-red-800';
-            statusText = 'text-red-600';
-        } else if (stock <= 10) {
-            lowStockCount++;
-            status = 'Low Stock';
-            statusClass = 'bg-yellow-100 text-yellow-800';
-            statusText = 'text-yellow-600';
-        } else {
-            status = 'In Stock';
-            statusClass = 'bg-green-100 text-green-800';
-            statusText = 'text-green-600';
-        }
-        
-        return `
-            <tr class="hover:bg-gray-50">
-                <td class="border border-gray-200 px-4 py-2 font-medium">${product.product_name}</td>
-                <td class="border border-gray-200 px-4 py-2 ${statusText} font-semibold">${stock}</td>
-                <td class="border border-gray-200 px-4 py-2">₹${price.toFixed(2)}</td>
-                <td class="border border-gray-200 px-4 py-2">₹${stockValue.toFixed(2)}</td>
-                <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">
-                    ${dateFrom || dateTo ? 'Calculated' : 'Current'}<br>
-                    <span class="text-xs text-gray-400">${formattedDate.time}</span>
-                </td>
-                <td class="border border-gray-200 px-4 py-2">
-                    <span class="px-2 py-1 rounded-full text-xs ${statusClass}">${status}</span>
-                </td>
-            </tr>
-        `;
-    }).join('');
-    
-    // Update summary statistics
-    document.getElementById('total-products').textContent = stockData.length;
-    document.getElementById('total-stock').textContent = totalStock;
-    document.getElementById('low-stock-count').textContent = lowStockCount;
-    document.getElementById('out-of-stock-count').textContent = outOfStockCount;
-    
-    // Add total row with filter info
-    const filterInfo = dateFrom || dateTo ? 
-        `<div class="text-xs text-gray-500 text-left">
-            Showing stock as of: ${dateTo || 'current'}<br>
-            ${dateFrom ? `From: ${dateFrom}` : ''}
-        </div>` : '';
-    
-    tableBodyEl.innerHTML += `
-        <tr class="bg-gray-50 font-bold">
-            <td class="border border-gray-200 px-4 py-2">
-                TOTAL
-                ${filterInfo}
-            </td>
-            <td class="border border-gray-200 px-4 py-2">${totalStock}</td>
-            <td class="border border-gray-200 px-4 py-2">-</td>
-            <td class="border border-gray-200 px-4 py-2">₹${totalStockValue.toFixed(2)}</td>
-            <td class="border border-gray-200 px-4 py-2">-</td>
-            <td class="border border-gray-200 px-4 py-2">-</td>
-        </tr>
-    `;
-}
-
-function applyStockFilters() {
-    // Simply reload the data with current filters
-    loadAllProductsLedger();
-}
-
-function clearStockFilters() {
-    document.getElementById('stock-date-from').value = '';
-    document.getElementById('stock-date-to').value = '';
-    document.getElementById('stock-product-filter').value = '';
-    loadAllProductsLedger();
 }
 
 // ===== SALES LEDGER FUNCTIONS =====

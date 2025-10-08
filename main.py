@@ -836,32 +836,63 @@ def get_products_stock_snapshot(
         for product in products:
             print(f"🔍 Processing product: {product.name} (ID: {product.id})")
             
-            # Convert date strings to datetime objects
+            # Convert date strings to datetime objects with better error handling
             date_from_dt = None
             date_to_dt = None
             
             if date_from:
                 try:
-                    # Handle different date formats
+                    # Try multiple date formats
                     if 'T' in date_from:
+                        # ISO format with time
                         date_from_dt = datetime.datetime.fromisoformat(date_from.replace('Z', '+00:00'))
                     else:
+                        # Simple date format (YYYY-MM-DD)
                         date_from_dt = datetime.datetime.strptime(date_from, '%Y-%m-%d')
-                except Exception as e:
+                    print(f"   Date From parsed: {date_from_dt}")
+                except ValueError as e:
                     print(f"❌ Error parsing date_from {date_from}: {e}")
-                    continue
+                    # Try alternative format
+                    try:
+                        date_from_dt = datetime.datetime.fromisoformat(date_from)
+                        print(f"   Date From parsed with alternative: {date_from_dt}")
+                    except:
+                        print(f"❌ Could not parse date_from {date_from}")
+                        continue
             
             if date_to:
                 try:
                     if 'T' in date_to:
+                        # ISO format with time
                         date_to_dt = datetime.datetime.fromisoformat(date_to.replace('Z', '+00:00'))
                     else:
+                        # Simple date format (YYYY-MM-DD)
                         date_to_dt = datetime.datetime.strptime(date_to, '%Y-%m-%d')
                         # Include the entire end date (up to 23:59:59)
                         date_to_dt = date_to_dt.replace(hour=23, minute=59, second=59)
-                except Exception as e:
+                    print(f"   Date To parsed: {date_to_dt}")
+                except ValueError as e:
                     print(f"❌ Error parsing date_to {date_to}: {e}")
-                    continue
+                    # Try alternative format
+                    try:
+                        date_to_dt = datetime.datetime.fromisoformat(date_to)
+                        print(f"   Date To parsed with alternative: {date_to_dt}")
+                    except:
+                        print(f"❌ Could not parse date_to {date_to}")
+                        continue
+            
+            # If we couldn't parse dates but they were provided, skip historical calculation
+            if (date_from and not date_from_dt) or (date_to and not date_to_dt):
+                print("❌ Could not parse dates, using current stock")
+                snapshots.append(ProductStockSnapshot(
+                    product_id=product.id,
+                    product_name=product.name,
+                    price=product.price,
+                    stock=product.stock,
+                    stock_value=product.price * product.stock,
+                    last_updated=datetime.datetime.now(IST)
+                ))
+                continue
             
             # Calculate opening stock (stock before the date range)
             opening_purchases_query = db.query(Purchase).filter(
@@ -936,7 +967,6 @@ def get_products_stock_snapshot(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error generating stock data: {str(e)}")
-
 
 
 # --- SMS Endpoint ---
