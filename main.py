@@ -319,15 +319,51 @@ def update_product(product_id: int, product_data: ProductUpdate, db: Session = D
     db.refresh(db_product)
     return db_product
 
-@app.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/products/{product_id}", status_code=status.HTTP_200_OK)
 def delete_product(product_id: int, db: Session = Depends(get_db)):
-    db_product = db.query(Product).filter(Product.id == product_id).first()
-    if db_product is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    db.delete(db_product)
-    db.commit()
-    return {"detail": "Product deleted successfully"}
-
+    """
+    Delete a product and all its associated sales and purchase records.
+    """
+    try:
+        # Find the product
+        db_product = db.query(Product).filter(Product.id == product_id).first()
+        if db_product is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+        
+        # Get product name for response message
+        product_name = db_product.name
+        
+        # Delete all associated sales records first
+        sales_count = db.query(Sale).filter(Sale.product_id == product_id).count()
+        if sales_count > 0:
+            db.query(Sale).filter(Sale.product_id == product_id).delete()
+            print(f"Deleted {sales_count} sales records for product {product_name}")
+        
+        # Delete all associated purchase records
+        purchases_count = db.query(Purchase).filter(Purchase.product_id == product_id).count()
+        if purchases_count > 0:
+            db.query(Purchase).filter(Purchase.product_id == product_id).delete()
+            print(f"Deleted {purchases_count} purchase records for product {product_name}")
+        
+        # Now delete the product
+        db.delete(db_product)
+        db.commit()
+        
+        return {
+            "status": "success",
+            "message": f"Product '{product_name}' deleted successfully. Removed {sales_count} sales and {purchases_count} purchases.",
+            "product_id": product_id,
+            "sales_deleted": sales_count,
+            "purchases_deleted": purchases_count
+        }
+        
+    except Exception as e:
+        db.rollback()
+        print(f"Error deleting product {product_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Error deleting product: {str(e)}"
+        )
 # --- API Endpoints for Sales ---
 @app.post("/sales/", response_model=SaleResponse, status_code=status.HTTP_201_CREATED)
 def record_sale(sale: SaleCreate, db: Session = Depends(get_db)):

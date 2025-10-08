@@ -731,42 +731,51 @@
         }).join('');
     }
 
-    async function deleteProduct(productId, productName) {
-        if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone and will remove all associated sales and purchase records.`)) {
-            return;
-        }
+    // ===== UPDATED DELETE PRODUCT FUNCTION =====
+async function deleteProduct(productId, productName) {
+    if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone and will remove all associated sales and purchase records.`)) {
+        return;
+    }
+    
+    try {
+        const deleteURL = `${backendURL}/products/${productId}`;
         
-        try {
-            const deleteURL = `${backendURL}/products/${productId}`;
+        console.log(`🗑️ Attempting to delete product from: ${deleteURL}`);
+        
+        const response = await fetch(deleteURL, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
+        
+        console.log(`📊 Delete response status: ${response.status}`);
+        
+        if (response.ok) {
+            const result = await response.json();
+            showNotification(result.message || `Product "${productName}" deleted successfully!`);
             
-            console.log(`🗑️ Attempting to delete product from: ${deleteURL}`);
+            // Reload the delete product page
+            await loadDeleteProductPage();
+        } else {
+            // Handle different HTTP status codes
+            const errorData = await response.json().catch(() => ({}));
             
-            const response = await fetch(deleteURL, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-            
-            console.log(`📊 Delete response status: ${response.status}`);
-            
-            if (response.ok) {
-                const result = await response.json();
-                showNotification(result.message || `Product "${productName}" deleted successfully!`);
-                
-                // Reload the delete product page
-                await loadDeleteProductPage();
+            if (response.status === 404) {
+                throw new Error('Product not found on server');
+            } else if (response.status === 500) {
+                throw new Error(errorData.detail || 'Server error - please try again later');
             } else {
-                const errorData = await response.json();
                 throw new Error(errorData.detail || `Server returned ${response.status}`);
             }
-            
-        } catch (error) {
-            console.error('Error deleting product:', error);
-            alert(`Error deleting product: ${error.message}`);
         }
+        
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        alert(`❌ Error deleting product: ${error.message}`);
     }
+}
 
     // ===== UPDATED: ALL PRODUCTS LEDGER FUNCTIONS WITH FILTERS =====
     async function loadAllProductsLedger() {
