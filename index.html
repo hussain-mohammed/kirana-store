@@ -50,8 +50,12 @@
     <div id="page-home" class="page active gradient-bg">
         <main class="w-full max-w-md mx-auto p-8">
             <div class="text-center mb-8 glass-effect rounded-2xl p-8 text-white">
-                <h2 class="text-3xl font-bold mb-4">Welcome to Kirana Store</h2>
-                <p class="text-blue-100 text-lg">Manage your store efficiently with our comprehensive tools</p>
+                <h2 class="text-3xl font-bold mb-4">Raza Wholesale and Retail kirana store</h2>
+                <p class="text-blue-100 text-lg">Fort View Colony,Upparpally,Rajender Nagar</p>
+                <p class="text-blue-100 text-lg">Hyderabad</p>
+                <p class="text-blue-100 text-lg">Phone: 7075210801</p>
+                <p class="text-blue-100 text-lg">Email: info@razastore.com</p>
+
             </div>
             
             <div class="space-y-4">
@@ -965,7 +969,7 @@
         displayFilteredPurchaseData(allPurchasesData);
     }
 
-    // ===== UPDATED CART FUNCTIONS WITH +/- BUTTONS =====
+    // ===== UPDATED CART FUNCTIONS WITH STOCK CHECK =====
     function updateCartUI() {
         const cartItemsEl = document.getElementById('cart-items');
         const cartTotalEl = document.getElementById('cart-total');
@@ -1021,18 +1025,49 @@
             : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
     }
 
+    // ===== MODIFIED: ADD TO CART WITH STOCK CHECK =====
     function addToCart(productId) {
-        cart[productId] = (cart[productId] || 0) + 1;
-        updateCartUI();
-        
         const product = products.find(p => p.id === parseInt(productId));
-        if (product) {
-            showNotification(`Added ${product.name} to cart!`);
+        
+        if (!product) {
+            showNotification("Product not found!");
+            return;
         }
+        
+        // Check if product has stock
+        if (product.stock <= 0) {
+            showNotification(`Sorry, ${product.name} is out of stock!`);
+            return;
+        }
+        
+        // Check if adding this item would exceed available stock
+        const currentCartQuantity = cart[productId] || 0;
+        if (currentCartQuantity + 1 > product.stock) {
+            showNotification(`Sorry, only ${product.stock} units of ${product.name} are available!`);
+            return;
+        }
+        
+        cart[productId] = currentCartQuantity + 1;
+        updateCartUI();
+        showNotification(`Added ${product.name} to cart!`);
     }
 
     function increaseQuantity(productId) {
-        cart[productId] = (cart[productId] || 0) + 1;
+        const product = products.find(p => p.id === parseInt(productId));
+        
+        if (!product) {
+            showNotification("Product not found!");
+            return;
+        }
+        
+        // Check if increasing quantity would exceed available stock
+        const currentCartQuantity = cart[productId] || 0;
+        if (currentCartQuantity + 1 > product.stock) {
+            showNotification(`Sorry, only ${product.stock} units of ${product.name} are available!`);
+            return;
+        }
+        
+        cart[productId] = currentCartQuantity + 1;
         updateCartUI();
     }
 
@@ -1081,12 +1116,12 @@
     function loadMockProducts() {
         console.log('🔄 Loading mock products');
         products = [
-            {id: 1, name: "Apple", price: 100.00, imageUrl: "https://placehold.co/400x400/81c784/ffffff?text=Apple"},
-            {id: 2, name: "Banana", price: 50.00, imageUrl: "https://placehold.co/400x400/fff176/ffffff?text=Banana"},
-            {id: 3, name: "Orange", price: 80.00, imageUrl: "https://placehold.co/400x400/ffb74d/ffffff?text=Orange"},
-            {id: 4, name: "Milk", price: 65.00, imageUrl: "https://placehold.co/400x400/b0e0e6/ffffff?text=Milk"},
-            {id: 5, name: "Bread", price: 40.00, imageUrl: "https://placehold.co/400x400/d7ccc8/ffffff?text=Bread"},
-            {id: 6, name: "Eggs", price: 90.00, imageUrl: "https://placehold.co/400x400/fff9c4/ffffff?text=Eggs"},
+            {id: 1, name: "Apple", price: 100.00, stock: 5, imageUrl: "https://placehold.co/400x400/81c784/ffffff?text=Apple"},
+            {id: 2, name: "Banana", price: 50.00, stock: 0, imageUrl: "https://placehold.co/400x400/fff176/ffffff?text=Banana"},
+            {id: 3, name: "Orange", price: 80.00, stock: 3, imageUrl: "https://placehold.co/400x400/ffb74d/ffffff?text=Orange"},
+            {id: 4, name: "Milk", price: 65.00, stock: 10, imageUrl: "https://placehold.co/400x400/b0e0e6/ffffff?text=Milk"},
+            {id: 5, name: "Bread", price: 40.00, stock: 0, imageUrl: "https://placehold.co/400x400/d7ccc8/ffffff?text=Bread"},
+            {id: 6, name: "Eggs", price: 90.00, stock: 12, imageUrl: "https://placehold.co/400x400/fff9c4/ffffff?text=Eggs"},
         ];
         renderProducts();
         showCartButton();
@@ -1099,19 +1134,32 @@
             return;
         }
         
-        productListEl.innerHTML = products.map(product => `
-            <div class="bg-white p-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
-                <img src="${product.imageUrl}" alt="${product.name}" 
-                     class="w-full h-28 object-cover rounded-md mb-2"
-                     onerror="this.src='https://placehold.co/400x400/cccccc/ffffff?text=Product'">
-                <h4 class="text-sm font-semibold text-gray-700">${product.name}</h4>
-                <p class="text-lg font-bold text-gray-800 my-1">₹${product.price.toFixed(2)}</p>
-                <button class="add-to-cart-btn mt-2 w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors duration-300" 
-                        data-id="${product.id}">
-                    Add to Cart
-                </button>
-            </div>
-        `).join('');
+        productListEl.innerHTML = products.map(product => {
+            const isOutOfStock = product.stock <= 0;
+            const buttonClass = isOutOfStock 
+                ? "w-full bg-gray-400 text-white text-xs font-bold py-2 px-3 rounded-lg cursor-not-allowed" 
+                : "w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors duration-300";
+            const buttonText = isOutOfStock ? "Out of Stock" : "Add to Cart";
+            
+            return `
+                <div class="bg-white p-4 rounded-xl shadow-lg transition-transform transform hover:scale-105 ${isOutOfStock ? 'opacity-70' : ''}">
+                    <img src="${product.imageUrl}" alt="${product.name}" 
+                         class="w-full h-28 object-cover rounded-md mb-2"
+                         onerror="this.src='https://placehold.co/400x400/cccccc/ffffff?text=Product'">
+                    <h4 class="text-sm font-semibold text-gray-700">${product.name}</h4>
+                    <p class="text-lg font-bold text-gray-800 my-1">₹${product.price.toFixed(2)}</p>
+                    <div class="flex justify-between items-center text-xs text-gray-500 mb-2">
+                        <span>Stock: ${product.stock}</span>
+                        ${isOutOfStock ? '<span class="text-red-500 font-bold">Out of Stock</span>' : ''}
+                    </div>
+                    <button class="add-to-cart-btn mt-2 ${buttonClass}" 
+                            data-id="${product.id}" 
+                            ${isOutOfStock ? 'disabled' : ''}>
+                        ${buttonText}
+                    </button>
+                </div>
+            `;
+        }).join('');
     }
 
     function showCartButton() {
