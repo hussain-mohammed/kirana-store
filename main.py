@@ -157,6 +157,14 @@ class ProductStockLedger(BaseModel):
     total_sales: int
     history: List[ProductStockHistory]
 
+class ProductStockSnapshot(BaseModel):
+    product_id: int
+    product_name: str
+    price: float
+    stock: int
+    stock_value: float
+    last_updated: datetime
+
 
 # Dependency to get a database session
 def get_db():
@@ -782,6 +790,152 @@ def get_ledger_summary(db: Session = Depends(get_db)):
         },
         "last_updated": datetime.datetime.now()
     }
+
+@app.get("/products/stock-snapshot", response_model=List[ProductStockSnapshot])
+def get_products_stock_snapshot(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Get product stock data with date filtering.
+    For date filtering, this returns the stock state at the end of the date range.
+    """
+    try:
+        print(f"📊 Generating stock snapshot - Date From: {date_from}, Date To: {date_to}, Product ID: {product_id}")
+        
+        # Base query for current products
+        query = db.query(Product)
+        
+        # Filter by product if specified
+        if product_id:
+            query = query.filter(Product.id == product_id)
+        
+        products = query.all()
+        
+        # If no date filters, return current stock
+        if not date_from and not date_to:
+            print("🔄 No date filters - returning current stock")
+            snapshots = []
+            for product in products:
+                snapshots.append(ProductStockSnapshot(
+                    product_id=product.id,
+                    product_name=product.name,
+                    price=product.price,
+                    stock=product.stock,
+                    stock_value=product.price * product.stock,
+                    last_updated=datetime.datetime.now(IST)
+                ))
+            return snapshots
+        
+        # If date filters are provided, calculate stock at that time
+        print("🔄 Calculating historical stock with date filters")
+        snapshots = []
+        
+        for product in products:
+            print(f"🔍 Processing product: {product.name} (ID: {product.id})")
+            
+            # Convert date strings to datetime objects
+            date_from_dt = None
+            date_to_dt = None
+            
+            if date_from:
+                try:
+                    # Handle different date formats
+                    if 'T' in date_from:
+                        date_from_dt = datetime.datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                    else:
+                        date_from_dt = datetime.datetime.strptime(date_from, '%Y-%m-%d')
+                except Exception as e:
+                    print(f"❌ Error parsing date_from {date_from}: {e}")
+                    continue
+            
+            if date_to:
+                try:
+                    if 'T' in date_to:
+                        date_to_dt = datetime.datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                    else:
+                        date_to_dt = datetime.datetime.strptime(date_to, '%Y-%m-%d')
+                        # Include the entire end date (up to 23:59:59)
+                        date_to_dt = date_to_dt.replace(hour=23, minute=59, second=59)
+                except Exception as e:
+                    print(f"❌ Error parsing date_to {date_to}: {e}")
+                    continue
+            
+            # Calculate opening stock (stock before the date range)
+            opening_purchases_query = db.query(Purchase).filter(
+                Purchase.product_id == product.id
+            )
+            opening_sales_query = db.query(Sale).filter(
+                Sale.product_id == product.id
+            )
+            
+            if date_from_dt:
+                opening_purchases_query = opening_purchases_query.filter(Purchase.purchase_date < date_from_dt)
+                opening_sales_query = opening_sales_query.filter(Sale.sale_date < date_from_dt)
+            
+            opening_purchases = opening_purchases_query.all()
+            opening_sales = opening_sales_query.all()
+            
+            total_opening_purchases = sum(p.quantity for p in opening_purchases)
+            total_opening_sales = sum(s.quantity for s in opening_sales)
+            opening_stock = total_opening_purchases - total_opening_sales
+            
+            print(f"   Opening stock: {opening_stock} (Purchases: {total_opening_purchases}, Sales: {total_opening_sales})")
+            
+            # Calculate transactions within date range
+            range_purchases_query = db.query(Purchase).filter(
+                Purchase.product_id == product.id
+            )
+            range_sales_query = db.query(Sale).filter(
+                Sale.product_id == product.id
+            )
+            
+            if date_from_dt:
+                range_purchases_query = range_purchases_query.filter(Purchase.purchase_date >= date_from_dt)
+                range_sales_query = range_sales_query.filter(Sale.sale_date >= date_from_dt)
+            
+            if date_to_dt:
+                range_purchases_query = range_purchases_query.filter(Purchase.purchase_date <= date_to_dt)
+                range_sales_query = range_sales_query.filter(Sale.sale_date <= date_to_dt)
+            
+            range_purchases = range_purchases_query.all()
+            range_sales = range_sales_query.all()
+            
+            total_range_purchases = sum(p.quantity for p in range_purchases)
+            total_range_sales = sum(s.quantity for s in range_sales)
+            
+            print(f"   Range transactions - Purchases: {total_range_purchases}, Sales: {total_range_sales}")
+            
+            # Calculate stock at the end of date range
+            stock_at_date = opening_stock + total_range_purchases - total_range_sales
+            
+            # Ensure stock doesn't go negative (shouldn't happen with proper data)
+            stock_at_date = max(0, stock_at_date)
+            
+            # Use current price (or you could calculate average price for the period)
+            current_price = product.price
+            
+            snapshots.append(ProductStockSnapshot(
+                product_id=product.id,
+                product_name=product.name,
+                price=current_price,
+                stock=stock_at_date,
+                stock_value=current_price * stock_at_date,
+                last_updated=datetime.datetime.now(IST)
+            ))
+            
+            print(f"   Final stock at date: {stock_at_date}")
+        
+        print(f"✅ Generated {len(snapshots)} stock snapshots")
+        return snapshots
+        
+    except Exception as e:
+        print(f"❌ Error generating stock snapshot: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error generating stock data: {str(e)}")
 
 
 

@@ -777,195 +777,216 @@ async function deleteProduct(productId, productName) {
     }
 }
 
-    // ===== UPDATED: ALL PRODUCTS LEDGER FUNCTIONS WITH FILTERS =====
-    async function loadAllProductsLedger() {
-        const loadingEl = document.getElementById('all-products-ledger-loading');
-        const errorEl = document.getElementById('all-products-ledger-error');
-        const contentEl = document.getElementById('all-products-ledger-content');
-        
-        loadingEl.classList.remove('hidden');
-        errorEl.classList.add('hidden');
-        contentEl.classList.add('hidden');
-        
-        try {
-            // Fetch all products
-            const response = await fetch(`${backendURL}/products`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-            
-            if (!response.ok) throw new Error('Failed to fetch products');
-            
-            allStockData = await response.json();
-            
-            if (!Array.isArray(allStockData) || allStockData.length === 0) {
-                throw new Error('No products found');
-            }
-            
-            // Load product dropdown for filter
-            await loadProductDropdownForFilter('stock-product-filter');
-            
-            // Display all data initially
-            displayFilteredStockData(allStockData);
-            
-            loadingEl.classList.add('hidden');
-            contentEl.classList.remove('hidden');
-            
-        } catch (error) {
-            console.error('Error loading all products ledger:', error);
-            loadingEl.classList.add('hidden');
-            errorEl.classList.remove('hidden');
-            errorEl.innerHTML = `<p class="text-red-500">Error loading products stock data: ${error.message}</p>`;
-        }
-    }
-
-    function displayFilteredStockData(stockData) {
-        const tableBodyEl = document.getElementById('all-products-ledger-table-body');
-        
-        if (stockData.length === 0) {
-            tableBodyEl.innerHTML = `
-                <tr>
-                    <td colspan="6" class="border border-gray-200 px-4 py-4 text-center text-gray-500">
-                        No products found
-                    </td>
-                </tr>
-            `;
-            // Reset summary stats
-            document.getElementById('total-products').textContent = '0';
-            document.getElementById('total-stock').textContent = '0';
-            document.getElementById('low-stock-count').textContent = '0';
-            document.getElementById('out-of-stock-count').textContent = '0';
-            return;
-        }
-        
-        // Calculate summary statistics
-        let totalStock = 0;
-        let lowStockCount = 0;
-        let outOfStockCount = 0;
-        let totalStockValue = 0;
-        
-        // Sort products by stock level (lowest first)
-        stockData.sort((a, b) => (a.stock || 0) - (b.stock || 0));
-        
-        // Generate table rows
-        tableBodyEl.innerHTML = stockData.map(product => {
-            const stock = product.stock || 0;
-            const price = product.price || 0;
-            const stockValue = stock * price;
-            const lastUpdated = product.last_updated || product.created_at || product.updated_at;
-            const formattedDate = formatDateTime(lastUpdated);
-            
-            totalStock += stock;
-            totalStockValue += stockValue;
-            
-            // Determine stock status
-            let status = '';
-            let statusClass = '';
-            
-            if (stock === 0) {
-                outOfStockCount++;
-                status = 'Out of Stock';
-                statusClass = 'bg-red-100 text-red-800';
-            } else if (stock <= 10) {
-                lowStockCount++;
-                status = 'Low Stock';
-                statusClass = 'bg-yellow-100 text-yellow-800';
-            } else {
-                status = 'In Stock';
-                statusClass = 'bg-green-100 text-green-800';
-            }
-            
-            return `
-                <tr class="hover:bg-gray-50">
-                    <td class="border border-gray-200 px-4 py-2 font-medium">${product.name}</td>
-                    <td class="border border-gray-200 px-4 py-2 ${stock <= 10 ? 'text-red-600 font-bold' : ''}">${stock}</td>
-                    <td class="border border-gray-200 px-4 py-2">₹${price.toFixed(2)}</td>
-                    <td class="border border-gray-200 px-4 py-2">₹${stockValue.toFixed(2)}</td>
-                    <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">${formattedDate.date}<br><span class="text-xs">${formattedDate.time}</span></td>
-                    <td class="border border-gray-200 px-4 py-2">
-                        <span class="px-2 py-1 rounded-full text-xs ${statusClass}">${status}</span>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-        
-        // Update summary statistics
-        document.getElementById('total-products').textContent = stockData.length;
-        document.getElementById('total-stock').textContent = totalStock;
-        document.getElementById('low-stock-count').textContent = lowStockCount;
-        document.getElementById('out-of-stock-count').textContent = outOfStockCount;
-        
-        // Add total row
-        tableBodyEl.innerHTML += `
-            <tr class="bg-gray-50 font-bold">
-                <td class="border border-gray-200 px-4 py-2">TOTAL</td>
-                <td class="border border-gray-200 px-4 py-2">${totalStock}</td>
-                <td class="border border-gray-200 px-4 py-2">-</td>
-                <td class="border border-gray-200 px-4 py-2">₹${totalStockValue.toFixed(2)}</td>
-                <td class="border border-gray-200 px-4 py-2">-</td>
-                <td class="border border-gray-200 px-4 py-2">-</td>
-            </tr>
-        `;
-    }
-
-    function applyStockFilters() {
+// ===== UPDATED: ALL PRODUCTS LEDGER FUNCTIONS WITH PROPER DATE FILTERING =====
+async function loadAllProductsLedger() {
+    const loadingEl = document.getElementById('all-products-ledger-loading');
+    const errorEl = document.getElementById('all-products-ledger-error');
+    const contentEl = document.getElementById('all-products-ledger-content');
+    
+    loadingEl.classList.remove('hidden');
+    errorEl.classList.add('hidden');
+    contentEl.classList.add('hidden');
+    
+    try {
+        // Use the new stock-snapshot endpoint
         const dateFrom = document.getElementById('stock-date-from').value;
         const dateTo = document.getElementById('stock-date-to').value;
         const productId = document.getElementById('stock-product-filter').value;
         
-        let filteredData = allStockData;
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+        if (productId) params.append('product_id', productId);
         
-        // Filter by product
-        if (productId) {
-            filteredData = filteredData.filter(product => product.id == productId);
-        }
+        const url = `${backendURL}/products/stock-snapshot?${params.toString()}`;
         
-        // Note: Date filtering would require additional API endpoints
-        // to get stock history by date. This is a basic implementation.
-        // For full date filtering, you would need to implement backend support.
+        console.log(`📊 Fetching stock snapshot from: ${url}`);
         
-        displayFilteredStockData(filteredData);
-    }
-
-    function clearStockFilters() {
-        document.getElementById('stock-date-from').value = '';
-        document.getElementById('stock-date-to').value = '';
-        document.getElementById('stock-product-filter').value = '';
-        displayFilteredStockData(allStockData);
-    }
-
-    async function loadProductDropdownForFilter(dropdownId) {
-        const dropdown = document.getElementById(dropdownId);
-        
-        try {
-            const response = await fetch(`${backendURL}/products`, {
-                headers: {
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-            
-            if (response.ok) {
-                const products = await response.json();
-                dropdown.innerHTML = '<option value="">All Products</option>';
-                products.forEach(product => {
-                    const option = document.createElement('option');
-                    option.value = product.id;
-                    option.textContent = product.name;
-                    dropdown.appendChild(option);
-                });
+        const response = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
             }
-        } catch (error) {
-            console.error('Error loading products for filter:', error);
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ Server response: ${response.status} - ${errorText}`);
+            throw new Error(`Failed to fetch stock data: ${response.status}`);
         }
+        
+        allStockData = await response.json();
+        console.log(`✅ Received ${allStockData.length} stock records`);
+        
+        if (!Array.isArray(allStockData) || allStockData.length === 0) {
+            // Show empty state instead of error
+            displayFilteredStockData([]);
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+            return;
+        }
+        
+        // Load product dropdown for filter
+        await loadProductDropdownForFilter('stock-product-filter');
+        
+        // Display the filtered data
+        displayFilteredStockData(allStockData);
+        
+        loadingEl.classList.add('hidden');
+        contentEl.classList.remove('hidden');
+        
+    } catch (error) {
+        console.error('Error loading all products ledger:', error);
+        loadingEl.classList.add('hidden');
+        errorEl.classList.remove('hidden');
+        errorEl.innerHTML = `
+            <p class="text-red-500">Error loading products stock data: ${error.message}</p>
+            <p class="text-sm text-gray-500 mt-2">Please check your backend server and try again.</p>
+        `;
     }
+}
 
-    // ===== SALES LEDGER FUNCTIONS =====
-    async function loadSalesLedger() {
-        const loadingEl = document.getElementById('sales-ledger-loading');
-        const errorEl = document.getElementById('sales-ledger-error');
-        const contentEl = document.getElementById('sales-ledger-content');
+function displayFilteredStockData(stockData) {
+    const tableBodyEl = document.getElementById('all-products-ledger-table-body');
+    
+    // Get current filter values for display
+    const dateFrom = document.getElementById('stock-date-from').value;
+    const dateTo = document.getElementById('stock-date-to').value;
+    const productFilter = document.getElementById('stock-product-filter');
+    const selectedProduct = productFilter.options[productFilter.selectedIndex]?.text || 'All Products';
+    
+    if (stockData.length === 0) {
+        let message = 'No stock data found';
+        if (dateFrom || dateTo || productFilter.value) {
+            message += ' for the selected filters';
+        }
+        
+        tableBodyEl.innerHTML = `
+            <tr>
+                <td colspan="6" class="border border-gray-200 px-4 py-8 text-center text-gray-500">
+                    <div class="text-lg">${message}</div>
+                    ${dateFrom || dateTo ? `
+                        <div class="text-sm mt-2">
+                            Date Range: ${dateFrom || 'Any'} to ${dateTo || 'Any'}<br>
+                            Product: ${selectedProduct}
+                        </div>
+                    ` : ''}
+                </td>
+            </tr>
+        `;
+        
+        // Reset summary stats
+        document.getElementById('total-products').textContent = '0';
+        document.getElementById('total-stock').textContent = '0';
+        document.getElementById('low-stock-count').textContent = '0';
+        document.getElementById('out-of-stock-count').textContent = '0';
+        return;
+    }
+    
+    // Calculate summary statistics
+    let totalStock = 0;
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+    let totalStockValue = 0;
+    
+    // Sort products by stock level (lowest first)
+    stockData.sort((a, b) => (a.stock || 0) - (b.stock || 0));
+    
+    // Generate table rows
+    tableBodyEl.innerHTML = stockData.map(product => {
+        const stock = product.stock || 0;
+        const price = product.price || 0;
+        const stockValue = stock * price;
+        const lastUpdated = product.last_updated;
+        const formattedDate = formatDateTime(lastUpdated);
+        
+        totalStock += stock;
+        totalStockValue += stockValue;
+        
+        // Determine stock status
+        let status = '';
+        let statusClass = '';
+        let statusText = '';
+        
+        if (stock === 0) {
+            outOfStockCount++;
+            status = 'Out of Stock';
+            statusClass = 'bg-red-100 text-red-800';
+            statusText = 'text-red-600';
+        } else if (stock <= 10) {
+            lowStockCount++;
+            status = 'Low Stock';
+            statusClass = 'bg-yellow-100 text-yellow-800';
+            statusText = 'text-yellow-600';
+        } else {
+            status = 'In Stock';
+            statusClass = 'bg-green-100 text-green-800';
+            statusText = 'text-green-600';
+        }
+        
+        return `
+            <tr class="hover:bg-gray-50">
+                <td class="border border-gray-200 px-4 py-2 font-medium">${product.product_name}</td>
+                <td class="border border-gray-200 px-4 py-2 ${statusText} font-semibold">${stock}</td>
+                <td class="border border-gray-200 px-4 py-2">₹${price.toFixed(2)}</td>
+                <td class="border border-gray-200 px-4 py-2">₹${stockValue.toFixed(2)}</td>
+                <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">
+                    ${dateFrom || dateTo ? 'Calculated' : 'Current'}<br>
+                    <span class="text-xs text-gray-400">${formattedDate.time}</span>
+                </td>
+                <td class="border border-gray-200 px-4 py-2">
+                    <span class="px-2 py-1 rounded-full text-xs ${statusClass}">${status}</span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    // Update summary statistics
+    document.getElementById('total-products').textContent = stockData.length;
+    document.getElementById('total-stock').textContent = totalStock;
+    document.getElementById('low-stock-count').textContent = lowStockCount;
+    document.getElementById('out-of-stock-count').textContent = outOfStockCount;
+    
+    // Add total row with filter info
+    const filterInfo = dateFrom || dateTo ? 
+        `<div class="text-xs text-gray-500 text-left">
+            Showing stock as of: ${dateTo || 'current'}<br>
+            ${dateFrom ? `From: ${dateFrom}` : ''}
+        </div>` : '';
+    
+    tableBodyEl.innerHTML += `
+        <tr class="bg-gray-50 font-bold">
+            <td class="border border-gray-200 px-4 py-2">
+                TOTAL
+                ${filterInfo}
+            </td>
+            <td class="border border-gray-200 px-4 py-2">${totalStock}</td>
+            <td class="border border-gray-200 px-4 py-2">-</td>
+            <td class="border border-gray-200 px-4 py-2">₹${totalStockValue.toFixed(2)}</td>
+            <td class="border border-gray-200 px-4 py-2">-</td>
+            <td class="border border-gray-200 px-4 py-2">-</td>
+        </tr>
+    `;
+}
+
+function applyStockFilters() {
+    // Simply reload the data with current filters
+    loadAllProductsLedger();
+}
+
+function clearStockFilters() {
+    document.getElementById('stock-date-from').value = '';
+    document.getElementById('stock-date-to').value = '';
+    document.getElementById('stock-product-filter').value = '';
+    loadAllProductsLedger();
+}
+
+// ===== SALES LEDGER FUNCTIONS =====
+async function loadSalesLedger() {
+    const loadingEl = document.getElementById('sales-ledger-loading');
+    const errorEl = document.getElementById('sales-ledger-error');
+    const contentEl = document.getElementById('sales-ledger-content');
         
         loadingEl.classList.remove('hidden');
         errorEl.classList.add('hidden');
