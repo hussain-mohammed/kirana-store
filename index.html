@@ -308,21 +308,29 @@
                 </div>
 
                 <!-- Filter Section -->
-                <div class="flex justify-between items-center mb-6 p-4 bg-gray-50 rounded-lg">
-                    <div class="flex-1 max-w-md">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
+                        <input type="date" id="stock-date-from" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
+                        <input type="date" id="stock-date-to" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Product</label>
                         <select id="stock-product-filter" class="w-full p-2 border border-gray-300 rounded-lg">
                             <option value="">All Products</option>
                         </select>
                     </div>
-                    <div class="flex space-x-2 ml-4">
-                        <button onclick="applyStockFilters()" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                            Apply
-                        </button>
-                        <button onclick="clearStockFilters()" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                            Clear
-                        </button>
-                    </div>
+                </div>
+                <div class="flex justify-end mb-4">
+                    <button onclick="applyStockFilters()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        Apply Filters
+                    </button>
+                    <button onclick="clearStockFilters()" class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                        Clear
+                    </button>
                 </div>
                 
                 <!-- Loading State -->
