@@ -308,30 +308,20 @@
                 </div>
 
                 <!-- Filter Section -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
-                        <input type="date" id="stock-date-from" class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
-                        <input type="date" id="stock-date-to" class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                <div class="flex justify-between items-center mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex-1 max-w-md">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Product</label>
                         <select id="stock-product-filter" class="w-full p-2 border border-gray-300 rounded-lg">
                             <option value="">All Products</option>
                         </select>
                     </div>
-                    <div class="flex items-end">
-                        <div class="flex space-x-2 w-full">
-                            <button onclick="applyStockFilters()" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                                Apply
-                            </button>
-                            <button onclick="clearStockFilters()" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                                Clear
-                            </button>
-                        </div>
+                    <div class="flex space-x-2 ml-4">
+                        <button onclick="applyStockFilters()" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            Apply
+                        </button>
+                        <button onclick="clearStockFilters()" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                            Clear
+                        </button>
                     </div>
                 </div>
                 
@@ -832,7 +822,7 @@
             
             return `
                 <tr class="hover:bg-gray-50">
-                    <td class="border border-gray-200 px-4 py-2 font-medium">${product.name}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium">${product.product_name || product.name}</td>
                     <td class="border border-gray-200 px-4 py-2 ${product.stock <= 10 ? 'text-red-600 font-bold' : ''}">${product.stock || 0}</td>
                     <td class="border border-gray-200 px-4 py-2">₹${(product.price || 0).toFixed(2)}</td>
                     <td class="border border-gray-200 px-4 py-2 font-medium">₹${stockValue.toFixed(2)}</td>
@@ -1548,6 +1538,40 @@
     async function loadPurchasePage() {
         await loadProductDropdown('purchase-product');
         await loadPurchaseHistory();
+    }
+
+    // ===== MISSING FUNCTION: Load Product Dropdown =====
+    async function loadProductDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        if (!dropdown) {
+            console.error(`Dropdown with ID '${dropdownId}' not found`);
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${backendURL}/products`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (response.ok) {
+                const products = await response.json();
+                dropdown.innerHTML = '<option value="">Select Product</option>';
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = `${product.name} (Stock: ${product.stock || 0})`;
+                    dropdown.appendChild(option);
+                });
+                console.log(`✅ Loaded ${products.length} products into dropdown`);
+            } else {
+                throw new Error('Failed to fetch products');
+            }
+        } catch (error) {
+            console.error('Error loading products for dropdown:', error);
+            dropdown.innerHTML = '<option value="">Error loading products</option>';
+        }
     }
 
     // ===== ADD THIS FUNCTION TO YOUR EXISTING JAVASCRIPT =====
