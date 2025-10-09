@@ -732,192 +732,266 @@
     }
 
     // ===== UPDATED DELETE PRODUCT FUNCTION =====
-async function deleteProduct(productId, productName) {
-    if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone and will remove all associated sales and purchase records.`)) {
-        return;
-    }
-    
-    try {
-        const deleteURL = `${backendURL}/products/${productId}`;
-        
-        console.log(`🗑️ Attempting to delete product from: ${deleteURL}`);
-        
-        const response = await fetch(deleteURL, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            }
-        });
-        
-        console.log(`📊 Delete response status: ${response.status}`);
-        
-        if (response.ok) {
-            const result = await response.json();
-            showNotification(result.message || `Product "${productName}" deleted successfully!`);
-            
-            // Reload the delete product page
-            await loadDeleteProductPage();
-        } else {
-            // Handle different HTTP status codes
-            const errorData = await response.json().catch(() => ({}));
-            
-            if (response.status === 404) {
-                throw new Error('Product not found on server');
-            } else if (response.status === 500) {
-                throw new Error(errorData.detail || 'Server error - please try again later');
-            } else {
-                throw new Error(errorData.detail || `Server returned ${response.status}`);
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error deleting product:', error);
-        alert(`❌ Error deleting product: ${error.message}`);
-    }
-}
-
-// ===== UPDATED: ALL PRODUCTS LEDGER FUNCTIONS =====
-async function loadAllProductsLedger() {
-    const loadingEl = document.getElementById('all-products-ledger-loading');
-    const errorEl = document.getElementById('all-products-ledger-error');
-    const contentEl = document.getElementById('all-products-ledger-content');
-    
-    loadingEl.classList.remove('hidden');
-    errorEl.classList.add('hidden');
-    contentEl.classList.add('hidden');
-    
-    try {
-        // Use the new stock-snapshot endpoint
-        const dateFrom = document.getElementById('stock-date-from').value;
-        const dateTo = document.getElementById('stock-date-to').value;
-        const productId = document.getElementById('stock-product-filter').value;
-        
-        // Build query parameters - ONLY include dates if they have values
-        const params = new URLSearchParams();
-        if (dateFrom && dateFrom.trim() !== '') params.append('date_from', dateFrom);
-        if (dateTo && dateTo.trim() !== '') params.append('date_to', dateTo);
-        if (productId && productId.trim() !== '') params.append('product_id', productId);
-        
-        const url = `${backendURL}/products/stock-snapshot?${params.toString()}`;
-        
-        console.log(`📊 Fetching stock snapshot from: ${url}`);
-        
-        const response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            }
-        });
-        
-        if (!response.ok) {
-            let errorMessage = `Failed to fetch stock data: ${response.status}`;
-            
-            // Try to get more detailed error information
-            try {
-                const errorData = await response.json();
-                if (errorData.detail) {
-                    errorMessage = errorData.detail;
-                }
-            } catch (e) {
-                // If we can't parse JSON, use the status text
-                errorMessage = `Server error: ${response.status} ${response.statusText}`;
-            }
-            
-            throw new Error(errorMessage);
-        }
-        
-        allStockData = await response.json();
-        console.log(`✅ Received ${allStockData.length} stock records`);
-        
-        if (!Array.isArray(allStockData) || allStockData.length === 0) {
-            // Show empty state instead of error
-            displayFilteredStockData([]);
-            loadingEl.classList.add('hidden');
-            contentEl.classList.remove('hidden');
+    async function deleteProduct(productId, productName) {
+        if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone and will remove all associated sales and purchase records.`)) {
             return;
         }
         
-        // Load product dropdown for filter (if not already loaded)
-        await loadProductDropdownForFilter('stock-product-filter');
-        
-        // Display the filtered data
-        displayFilteredStockData(allStockData);
-        
-        loadingEl.classList.add('hidden');
-        contentEl.classList.remove('hidden');
-        
-    } catch (error) {
-        console.error('Error loading all products ledger:', error);
-        loadingEl.classList.add('hidden');
-        errorEl.classList.remove('hidden');
-        errorEl.innerHTML = `
-            <div class="text-center">
-                <p class="text-red-500 font-semibold">Error loading products stock data</p>
-                <p class="text-gray-600 mt-2">${error.message}</p>
-                <button onclick="clearStockFiltersAndReload()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Clear Filters & Retry
-                </button>
-            </div>
-        `;
+        try {
+            const deleteURL = `${backendURL}/products/${productId}`;
+            
+            console.log(`🗑️ Attempting to delete product from: ${deleteURL}`);
+            
+            const response = await fetch(deleteURL, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            console.log(`📊 Delete response status: ${response.status}`);
+            
+            if (response.ok) {
+                const result = await response.json();
+                showNotification(result.message || `Product "${productName}" deleted successfully!`);
+                
+                // Reload the delete product page
+                await loadDeleteProductPage();
+            } else {
+                // Handle different HTTP status codes
+                const errorData = await response.json().catch(() => ({}));
+                
+                if (response.status === 404) {
+                    throw new Error('Product not found on server');
+                } else if (response.status === 500) {
+                    throw new Error(errorData.detail || 'Server error - please try again later');
+                } else {
+                    throw new Error(errorData.detail || `Server returned ${response.status}`);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            alert(`❌ Error deleting product: ${error.message}`);
+        }
     }
-}
 
-// NEW: Separate function for clear button that actually works
-function clearStockFiltersAndReload() {
-    document.getElementById('stock-date-from').value = '';
-    document.getElementById('stock-date-to').value = '';
-    document.getElementById('stock-product-filter').value = '';
-    loadAllProductsLedger();
-}
+    // ===== MISSING FUNCTION: displayFilteredStockData =====
+    function displayFilteredStockData(stockData) {
+        const tableBodyEl = document.getElementById('all-products-ledger-table-body');
+        const totalProductsEl = document.getElementById('total-products');
+        const totalStockEl = document.getElementById('total-stock');
+        const lowStockCountEl = document.getElementById('low-stock-count');
+        const outOfStockCountEl = document.getElementById('out-of-stock-count');
+        
+        if (!stockData || stockData.length === 0) {
+            tableBodyEl.innerHTML = `
+                <tr>
+                    <td colspan="6" class="border border-gray-200 px-4 py-4 text-center text-gray-500">
+                        No stock data found for the selected filters
+                    </td>
+                </tr>
+            `;
+            totalProductsEl.textContent = '0';
+            totalStockEl.textContent = '0';
+            lowStockCountEl.textContent = '0';
+            outOfStockCountEl.textContent = '0';
+            return;
+        }
+        
+        let totalProducts = 0;
+        let totalStock = 0;
+        let lowStockCount = 0;
+        let outOfStockCount = 0;
+        
+        // Generate table rows
+        tableBodyEl.innerHTML = stockData.map(product => {
+            totalProducts++;
+            totalStock += product.stock || 0;
+            
+            const stockValue = (product.price || 0) * (product.stock || 0);
+            const lastUpdated = product.last_updated || product.created_at || product.updated_at;
+            const formattedDate = formatDateTime(lastUpdated);
+            
+            let status = '';
+            let statusClass = '';
+            
+            if (product.stock === 0) {
+                outOfStockCount++;
+                status = 'Out of Stock';
+                statusClass = 'bg-red-100 text-red-800';
+            } else if (product.stock <= 10) {
+                lowStockCount++;
+                status = 'Low Stock';
+                statusClass = 'bg-yellow-100 text-yellow-800';
+            } else {
+                status = 'In Stock';
+                statusClass = 'bg-green-100 text-green-800';
+            }
+            
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="border border-gray-200 px-4 py-2 font-medium">${product.name}</td>
+                    <td class="border border-gray-200 px-4 py-2 ${product.stock <= 10 ? 'text-red-600 font-bold' : ''}">${product.stock || 0}</td>
+                    <td class="border border-gray-200 px-4 py-2">₹${(product.price || 0).toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium">₹${stockValue.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">${formattedDate.date}<br><span class="text-xs">${formattedDate.time}</span></td>
+                    <td class="border border-gray-200 px-4 py-2">
+                        <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${status}</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        // Update summary statistics
+        totalProductsEl.textContent = totalProducts;
+        totalStockEl.textContent = totalStock;
+        lowStockCountEl.textContent = lowStockCount;
+        outOfStockCountEl.textContent = outOfStockCount;
+    }
 
-// Update the existing functions to use the new clear function
-function applyStockFilters() {
-    loadAllProductsLedger();
-}
-
-function clearStockFilters() {
-    clearStockFiltersAndReload();
-}
-
-// ===== SALES LEDGER FUNCTIONS =====
-async function loadSalesLedger() {
-    const loadingEl = document.getElementById('sales-ledger-loading');
-    const errorEl = document.getElementById('sales-ledger-error');
-    const contentEl = document.getElementById('sales-ledger-content');
+    // ===== UPDATED: ALL PRODUCTS LEDGER FUNCTIONS =====
+    async function loadAllProductsLedger() {
+        const loadingEl = document.getElementById('all-products-ledger-loading');
+        const errorEl = document.getElementById('all-products-ledger-error');
+        const contentEl = document.getElementById('all-products-ledger-content');
         
         loadingEl.classList.remove('hidden');
         errorEl.classList.add('hidden');
         contentEl.classList.add('hidden');
         
         try {
-            const response = await fetch(`${backendURL}/ledger/sales`, {
+            // Use the new stock-snapshot endpoint
+            const dateFrom = document.getElementById('stock-date-from').value;
+            const dateTo = document.getElementById('stock-date-to').value;
+            const productId = document.getElementById('stock-product-filter').value;
+            
+            // Build query parameters - ONLY include dates if they have values
+            const params = new URLSearchParams();
+            if (dateFrom && dateFrom.trim() !== '') params.append('date_from', dateFrom);
+            if (dateTo && dateTo.trim() !== '') params.append('date_to', dateTo);
+            if (productId && productId.trim() !== '') params.append('product_id', productId);
+            
+            const url = `${backendURL}/products/stock-snapshot?${params.toString()}`;
+            
+            console.log(`📊 Fetching stock snapshot from: ${url}`);
+            
+            const response = await fetch(url, {
                 headers: {
+                    'Content-Type': 'application/json',
                     'ngrok-skip-browser-warning': 'true'
                 }
             });
             
-            if (!response.ok) throw new Error('Failed to fetch sales ledger');
+            if (!response.ok) {
+                let errorMessage = `Failed to fetch stock data: ${response.status}`;
+                
+                // Try to get more detailed error information
+                try {
+                    const errorData = await response.json();
+                    if (errorData.detail) {
+                        errorMessage = errorData.detail;
+                    }
+                } catch (e) {
+                    // If we can't parse JSON, use the status text
+                    errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                }
+                
+                throw new Error(errorMessage);
+            }
             
-            allSalesData = await response.json();
-            console.log('📊 Sales data received:', allSalesData);
+            allStockData = await response.json();
+            console.log(`✅ Received ${allStockData.length} stock records`);
             
-            // Load product dropdown for filter
-            await loadProductDropdownForFilter('sales-product-filter');
+            if (!Array.isArray(allStockData) || allStockData.length === 0) {
+                // Show empty state instead of error
+                displayFilteredStockData([]);
+                loadingEl.classList.add('hidden');
+                contentEl.classList.remove('hidden');
+                return;
+            }
             
-            // Display all data initially
-            displayFilteredSalesData(allSalesData);
+            // Load product dropdown for filter (if not already loaded)
+            await loadProductDropdownForFilter('stock-product-filter');
+            
+            // Display the filtered data
+            displayFilteredStockData(allStockData);
             
             loadingEl.classList.add('hidden');
             contentEl.classList.remove('hidden');
             
         } catch (error) {
-            console.error('Error loading sales ledger:', error);
+            console.error('Error loading all products ledger:', error);
             loadingEl.classList.add('hidden');
             errorEl.classList.remove('hidden');
-            errorEl.innerHTML = `<p class="text-red-500">Error loading sales records: ${error.message}</p>`;
+            errorEl.innerHTML = `
+                <div class="text-center">
+                    <p class="text-red-500 font-semibold">Error loading products stock data</p>
+                    <p class="text-gray-600 mt-2">${error.message}</p>
+                    <button onclick="clearStockFiltersAndReload()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Clear Filters & Retry
+                    </button>
+                </div>
+            `;
         }
     }
+
+    // NEW: Separate function for clear button that actually works
+    function clearStockFiltersAndReload() {
+        document.getElementById('stock-date-from').value = '';
+        document.getElementById('stock-date-to').value = '';
+        document.getElementById('stock-product-filter').value = '';
+        loadAllProductsLedger();
+    }
+
+    // Update the existing functions to use the new clear function
+    function applyStockFilters() {
+        loadAllProductsLedger();
+    }
+
+    function clearStockFilters() {
+        clearStockFiltersAndReload();
+    }
+
+    // ===== SALES LEDGER FUNCTIONS =====
+    async function loadSalesLedger() {
+        const loadingEl = document.getElementById('sales-ledger-loading');
+        const errorEl = document.getElementById('sales-ledger-error');
+        const contentEl = document.getElementById('sales-ledger-content');
+            
+            loadingEl.classList.remove('hidden');
+            errorEl.classList.add('hidden');
+            contentEl.classList.add('hidden');
+            
+            try {
+                const response = await fetch(`${backendURL}/ledger/sales`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch sales ledger');
+                
+                allSalesData = await response.json();
+                console.log('📊 Sales data received:', allSalesData);
+                
+                // Load product dropdown for filter
+                await loadProductDropdownForFilter('sales-product-filter');
+                
+                // Display all data initially
+                displayFilteredSalesData(allSalesData);
+                
+                loadingEl.classList.add('hidden');
+                contentEl.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error loading sales ledger:', error);
+                loadingEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
+                errorEl.innerHTML = `<p class="text-red-500">Error loading sales records: ${error.message}</p>`;
+            }
+        }
 
     function displayFilteredSalesData(salesData) {
         const tableBodyEl = document.getElementById('sales-ledger-table-body');
@@ -1477,35 +1551,35 @@ async function loadSalesLedger() {
     }
 
     // ===== ADD THIS FUNCTION TO YOUR EXISTING JAVASCRIPT =====
-async function loadProductDropdownForFilter(dropdownId) {
-    const dropdown = document.getElementById(dropdownId);
-    if (!dropdown) {
-        console.error(`Dropdown with ID '${dropdownId}' not found`);
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${backendURL}/products`, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true'
-            }
-        });
-        
-        if (response.ok) {
-            const products = await response.json();
-            dropdown.innerHTML = '<option value="">All Products</option>';
-            products.forEach(product => {
-                const option = document.createElement('option');
-                option.value = product.id;
-                option.textContent = product.name;
-                dropdown.appendChild(option);
-            });
+    async function loadProductDropdownForFilter(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        if (!dropdown) {
+            console.error(`Dropdown with ID '${dropdownId}' not found`);
+            return;
         }
-    } catch (error) {
-        console.error('Error loading products for filter:', error);
-        dropdown.innerHTML = '<option value="">Error loading products</option>';
+        
+        try {
+            const response = await fetch(`${backendURL}/products`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (response.ok) {
+                const products = await response.json();
+                dropdown.innerHTML = '<option value="">All Products</option>';
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = product.name;
+                    dropdown.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading products for filter:', error);
+            dropdown.innerHTML = '<option value="">Error loading products</option>';
+        }
     }
-}
 
     // ===== FIXED PURCHASE HISTORY =====
     async function loadPurchaseHistory() {
