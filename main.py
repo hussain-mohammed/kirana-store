@@ -339,7 +339,7 @@ def get_products_stock_snapshot(
                 price=product.price,
                 stock=product.stock,
                 stock_value=product.price * product.stock,
-                last_updated=datetime.datetime.now(IST)
+                last_updated=datetime.now(IST)
             ))
         
         print(f"✅ Generated {len(snapshots)} stock snapshots")
