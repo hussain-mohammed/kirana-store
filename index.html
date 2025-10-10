@@ -130,7 +130,7 @@
                 </button>
 
                 <!-- NEW: Profit & Loss Button -->
-                <button onclick="showContentPage('profit-loss')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
+                <button onclick="showProfitLoss()" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">💰 Profit & Loss</div>
                         <p class="text-green-100">View profit and loss reports with filters</p>
@@ -1872,17 +1872,57 @@
         }
     }
 
+    // ===== PROFIT & LOSS FUNCTION =====
+    async function showProfitLoss() {
+        try {
+            // Fetch sales and purchases data
+            const [salesResponse, purchasesResponse] = await Promise.all([
+                fetch(`${backendURL}/ledger/sales`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                }),
+                fetch(`${backendURL}/ledger/purchases`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                })
+            ]);
+
+            if (!salesResponse.ok || !purchasesResponse.ok) {
+                throw new Error('Failed to fetch data');
+            }
+
+            const salesData = await salesResponse.json();
+            const purchasesData = await purchasesResponse.json();
+
+            // Calculate totals
+            const totalSales = salesData.reduce((sum, sale) => sum + sale.total_amount, 0);
+            const totalPurchases = purchasesData.reduce((sum, purchase) => sum + purchase.total_cost, 0);
+            const totalProfit = totalSales - totalPurchases;
+
+            // Show profit/loss in an alert
+            const message = `💰 Profit & Loss Report\n\n📈 Total Sales: ₹${totalSales.toFixed(2)}\n📉 Total Purchases: ₹${totalPurchases.toFixed(2)}\n💵 Net Profit/Loss: ₹${totalProfit.toFixed(2)}\n\n${totalProfit >= 0 ? '✅ PROFIT' : '❌ LOSS'}`;
+
+            alert(message);
+
+        } catch (error) {
+            console.error('Error calculating profit/loss:', error);
+            alert('Error loading profit/loss data. Please try again.');
+        }
+    }
+
     // ===== UTILITY FUNCTIONS =====
     function showNotification(message) {
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) existingNotification.remove();
-        
+
         const notification = document.createElement('div');
         notification.className = 'notification fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50';
         notification.textContent = message;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.remove();
         }, 3000);
