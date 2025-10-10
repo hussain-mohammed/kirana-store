@@ -602,23 +602,23 @@
         if (!dateString) {
             return { date: 'N/A', time: 'N/A', full: 'N/A' };
         }
-        
+
         try {
             const dateObj = new Date(dateString);
-            
+
             if (isNaN(dateObj.getTime())) {
                 console.warn('Invalid date:', dateString);
                 return { date: 'Invalid Date', time: 'Invalid Date', full: 'Invalid Date' };
             }
-            
+
             // Format as Indian date format without timezone conversion
             const day = dateObj.getDate().toString().padStart(2, '0');
             const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
             const year = dateObj.getFullYear().toString().slice(-2);
-            
+
             const hours = dateObj.getHours().toString().padStart(2, '0');
             const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-            
+
             return {
                 date: `${day}/${month}/${year}`,
                 time: `${hours}:${minutes}`,
@@ -628,6 +628,14 @@
             console.error('Error formatting date:', error, dateString);
             return { date: 'Error', time: 'Error', full: 'Error' };
         }
+    }
+
+    // ===== UNIT DISPLAY UTILITY =====
+    function getUnitDisplay(unitType, quantity) {
+        if (!unitType || unitType === 'pcs') {
+            return `${quantity} pcs`;
+        }
+        return `${quantity} ${unitType}`;
     }
 
     // ===== NAVIGATION FUNCTIONS =====
@@ -712,7 +720,7 @@
 
     function displayProductsForDeletion(products) {
         const tableBodyEl = document.getElementById('delete-product-table-body');
-        
+
         if (products.length === 0) {
             tableBodyEl.innerHTML = `
                 <tr>
@@ -723,24 +731,25 @@
             `;
             return;
         }
-        
+
         // Sort products by ID
         products.sort((a, b) => a.id - b.id);
-        
+
         // Generate table rows
         tableBodyEl.innerHTML = products.map(product => {
             const lastUpdated = product.last_updated || product.created_at || product.updated_at;
             const formattedDate = formatDateTime(lastUpdated);
-            
+            const unitDisplay = getUnitDisplay(product.unit_type || 'pcs', product.stock || 0);
+
             return `
                 <tr class="hover:bg-gray-50">
                     <td class="border border-gray-200 px-4 py-2 font-medium">${product.id}</td>
                     <td class="border border-gray-200 px-4 py-2 font-medium">${product.name}</td>
-                    <td class="border border-gray-200 px-4 py-2">₹${product.price?.toFixed(2) || '0.00'}</td>
-                    <td class="border border-gray-200 px-4 py-2 ${product.stock <= 10 ? 'text-red-600 font-bold' : ''}">${product.stock || 0}</td>
+                    <td class="border border-gray-200 px-4 py-2">₹${product.selling_price?.toFixed(2) || product.price?.toFixed(2) || '0.00'}</td>
+                    <td class="border border-gray-200 px-4 py-2 ${product.stock <= 10 ? 'text-red-600 font-bold' : ''}">${unitDisplay}</td>
                     <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">${formattedDate.date}<br><span class="text-xs">${formattedDate.time}</span></td>
                     <td class="border border-gray-200 px-4 py-2">
-                        <button class="delete-product-btn text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors" 
+                        <button class="delete-product-btn text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors"
                                 data-id="${product.id}" data-name="${product.name}">
                             Delete
                         </button>
@@ -838,6 +847,10 @@
             const lastUpdated = product.last_updated || product.created_at || product.updated_at;
             const formattedDate = formatDateTime(lastUpdated);
 
+            // Get unit type from the product data or default to 'pcs'
+            const unitType = product.unit_type || 'pcs';
+            const stockDisplay = getUnitDisplay(unitType, product.stock || 0);
+
             let status = '';
             let statusClass = '';
 
@@ -857,7 +870,7 @@
             return `
                 <tr class="hover:bg-gray-50">
                     <td class="border border-gray-200 px-4 py-2 font-medium">${product.product_name || product.name}</td>
-                    <td class="border border-gray-200 px-4 py-2 ${product.stock <= 10 ? 'text-red-600 font-bold' : ''}">${product.stock || 0}</td>
+                    <td class="border border-gray-200 px-4 py-2 ${product.stock <= 10 ? 'text-red-600 font-bold' : ''}">${stockDisplay}</td>
                     <td class="border border-gray-200 px-4 py-2">₹${(product.price || 0).toFixed(2)}</td>
                     <td class="border border-gray-200 px-4 py-2 font-medium">₹${stockValue.toFixed(2)}</td>
                     <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">${formattedDate.date}<br><span class="text-xs">${formattedDate.time}</span></td>
@@ -1390,27 +1403,28 @@
             productListEl.innerHTML = '<p class="text-center text-gray-500">No products available</p>';
             return;
         }
-        
+
         productListEl.innerHTML = products.map(product => {
             const isOutOfStock = product.stock <= 0;
-            const buttonClass = isOutOfStock 
-                ? "w-full bg-gray-400 text-white text-xs font-bold py-2 px-3 rounded-lg cursor-not-allowed" 
+            const buttonClass = isOutOfStock
+                ? "w-full bg-gray-400 text-white text-xs font-bold py-2 px-3 rounded-lg cursor-not-allowed"
                 : "w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors duration-300";
             const buttonText = isOutOfStock ? "Out of Stock" : "Add to Cart";
-            
+            const unitDisplay = getUnitDisplay(product.unit_type || 'pcs', product.stock || 0);
+
             return `
                 <div class="bg-white p-4 rounded-xl shadow-lg transition-transform transform hover:scale-105 ${isOutOfStock ? 'opacity-70' : ''}">
-                    <img src="${product.imageUrl}" alt="${product.name}" 
+                    <img src="${product.imageUrl}" alt="${product.name}"
                          class="w-full h-28 object-cover rounded-md mb-2"
                          onerror="this.src='https://placehold.co/400x400/cccccc/ffffff?text=Product'">
                     <h4 class="text-sm font-semibold text-gray-700">${product.name}</h4>
                     <p class="text-lg font-bold text-gray-800 my-1">₹${product.price.toFixed(2)}</p>
                     <div class="flex justify-between items-center text-xs text-gray-500 mb-2">
-                        <span>Stock: ${product.stock}</span>
+                        <span>Stock: ${unitDisplay}</span>
                         ${isOutOfStock ? '<span class="text-red-500 font-bold">Out of Stock</span>' : ''}
                     </div>
-                    <button class="add-to-cart-btn mt-2 ${buttonClass}" 
-                            data-id="${product.id}" 
+                    <button class="add-to-cart-btn mt-2 ${buttonClass}"
+                            data-id="${product.id}"
                             ${isOutOfStock ? 'disabled' : ''}>
                         ${buttonText}
                     </button>
@@ -1695,35 +1709,40 @@
     async function loadExistingProducts() {
         const productsEl = document.getElementById('existing-products');
         productsEl.innerHTML = '<p class="text-gray-500 text-center">Loading products...</p>';
-        
+
         try {
             const response = await fetch(`${backendURL}/products`, {
                 headers: {
                     'ngrok-skip-browser-warning': 'true'
                 }
             });
-            
+
             if (!response.ok) throw new Error('Failed to fetch products');
-            
+
             const products = await response.json();
-            
+
             if (products.length === 0) {
                 productsEl.innerHTML = '<p class="text-gray-500 text-center">No products found. Create your first product!</p>';
                 return;
             }
-            
-            productsEl.innerHTML = products.map(product => `
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <div class="font-medium">${product.name}</div>
-                        <div class="text-sm text-gray-500">Stock: ${product.stock || 0}</div>
+
+            productsEl.innerHTML = products.map(product => {
+                const unitDisplay = getUnitDisplay(product.unit_type || 'pcs', product.stock || 0);
+                return `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <div class="font-medium">${product.name}</div>
+                            <div class="text-sm text-gray-500">Stock: ${unitDisplay}</div>
+                            <div class="text-xs text-gray-400">Type: ${product.unit_type || 'pcs'}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium">Buy: ₹${product.purchase_price?.toFixed(2) || '0.00'}</div>
+                            <div class="text-sm text-green-600">Sell: ₹${product.selling_price?.toFixed(2) || '0.00'}</div>
+                            <div class="text-xs text-gray-500">ID: ${product.id}</div>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <div class="font-medium">₹${product.price.toFixed(2)}</div>
-                        <div class="text-xs text-gray-500">ID: ${product.id}</div>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         } catch (error) {
             console.error('Error loading products:', error);
             productsEl.innerHTML = '<p class="text-red-500 text-center">Error loading products</p>';
