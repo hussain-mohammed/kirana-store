@@ -175,8 +175,12 @@
                         <input type="number" id="purchase-quantity" class="w-full p-2 border border-gray-300 rounded-lg" min="1" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Unit Cost (₹)</label>
-                        <input type="number" id="purchase-unit-cost" class="w-full p-2 border border-gray-300 rounded-lg" step="0.01" min="0.01" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Unit Cost (₹) - Auto-filled</label>
+                        <input type="number" id="purchase-unit-cost" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-100" step="0.01" min="0.01" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Unit Type</label>
+                        <input type="text" id="purchase-unit-type" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
                     </div>
                     <button type="submit" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
                         Record Purchase
@@ -207,8 +211,21 @@
                         <input type="text" id="product-name" class="w-full p-2 border border-gray-300 rounded-lg" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
-                        <input type="number" id="product-price" class="w-full p-2 border border-gray-300 rounded-lg" step="0.01" min="0.01" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Purchase Price (₹)</label>
+                        <input type="number" id="product-purchase-price" class="w-full p-2 border border-gray-300 rounded-lg" step="0.01" min="0.01" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price (₹)</label>
+                        <input type="number" id="product-selling-price" class="w-full p-2 border border-gray-300 rounded-lg" step="0.01" min="0.01" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Unit Type</label>
+                        <select id="product-unit-type" class="w-full p-2 border border-gray-300 rounded-lg" required>
+                            <option value="">Select Unit Type</option>
+                            <option value="kgs">Kilograms (kgs)</option>
+                            <option value="ltr">Liters (ltr)</option>
+                            <option value="pcs">Pieces (pcs)</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Initial Stock</label>
@@ -1558,28 +1575,31 @@
         await loadPurchaseHistory();
     }
 
-    // ===== MISSING FUNCTION: Load Product Dropdown =====
+    // ===== ENHANCED: Load Product Dropdown with Price Data =====
     async function loadProductDropdown(dropdownId) {
         const dropdown = document.getElementById(dropdownId);
         if (!dropdown) {
             console.error(`Dropdown with ID '${dropdownId}' not found`);
             return;
         }
-        
+
         try {
             const response = await fetch(`${backendURL}/products`, {
                 headers: {
                     'ngrok-skip-browser-warning': 'true'
                 }
             });
-            
+
             if (response.ok) {
                 const products = await response.json();
                 dropdown.innerHTML = '<option value="">Select Product</option>';
                 products.forEach(product => {
                     const option = document.createElement('option');
                     option.value = product.id;
-                    option.textContent = `${product.name} (Stock: ${product.stock || 0})`;
+                    option.textContent = `${product.name} (${product.unit_type}) - Stock: ${product.stock || 0}`;
+                    option.dataset.purchasePrice = product.purchase_price;
+                    option.dataset.sellingPrice = product.selling_price;
+                    option.dataset.unitType = product.unit_type;
                     dropdown.appendChild(option);
                 });
                 console.log(`✅ Loaded ${products.length} products into dropdown`);
@@ -1859,18 +1879,33 @@
 
         document.getElementById('whatsapp-checkout-button').addEventListener('click', generateWhatsAppOrder);
 
+        // Auto-populate prices when product is selected in purchase form
+        document.getElementById('purchase-product').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const unitCostField = document.getElementById('purchase-unit-cost');
+            const unitTypeField = document.getElementById('purchase-unit-type');
+
+            if (selectedOption.value) {
+                unitCostField.value = selectedOption.dataset.purchasePrice || '';
+                unitTypeField.value = selectedOption.dataset.unitType || '';
+            } else {
+                unitCostField.value = '';
+                unitTypeField.value = '';
+            }
+        });
+
         document.getElementById('purchase-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const productId = document.getElementById('purchase-product').value;
             const quantity = document.getElementById('purchase-quantity').value;
             const unitCost = document.getElementById('purchase-unit-cost').value;
-            
+
             if (!productId) {
                 alert('Please select a product');
                 return;
             }
-            
+
             try {
                 const response = await fetch(`${backendURL}/purchases/`, {
                     method: 'POST',
@@ -1884,7 +1919,7 @@
                         unit_cost: parseFloat(unitCost)
                     })
                 });
-                
+
                 if (response.ok) {
                     alert('Purchase recorded successfully!');
                     document.getElementById('purchase-form').reset();
@@ -1901,22 +1936,26 @@
 
         document.getElementById('create-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const name = document.getElementById('product-name').value;
-            const price = document.getElementById('product-price').value;
+            const purchasePrice = document.getElementById('product-purchase-price').value;
+            const sellingPrice = document.getElementById('product-selling-price').value;
+            const unitType = document.getElementById('product-unit-type').value;
             const stock = document.getElementById('product-stock').value;
-            
+
             try {
                 await createProduct({
                     name: name,
-                    price: parseFloat(price),
+                    purchase_price: parseFloat(purchasePrice),
+                    selling_price: parseFloat(sellingPrice),
+                    unit_type: unitType,
                     stock: parseInt(stock) || 0
                 });
-                
+
                 alert('Product created successfully!');
                 document.getElementById('create-product-form').reset();
                 await loadExistingProducts();
-                
+
             } catch (error) {
                 alert('Error creating product: ' + error.message);
             }
