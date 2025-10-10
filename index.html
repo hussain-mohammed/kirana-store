@@ -1732,7 +1732,7 @@
 
     async function createProduct(productData) {
         console.log('➕ Creating product:', productData);
-        
+
         try {
             const response = await fetch(`${backendURL}/products/`, {
                 method: 'POST',
@@ -1744,16 +1744,23 @@
             });
 
             console.log(`📊 Response: ${response.status}`);
-            
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Failed to create product');
+                let errorMessage = 'Failed to create product';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || errorData.message || errorMessage;
+                } catch (parseError) {
+                    // If we can't parse JSON, use the status text
+                    errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
             }
-            
+
             const result = await response.json();
             console.log('✅ Product created successfully:', result);
             return result;
-            
+
         } catch (error) {
             console.error('Error creating product:', error);
             throw error;

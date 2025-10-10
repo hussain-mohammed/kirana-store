@@ -35,7 +35,9 @@ class Product(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
-    price = Column(Float, nullable=False)
+    purchase_price = Column(Float, nullable=False)  # Cost price when buying from supplier
+    selling_price = Column(Float, nullable=False)   # Selling price to customers
+    unit_type = Column(String, nullable=False)      # Unit type: kgs, ltr, or pcs
     stock = Column(Integer, default=0)
 
 class Sale(Base):
@@ -63,14 +65,18 @@ class Purchase(Base):
 # --- Pydantic Models for API Requests/Responses ---
 class ProductBase(BaseModel):
     name: str
-    price: float = Field(..., gt=0, description="Price must be a positive number")
+    purchase_price: float = Field(..., gt=0, description="Purchase price must be a positive number")
+    selling_price: float = Field(..., gt=0, description="Selling price must be a positive number")
+    unit_type: str = Field(..., description="Unit type: kgs, ltr, or pcs")
 
 class ProductCreate(ProductBase):
     stock: int = Field(0, ge=0, description="Initial stock level")
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
-    price: Optional[float] = None
+    purchase_price: Optional[float] = None
+    selling_price: Optional[float] = None
+    unit_type: Optional[str] = None
     stock: Optional[int] = None
 
 class ProductResponse(ProductCreate):
@@ -187,14 +193,14 @@ async def lifespan(app: FastAPI):
         if product_count == 0:
             print("Seeding database with sample products...")
             sample_products = [
-                Product(name="Apple", price=100.00, stock=50),
-                Product(name="Banana", price=50.00, stock=30),
-                Product(name="Orange", price=80.00, stock=25),
-                Product(name="Milk", price=65.00, stock=20),
-                Product(name="Bread", price=40.00, stock=15),
-                Product(name="Eggs", price=90.00, stock=40),
-                Product(name="Rice", price=120.00, stock=60),
-                Product(name="Sugar", price=55.00, stock=35),
+                Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
+                Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
+                Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
+                Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
+                Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
+                Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
+                Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
+                Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
             ]
             db.add_all(sample_products)
             db.commit()
@@ -278,11 +284,14 @@ def get_products(db: Session = Depends(get_db)):
         
         for product in db_products:
             image_url = image_mapping.get(product.name.lower(), "https://placehold.co/400x400/cccccc/ffffff?text=Product")
-            
+
             frontend_products.append({
                 "id": product.id,
                 "name": product.name,
-                "price": float(product.price),
+                "price": float(product.selling_price),  # Use selling_price for frontend display
+                "purchase_price": float(product.purchase_price),
+                "selling_price": float(product.selling_price),
+                "unit_type": product.unit_type,
                 "imageUrl": image_url,
                 "stock": product.stock
             })
@@ -390,9 +399,9 @@ def get_products_stock_snapshot(
             snapshots.append(ProductStockSnapshot(
                 product_id=product.id,
                 product_name=product.name,
-                price=product.price,
+                price=product.selling_price,
                 stock=current_stock,
-                stock_value=product.price * current_stock,
+                stock_value=product.selling_price * current_stock,
                 last_updated=datetime.now(IST)
             ))
 
@@ -479,7 +488,10 @@ def record_sale(sale: SaleCreate, db: Session = Depends(get_db)):
     if product.stock < sale.quantity:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not enough stock available")
 
-    total_amount = product.price * sale.quantity
+    # Use product's selling_price for the sale
+    selling_price = product.selling_price
+    total_amount = selling_price * sale.quantity
+
     db_sale = Sale(
         product_id=sale.product_id,
         quantity=sale.quantity,
@@ -487,7 +499,7 @@ def record_sale(sale: SaleCreate, db: Session = Depends(get_db)):
         sale_date=datetime.now(IST)
     )
     product.stock -= sale.quantity
-    
+
     db.add(db_sale)
     db.commit()
     db.refresh(db_sale)
@@ -607,7 +619,7 @@ def process_whatsapp_order(order_request: WhatsAppOrderRequest, db: Session = De
         if product.stock < item.quantity:
             return {"status": "error", "message": f"Insufficient stock for '{item.product_name}'."}
 
-        item_total = product.price * item.quantity
+        item_total = product.selling_price * item.quantity
         total_bill += item_total
         product.stock -= item.quantity
         
@@ -840,7 +852,7 @@ def get_products_for_ledger(db: Session = Depends(get_db)):
             "product_id": product.id,
             "product_name": product.name,
             "current_stock": product.stock,
-            "price": product.price,
+            "price": product.selling_price,
             "total_purchases": purchase_count,
             "total_sales": sale_count,
             "has_activity": purchase_count > 0 or sale_count > 0
