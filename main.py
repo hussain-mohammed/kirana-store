@@ -183,12 +183,16 @@ def get_db():
 # Lifespan event to create the database tables on startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Create database tables
     Base.metadata.create_all(bind=engine)
     print("Database tables created.")
-    
+
     # Seed with sample data if no products exist
     db = SessionLocal()
     try:
+        # Test database connection first
+        db.execute(text("SELECT 1"))
+
         product_count = db.query(Product).count()
         if product_count == 0:
             print("Seeding database with sample products...")
@@ -207,9 +211,13 @@ async def lifespan(app: FastAPI):
             print("Sample products added to database.")
         else:
             print(f"Database already contains {product_count} products.")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+        # Don't fail the entire app if seeding fails
+        pass
     finally:
         db.close()
-    
+
     yield
 
 # --- FastAPI App Initialization ---
