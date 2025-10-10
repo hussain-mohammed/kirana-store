@@ -60,8 +60,12 @@
     <div id="page-home" class="page active gradient-bg">
         <main class="w-full max-w-md mx-auto p-8">
             <div class="text-center mb-8 glass-effect rounded-2xl p-8 text-white">
-                <h2 class="text-3xl font-bold mb-4">Welcome to Kirana Store</h2>
-                <p class="text-blue-100 text-lg">Manage your store efficiently with our comprehensive tools</p>
+                <h2 class="text-3xl font-bold mb-4">Raza Wholesale and Retail</h2>
+                <p class="text-blue-100 text-lg">Kirana Store</p>
+                <p class="text-blue-100 mt-2">Tolichowki,Hyderabad</p>
+                <p class="text-blue-100 mt-2">Contact: +91 7075210801</p>
+                <p class="text-blue-100 mt-2">U order on whatsapp we deliver to your doorstep</p>
+
             </div>
             
             <div class="space-y-4">
@@ -632,10 +636,34 @@
 
     // ===== UNIT DISPLAY UTILITY =====
     function getUnitDisplay(unitType, quantity) {
-        if (!unitType || unitType === 'pcs') {
+        // Handle null, undefined, or empty unit types
+        if (!unitType) {
             return `${quantity} pcs`;
         }
-        return `${quantity} ${unitType}`;
+
+        // Normalize unit type to handle case variations
+        const normalizedUnitType = unitType.toLowerCase().trim();
+
+        // Return appropriate display based on unit type
+        switch(normalizedUnitType) {
+            case 'kgs':
+            case 'kg':
+            case 'kilograms':
+                return `${quantity} kgs`;
+            case 'ltr':
+            case 'liter':
+            case 'liters':
+            case 'litre':
+            case 'litres':
+                return `${quantity} ltr`;
+            case 'pcs':
+            case 'piece':
+            case 'pieces':
+            case 'pc':
+                return `${quantity} pcs`;
+            default:
+                return `${quantity} ${unitType}`; // Fallback to original value
+        }
     }
 
     // ===== NAVIGATION FUNCTIONS =====
