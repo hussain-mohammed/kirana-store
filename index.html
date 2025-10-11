@@ -2203,12 +2203,8 @@
         const overallStatusEl = document.getElementById('overall-status');
 
         try {
-            // Get opening stock data from opening stock register (as of dateFrom)
-            let openingStockUrl = `${backendURL}/products/stock-snapshot`;
-            if (dateFrom) {
-                openingStockUrl += `?date_to=${dateFrom}`;
-            }
-            const openingStockResponse = await fetch(openingStockUrl, {
+            // Get opening stock data from opening stock register (historical values)
+            const openingStockResponse = await fetch(`${backendURL}/opening-stock-register`, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
             const openingStockData = await openingStockResponse.json();
