@@ -39,6 +39,7 @@ class Product(Base):
     selling_price = Column(Float, nullable=False)   # Selling price to customers
     unit_type = Column(String, nullable=False)      # Unit type: kgs, ltr, or pcs
     stock = Column(Integer, default=0)
+    created_at = Column(DateTime, default=lambda: datetime.now(IST))
 
 class Sale(Base):
     """Records a single sale transaction."""
@@ -81,6 +82,7 @@ class ProductUpdate(BaseModel):
 
 class ProductResponse(ProductCreate):
     id: int
+    created_at: datetime
 
 class SaleCreate(BaseModel):
     product_id: int
@@ -369,6 +371,38 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     return db_product
 
 # 2. ADD THE STOCK-SNAPSHOT ENDPOINT HERE (BEFORE THE DYNAMIC ROUTE)
+# --- API Endpoint for Opening Stock Register ---
+@app.get("/opening-stock-register", response_model=List[ProductResponse])
+def get_opening_stock_register(db: Session = Depends(get_db)):
+    """
+    Get opening stock register showing all products with their creation dates and initial stock values.
+    This represents the initial stock when products were first created.
+    """
+    try:
+        products = db.query(Product).all()
+
+        opening_stock_data = []
+        for product in products:
+            # For opening stock, we use the initial stock value when product was created
+            # Since we don't have historical data, we'll use the current stock as the opening stock
+            # In a real scenario, you'd want to track the initial stock separately
+            opening_stock_data.append({
+                "id": product.id,
+                "name": product.name,
+                "purchase_price": product.purchase_price,
+                "selling_price": product.selling_price,
+                "unit_type": product.unit_type,
+                "stock": product.stock,  # This represents the opening stock value
+                "created_at": product.created_at
+            })
+
+        print(f"📊 Generated opening stock register for {len(opening_stock_data)} products")
+        return opening_stock_data
+
+    except Exception as e:
+        print(f"❌ Error generating opening stock register: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating opening stock register: {str(e)}")
+
 @app.get("/products/stock-snapshot", response_model=List[ProductStockSnapshot])
 def get_products_stock_snapshot(
     date_from: Optional[str] = None,

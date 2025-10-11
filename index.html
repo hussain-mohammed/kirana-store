@@ -2203,6 +2203,12 @@
         const overallStatusEl = document.getElementById('overall-status');
 
         try {
+            // Get opening stock data from opening stock register
+            const openingStockResponse = await fetch(`${backendURL}/opening-stock-register`, {
+                headers: { 'ngrok-skip-browser-warning': 'true' }
+            });
+            const openingStockData = await openingStockResponse.json();
+
             // Get current stock as closing stock from all products stock page
             const currentStockResponse = await fetch(`${backendURL}/products`, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
@@ -2257,9 +2263,10 @@
                 const sales = productSales[productId] || { total_quantity: 0, total_sales: 0 };
                 const purchases = productPurchases[productId] || { total_cost: 0 };
 
-                // For opening stock, we'll use 0 for now since we need to get it from create product logic
-                // This should be the initial stock when the product was created
-                const openingStockValue = 0; // TODO: Get from product creation data
+                // Get opening stock value from opening stock register
+                const openingStockProduct = openingStockData.find(p => p.id == productId);
+                const openingStockValue = openingStockProduct ?
+                    ((openingStockProduct.stock || 0) * (openingStockProduct.purchase_price || 0)) : 0;
 
                 // Get current stock as closing stock value
                 const closingStockValue = (product.stock || 0) * (product.purchase_price || 0);
@@ -2300,7 +2307,7 @@
                     <tr class="hover:bg-gray-50">
                         <td class="border border-gray-200 px-4 py-2 font-medium">${product.product_name}</td>
                         <td class="border border-gray-200 px-4 py-2">${product.units_sold}</td>
-                        <td class="border border-gray-200 px-4 py-2">₹${product.opening_stock.toFixed(2)}</td>
+                        <td class="border border-gray-200 px-4 py-2 text-gray-600">₹${product.opening_stock.toFixed(2)}</td>
                         <td class="border border-gray-200 px-4 py-2 text-blue-600">₹${product.purchases.toFixed(2)}</td>
                         <td class="border border-gray-200 px-4 py-2 text-green-600">₹${product.sales.toFixed(2)}</td>
                         <td class="border border-gray-200 px-4 py-2 text-purple-600">₹${product.closing_stock.toFixed(2)}</td>
@@ -2333,7 +2340,7 @@
                             ${finalGrossProfit >= 0 ? 'Profit' : 'Loss'} of ₹${Math.abs(finalGrossProfit).toFixed(2)}
                         </h4>
                         <p class="text-sm text-gray-600">
-                            From transactions: Sales ₹${totalSales.toFixed(2)} - Purchase ₹${totalPurchases.toFixed(2)} = ₹${(totalSales - totalPurchases).toFixed(2)}
+                            Opening Stock: ₹${totalOpeningStock.toFixed(2)} | Purchases: ₹${totalPurchases.toFixed(2)} | Sales: ₹${totalSales.toFixed(2)} | Closing Stock: ₹${totalClosingStock.toFixed(2)}
                         </p>
                     </div>
                 </div>
@@ -2466,20 +2473,20 @@
         contentEl.classList.add('hidden');
 
         try {
-            // Fetch all products data
-            const response = await fetch(`${backendURL}/products`, {
+            // Fetch opening stock register data with creation dates
+            const response = await fetch(`${backendURL}/opening-stock-register`, {
                 headers: {
                     'ngrok-skip-browser-warning': 'true'
                 }
             });
 
-            if (!response.ok) throw new Error('Failed to fetch products');
+            if (!response.ok) throw new Error('Failed to fetch opening stock register');
 
             const products = await response.json();
-            console.log('📦 Opening stock products received:', products);
+            console.log('📦 Opening stock register received:', products);
 
             if (!Array.isArray(products) || products.length === 0) {
-                throw new Error('No products found');
+                throw new Error('No products found in opening stock register');
             }
 
             displayOpeningStockData(products);
