@@ -205,20 +205,8 @@ async def lifespan(app: FastAPI):
 
                 product_count = db.query(Product).count()
                 if product_count == 0:
-                    print("Seeding database with sample products...")
-                    sample_products = [
-                        Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
-                        Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
-                        Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
-                        Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
-                        Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
-                        Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
-                        Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
-                        Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
-                    ]
-                    db.add_all(sample_products)
-                    db.commit()
-                    print("Sample products added to database.")
+                    print("No products found in database. You can create products through the web interface.")
+                    print("To add sample products, use the 'Create Product' page in the application.")
                 else:
                     print(f"Database already contains {product_count} products.")
 

@@ -2310,8 +2310,8 @@
                 `;
             }).join('') || '<tr><td colspan="8" class="border border-gray-200 px-4 py-4 text-center text-gray-500">No transaction data found for the selected period</td></tr>';
 
-            // Calculate final totals using the formula: Opening Stock + Purchase - Sales - Closing Stock
-            const finalGrossProfit = totalOpeningStock + totalPurchases - totalSales - totalClosingStock;
+            // Calculate final totals using the formula: Sales + Closing Stock - Opening Stock - Purchase
+            const finalGrossProfit = totalSales + totalClosingStock - totalOpeningStock - totalPurchases;
 
             // Update summary cards
             totalSalesEl.textContent = `₹${totalSales.toFixed(2)}`;
