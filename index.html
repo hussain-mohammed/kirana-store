@@ -190,6 +190,13 @@
                         <p class="text-emerald-100">View shop profit and loss analysis with date filters</p>
                     </div>
                 </button>
+
+                <button onclick="showContentPage('opening-stock')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">📊 Opening Stock</div>
+                        <p class="text-yellow-100">View opening stock register with all created products</p>
+                    </div>
+                </button>
             </div>
         </main>
     </div>
@@ -758,6 +765,86 @@
         </main>
     </div>
 
+    <!-- Opening Stock Page -->
+    <div id="page-opening-stock" class="page" style="background: linear-gradient(rgba(255, 193, 7, 0.85), rgba(255, 152, 0, 0.438)); background-size: cover; background-position: center; min-height: 100vh;">
+        <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">Opening Stock Register</h2>
+
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">All Created Products</h3>
+                    <button onclick="loadOpeningStockData()" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Loading State -->
+                <div id="opening-stock-loading" class="text-center py-8">
+                    <p class="text-gray-500">Loading opening stock register...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="opening-stock-error" class="text-center py-8 hidden">
+                    <p class="text-red-500">Error loading opening stock data</p>
+                </div>
+
+                <!-- Opening Stock Content -->
+                <div id="opening-stock-content" class="hidden">
+                    <!-- Summary Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="total-opening-products">0</div>
+                            <div class="text-sm text-gray-600">Total Products</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green-600" id="total-opening-stock">0</div>
+                            <div class="text-sm text-gray-600">Total Stock</div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="total-opening-value">₹0.00</div>
+                            <div class="text-sm text-gray-600">Total Stock Value</div>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-orange-600" id="avg-stock-age">0 days</div>
+                            <div class="text-sm text-gray-600">Avg Stock Age</div>
+                        </div>
+                    </div>
+
+                    <!-- Products Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-gray-200">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Product ID</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Product Name</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Unit Type</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Initial Stock</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Purchase Price (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Selling Price (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Stock Value (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Created Date</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="opening-stock-table-body">
+                                <!-- Products will be populated here -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="bg-gray-50 font-bold">
+                                    <td colspan="3" class="border border-gray-200 px-4 py-2 text-right">Total:</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-green-600" id="total-initial-stock-footer">0</td>
+                                    <td class="border border-gray-200 px-4 py-2" colspan="2"></td>
+                                    <td class="border border-gray-200 px-4 py-2 text-blue-600" id="total-stock-value-footer">₹0.00</td>
+                                    <td class="border border-gray-200 px-4 py-2" colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
 <script>
     // ===== BACKEND CONFIGURATION =====
     const backendURL = "https://kirana-store-maoc.onrender.com";
@@ -780,7 +867,8 @@
         'all-products-ledger': document.getElementById('page-all-products-ledger'),
         'sales-ledger': document.getElementById('page-sales-ledger'),
         'purchase-ledger': document.getElementById('page-purchase-ledger'),
-        'profit-loss': document.getElementById('page-profit-loss')
+        'profit-loss': document.getElementById('page-profit-loss'),
+        'opening-stock': document.getElementById('page-opening-stock')
     };
 
     const backButton = document.getElementById('back-to-home');
@@ -889,6 +977,9 @@
                 break;
             case 'profit-loss':
                 loadProfitLossData();
+                break;
+            case 'opening-stock':
+                loadOpeningStockData();
                 break;
         }
     }
@@ -2362,6 +2453,141 @@
         .catch(error => {
             console.error('Error fetching products for clear filters:', error);
         });
+    }
+
+    // ===== OPENING STOCK PAGE FUNCTIONS =====
+    async function loadOpeningStockData() {
+        const loadingEl = document.getElementById('opening-stock-loading');
+        const errorEl = document.getElementById('opening-stock-error');
+        const contentEl = document.getElementById('opening-stock-content');
+
+        loadingEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        contentEl.classList.add('hidden');
+
+        try {
+            // Fetch all products data
+            const response = await fetch(`${backendURL}/products`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch products');
+
+            const products = await response.json();
+            console.log('📦 Opening stock products received:', products);
+
+            if (!Array.isArray(products) || products.length === 0) {
+                throw new Error('No products found');
+            }
+
+            displayOpeningStockData(products);
+
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+
+        } catch (error) {
+            console.error('Error loading opening stock data:', error);
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<p class="text-red-500">Error loading opening stock data: ${error.message}</p>`;
+        }
+    }
+
+    function displayOpeningStockData(products) {
+        const tableBodyEl = document.getElementById('opening-stock-table-body');
+        const totalProductsEl = document.getElementById('total-opening-products');
+        const totalStockEl = document.getElementById('total-opening-stock');
+        const totalValueEl = document.getElementById('total-opening-value');
+        const avgAgeEl = document.getElementById('avg-stock-age');
+
+        if (products.length === 0) {
+            tableBodyEl.innerHTML = `
+                <tr>
+                    <td colspan="9" class="border border-gray-200 px-4 py-4 text-center text-gray-500">
+                        No products found
+                    </td>
+                </tr>
+            `;
+            totalProductsEl.textContent = '0';
+            totalStockEl.textContent = '0';
+            totalValueEl.textContent = '₹0.00';
+            avgAgeEl.textContent = '0 days';
+            return;
+        }
+
+        let totalProducts = 0;
+        let totalStock = 0;
+        let totalStockValue = 0;
+        let totalAgeDays = 0;
+
+        // Sort products by creation date (newest first)
+        products.sort((a, b) => {
+            const dateA = new Date(a.created_at || Date.now());
+            const dateB = new Date(b.created_at || Date.now());
+            return dateB - dateA;
+        });
+
+        // Generate table rows
+        tableBodyEl.innerHTML = products.map(product => {
+            totalProducts++;
+            const stock = product.stock || 0;
+            totalStock += stock;
+
+            const purchasePrice = product.purchase_price || 0;
+            const stockValue = stock * purchasePrice;
+            totalStockValue += stockValue;
+
+            // Calculate age in days
+            const createdDate = new Date(product.created_at || Date.now());
+            const now = new Date();
+            const ageDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+            totalAgeDays += ageDays;
+
+            const formattedDate = formatDateTime(product.created_at);
+            const unitDisplay = getUnitDisplay(product.unit_type || 'pcs', stock);
+
+            let status = 'Active';
+            let statusClass = 'bg-green-100 text-green-800';
+
+            if (stock === 0) {
+                status = 'Out of Stock';
+                statusClass = 'bg-red-100 text-red-800';
+            } else if (stock <= 10) {
+                status = 'Low Stock';
+                statusClass = 'bg-yellow-100 text-yellow-800';
+            }
+
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="border border-gray-200 px-4 py-2 font-medium">${product.id}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium">${product.name}</td>
+                    <td class="border border-gray-200 px-4 py-2">${product.unit_type || 'pcs'}</td>
+                    <td class="border border-gray-200 px-4 py-2 ${stock <= 10 ? 'text-red-600 font-bold' : ''}">${unitDisplay}</td>
+                    <td class="border border-gray-200 px-4 py-2">₹${purchasePrice.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2">₹${(product.selling_price || 0).toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium">₹${stockValue.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">${formattedDate.date}<br><span class="text-xs">${ageDays} days ago</span></td>
+                    <td class="border border-gray-200 px-4 py-2">
+                        <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${status}</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // Calculate average age
+        const avgAge = totalProducts > 0 ? Math.round(totalAgeDays / totalProducts) : 0;
+
+        // Update summary statistics
+        totalProductsEl.textContent = totalProducts;
+        totalStockEl.textContent = totalStock;
+        totalValueEl.textContent = `₹${totalStockValue.toFixed(2)}`;
+        avgAgeEl.textContent = `${avgAge} days`;
+
+        // Update footer totals
+        document.getElementById('total-initial-stock-footer').textContent = totalStock;
+        document.getElementById('total-stock-value-footer').textContent = `₹${totalStockValue.toFixed(2)}`;
     }
 
     // ===== UTILITY FUNCTIONS =====
