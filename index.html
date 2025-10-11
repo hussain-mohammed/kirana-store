@@ -2243,23 +2243,16 @@
                 productPurchases[purchase.product_id].total_cost += purchase.total_cost;
             });
 
-            // Only include products that have actual transactions (sales or purchases)
+            // Include ALL products for complete profit & loss analysis
             const productAnalysis = [];
             let totalOpeningStock = 0;
             let totalPurchases = 0;
             let totalSales = 0;
             let totalClosingStock = 0;
 
-            // Get unique product IDs that have transactions
-            const transactionProductIds = new Set([
-                ...Object.keys(productSales),
-                ...Object.keys(productPurchases)
-            ]);
-
-            for (const productId of transactionProductIds) {
-                const product = productsData.find(p => p.id == productId);
-                if (!product) continue;
-
+            // Process ALL products, even those without transactions
+            for (const product of productsData) {
+                const productId = product.id;
                 const sales = productSales[productId] || { total_quantity: 0, total_sales: 0 };
                 const purchases = productPurchases[productId] || { total_cost: 0 };
 
