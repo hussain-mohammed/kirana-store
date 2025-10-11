@@ -24,6 +24,7 @@ if not DATABASE_URL:
         # Don't crash the app, but it won't work without database
 else:
         print(f"📡 Connecting to database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'Local database'}")
+        print(f"🔍 Full DATABASE_URL: {DATABASE_URL[:50]}..." if len(DATABASE_URL) > 50 else f"🔍 Full DATABASE_URL: {DATABASE_URL}")
 
 # Create a SQLAlchemy engine
 engine = create_engine(DATABASE_URL)

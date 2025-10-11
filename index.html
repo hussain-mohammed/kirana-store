@@ -2215,10 +2215,18 @@
                 closingStockUrl += `?date_to=${dateTo}`;
             }
             // If no dateTo specified, get current stock data
+            console.log(`📊 Fetching closing stock from: ${closingStockUrl}`);
             const closingStockResponse = await fetch(closingStockUrl, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
+
+            if (!closingStockResponse.ok) {
+                console.error(`❌ Failed to fetch closing stock data: ${closingStockResponse.status}`);
+                throw new Error(`Failed to fetch closing stock: ${closingStockResponse.status}`);
+            }
+
             const closingStockData = await closingStockResponse.json();
+            console.log(`✅ Received ${closingStockData.length} closing stock records`);
 
             // Group sales data by product
             const productSales = {};
