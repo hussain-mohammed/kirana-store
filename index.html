@@ -2209,24 +2209,18 @@
             });
             const openingStockData = await openingStockResponse.json();
 
-            // Get closing stock data from all products stock page (as of dateTo or current)
-            let closingStockUrl = `${backendURL}/all-products-stock`;
+            // Get closing stock data from all products stock page (as of dateTo)
+            let closingStockUrl = `${backendURL}/products/stock-snapshot`;
             if (dateTo) {
                 closingStockUrl += `?date_to=${dateTo}`;
+            } else if (dateFrom) {
+                // If only dateFrom is specified, use it as dateTo
+                closingStockUrl += `?date_to=${dateFrom}`;
             }
-            // If no dateTo specified, get current stock data
-            console.log(`📊 Fetching closing stock from: ${closingStockUrl}`);
             const closingStockResponse = await fetch(closingStockUrl, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
-
-            if (!closingStockResponse.ok) {
-                console.error(`❌ Failed to fetch closing stock data: ${closingStockResponse.status}`);
-                throw new Error(`Failed to fetch closing stock: ${closingStockResponse.status}`);
-            }
-
             const closingStockData = await closingStockResponse.json();
-            console.log(`✅ Received ${closingStockData.length} closing stock records`);
 
             // Group sales data by product
             const productSales = {};
@@ -2256,43 +2250,16 @@
                 productPurchases[purchase.product_id].total_cost += purchase.total_cost;
             });
 
-            // Only include products that have transactions in the selected period
+            // Include ALL products for complete profit & loss analysis
             const productAnalysis = [];
             let totalOpeningStock = 0;
             let totalPurchases = 0;
             let totalSales = 0;
             let totalClosingStock = 0;
 
-            // Get unique product IDs that have transactions in the filtered period
-            const transactionProductIds = new Set([
-                ...Object.keys(productSales),
-                ...Object.keys(productPurchases)
-            ]);
-
-            // If date filters are applied but no transactions found, show empty state
-            if ((dateFrom || dateTo) && transactionProductIds.size === 0) {
-                tableBodyEl.innerHTML = '<tr><td colspan="8" class="border border-gray-200 px-4 py-4 text-center text-gray-500">No transaction data found for the selected period</td></tr>';
-                totalSalesEl.textContent = '₹0.00';
-                totalPurchasesEl.textContent = '₹0.00';
-                grossProfitEl.textContent = '₹0.00';
-                profitMarginEl.textContent = '0%';
-                overallStatusEl.innerHTML = '<p class="text-gray-500 text-center">No transactions found in the selected date range</p>';
-
-                // Update footer totals
-                document.getElementById('total-opening-stock-footer').textContent = '₹0.00';
-                document.getElementById('total-purchases-footer').textContent = '₹0.00';
-                document.getElementById('total-sales-footer').textContent = '₹0.00';
-                document.getElementById('total-closing-stock-footer').textContent = '₹0.00';
-                document.getElementById('total-profit-footer').textContent = '₹0.00';
-                document.getElementById('total-margin-footer').textContent = '0%';
-                return;
-            }
-
-            // Process only products that have transactions (or all products if no date filter)
-            for (const productId of transactionProductIds) {
-                const product = productsData.find(p => p.id == productId);
-                if (!product) continue;
-
+            // Process ALL products, even those without transactions
+            for (const product of productsData) {
+                const productId = product.id;
                 const sales = productSales[productId] || { total_quantity: 0, total_sales: 0 };
                 const purchases = productPurchases[productId] || { total_cost: 0 };
 
@@ -2301,10 +2268,8 @@
                 const openingStockValue = openingStockProduct ?
                     ((openingStockProduct.stock || 0) * (openingStockProduct.purchase_price || 0)) : 0;
 
-                // Get closing stock value from closing stock data
-                const closingStockProduct = closingStockData.find(p => p.id == productId);
-                const closingStockValue = closingStockProduct ?
-                    ((closingStockProduct.stock || 0) * (closingStockProduct.price || 0)) : 0;
+                // Get current stock as closing stock value
+                const closingStockValue = (product.stock || 0) * (product.purchase_price || 0);
 
                 // Apply inventory formula: Sales + Closing Stock - Opening Stock - Purchase
                 const grossProfit = sales.total_sales + closingStockValue - openingStockValue - purchases.total_cost;
