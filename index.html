@@ -2210,23 +2210,24 @@
             const openingStockData = await openingStockResponse.json();
 
             // Get closing stock data from all products stock page (as of dateTo or current)
-            let closingStockUrl = `${backendURL}/products/stock-snapshot`;
-            if (dateTo) {
-                closingStockUrl += `?date_to=${dateTo}`;
-            }
+            // let closingStockUrl = `${backendURL}/products/stock-snapshot`;
+            // if (dateTo) 
+            //     closingStockUrl += `?date_to=${dateTo}`;
+            // }
             // If no dateTo specified, get current stock data
-            console.log(`📊 Fetching closing stock from: ${closingStockUrl}`);
-            const closingStockResponse = await fetch(closingStockUrl, {
+            // console.log(`📊 Fetching closing stock from: ${closingStockUrl}`);
+            const closingStockResponse = await fetch(`${backendURL}/complete-stock-overview`, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
+            const closingStockData = await closingStockResponse.json();
 
             if (!closingStockResponse.ok) {
                 console.error(`❌ Failed to fetch closing stock data: ${closingStockResponse.status}`);
                 throw new Error(`Failed to fetch closing stock: ${closingStockResponse.status}`);
             }
 
-            const closingStockData = await closingStockResponse.json();
-            console.log(`✅ Received ${closingStockData.length} closing stock records`);
+            // const closingStockData = await closingStockResponse.json();
+            // console.log(`✅ Received ${closingStockData.length} closing stock records`);
 
             // Group sales data by product
             const productSales = {};
