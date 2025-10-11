@@ -17,7 +17,11 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-        print("WARNING: DATABASE_URL not set in environment variables. Using default PostgreSQL database.")
+        print("❌ ERROR: DATABASE_URL not set in environment variables!")
+        print("Please set your DATABASE_URL environment variable to connect to PostgreSQL")
+        print("Example: postgresql://username:password@hostname:port/database_name")
+        print("For local development, create a .env file with your DATABASE_URL")
+        # Don't crash the app, but it won't work without database
 
 # Create a SQLAlchemy engine
 engine = create_engine(DATABASE_URL)

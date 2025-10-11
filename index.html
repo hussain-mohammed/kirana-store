@@ -2203,14 +2203,25 @@
         const overallStatusEl = document.getElementById('overall-status');
 
         try {
-            // Get opening stock data from opening stock register
-            const openingStockResponse = await fetch(`${backendURL}/opening-stock-register`, {
+            // Get opening stock data from opening stock register (as of dateFrom)
+            let openingStockUrl = `${backendURL}/products/stock-snapshot`;
+            if (dateFrom) {
+                openingStockUrl += `?date_to=${dateFrom}`;
+            }
+            const openingStockResponse = await fetch(openingStockUrl, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
             const openingStockData = await openingStockResponse.json();
 
-            // Get closing stock data from all products stock page (stock snapshot)
-            const closingStockResponse = await fetch(`${backendURL}/products/stock-snapshot`, {
+            // Get closing stock data from all products stock page (as of dateTo)
+            let closingStockUrl = `${backendURL}/products/stock-snapshot`;
+            if (dateTo) {
+                closingStockUrl += `?date_to=${dateTo}`;
+            } else if (dateFrom) {
+                // If only dateFrom is specified, use it as dateTo
+                closingStockUrl += `?date_to=${dateFrom}`;
+            }
+            const closingStockResponse = await fetch(closingStockUrl, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
             const closingStockData = await closingStockResponse.json();
@@ -2430,6 +2441,10 @@
         })
         .then(response => response.json())
         .then(productsData => {
+            // If a specific product is selected, filter the products data as well
+            if (productId) {
+                productsData = productsData.filter(product => product.id == productId);
+            }
             calculateAndDisplayProfitLoss(filteredSales, filteredPurchases, productsData);
         })
         .catch(error => {
