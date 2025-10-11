@@ -183,6 +183,13 @@
                         <p class="text-indigo-100">View and manage all purchase records</p>
                     </div>
                 </button>
+
+                <button onclick="showContentPage('profit-loss')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">💰 Profit & Loss</div>
+                        <p class="text-emerald-100">View shop profit and loss analysis with date filters</p>
+                    </div>
+                </button>
             </div>
         </main>
     </div>
@@ -639,6 +646,114 @@
         </main>
     </div>
 
+    <!-- Profit & Loss Page -->
+    <div id="page-profit-loss" class="page" style="background: linear-gradient(rgba(16, 185, 129, 0.85), rgba(245, 158, 11, 0.438)); background-size: cover; background-position: center; min-height: 100vh;">
+        <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">Profit & Loss Analysis</h2>
+
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">Financial Overview</h3>
+                    <button onclick="loadProfitLossData()" class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors">
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
+                        <input type="date" id="pl-date-from" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
+                        <input type="date" id="pl-date-to" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Product</label>
+                        <select id="pl-product-filter" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="">All Products</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end mb-4">
+                    <button onclick="applyProfitLossFilters()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        Apply Filters
+                    </button>
+                    <button onclick="clearProfitLossFilters()" class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                        Clear
+                    </button>
+                </div>
+
+                <!-- Loading State -->
+                <div id="profit-loss-loading" class="text-center py-8">
+                    <p class="text-gray-500">Loading profit & loss data...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="profit-loss-error" class="text-center py-8 hidden">
+                    <p class="text-red-500">Error loading profit & loss data</p>
+                </div>
+
+                <!-- Profit & Loss Content -->
+                <div id="profit-loss-content" class="hidden">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-green-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green-600" id="total-sales">₹0.00</div>
+                            <div class="text-sm text-gray-600">Total Sales</div>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-red-600" id="total-purchases">₹0.00</div>
+                            <div class="text-sm text-gray-600">Total Purchases</div>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="gross-profit">₹0.00</div>
+                            <div class="text-sm text-gray-600">Gross Profit</div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="profit-margin">0%</div>
+                            <div class="text-sm text-gray-600">Profit Margin</div>
+                        </div>
+                    </div>
+
+                    <!-- Overall Status -->
+                    <div class="mb-6 p-4 rounded-lg" id="overall-status">
+                        <!-- Status will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Product-wise Breakdown Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-gray-200">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Product</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Units Sold</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Sales Amount (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Purchase Cost (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Profit/Loss (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Margin (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="profit-loss-table-body">
+                                <!-- Product-wise data will be populated here -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="bg-gray-50 font-bold">
+                                    <td colspan="2" class="border border-gray-200 px-4 py-2 text-right">Total:</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-green-600" id="total-sales-footer">₹0.00</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-red-600" id="total-purchases-footer">₹0.00</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-blue-600" id="total-profit-footer">₹0.00</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-purple-600" id="total-margin-footer">0%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
 <script>
     // ===== BACKEND CONFIGURATION =====
     const backendURL = "https://kirana-store-maoc.onrender.com";
@@ -660,7 +775,8 @@
         'delete-product': document.getElementById('page-delete-product'),
         'all-products-ledger': document.getElementById('page-all-products-ledger'),
         'sales-ledger': document.getElementById('page-sales-ledger'),
-        'purchase-ledger': document.getElementById('page-purchase-ledger')
+        'purchase-ledger': document.getElementById('page-purchase-ledger'),
+        'profit-loss': document.getElementById('page-profit-loss')
     };
 
     const backButton = document.getElementById('back-to-home');
@@ -766,6 +882,9 @@
                 break;
             case 'purchase-ledger':
                 loadPurchaseLedger();
+                break;
+            case 'profit-loss':
+                loadProfitLossData();
                 break;
         }
     }
@@ -1927,17 +2046,276 @@
         }
     }
 
+    // ===== PROFIT & LOSS FUNCTIONS =====
+    async function loadProfitLossData() {
+        const loadingEl = document.getElementById('profit-loss-loading');
+        const errorEl = document.getElementById('profit-loss-error');
+        const contentEl = document.getElementById('profit-loss-content');
+
+        loadingEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        contentEl.classList.add('hidden');
+
+        try {
+            // Fetch sales and purchase data
+            const [salesResponse, purchasesResponse, productsResponse] = await Promise.all([
+                fetch(`${backendURL}/ledger/sales`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                }),
+                fetch(`${backendURL}/ledger/purchases`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                }),
+                fetch(`${backendURL}/products`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                })
+            ]);
+
+            if (!salesResponse.ok) throw new Error('Failed to fetch sales data');
+            if (!purchasesResponse.ok) throw new Error('Failed to fetch purchase data');
+            if (!productsResponse.ok) throw new Error('Failed to fetch products data');
+
+            const salesData = await salesResponse.json();
+            const purchasesData = await purchasesResponse.json();
+            const productsData = await productsResponse.json();
+
+            // Store data globally for filtering
+            allSalesData = salesData || [];
+            allPurchasesData = purchasesData || [];
+
+            // Load product dropdown for filter
+            await loadProductDropdownForFilter('pl-product-filter');
+
+            // Calculate and display profit/loss
+            calculateAndDisplayProfitLoss(allSalesData, allPurchasesData, productsData);
+
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+
+        } catch (error) {
+            console.error('Error loading profit & loss data:', error);
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<p class="text-red-500">Error loading profit & loss data: ${error.message}</p>`;
+        }
+    }
+
+    function calculateAndDisplayProfitLoss(salesData, purchasesData, productsData) {
+        const tableBodyEl = document.getElementById('profit-loss-table-body');
+        const totalSalesEl = document.getElementById('total-sales');
+        const totalPurchasesEl = document.getElementById('total-purchases');
+        const grossProfitEl = document.getElementById('gross-profit');
+        const profitMarginEl = document.getElementById('profit-margin');
+        const overallStatusEl = document.getElementById('overall-status');
+
+        // Group data by product
+        const productSales = {};
+        const productPurchases = {};
+
+        // Process sales data
+        salesData.forEach(sale => {
+            if (!productSales[sale.product_id]) {
+                productSales[sale.product_id] = {
+                    product_id: sale.product_id,
+                    product_name: sale.product_name,
+                    total_quantity: 0,
+                    total_sales: 0
+                };
+            }
+            productSales[sale.product_id].total_quantity += sale.quantity;
+            productSales[sale.product_id].total_sales += sale.total_amount;
+        });
+
+        // Process purchases data
+        purchasesData.forEach(purchase => {
+            if (!productPurchases[purchase.product_id]) {
+                productPurchases[purchase.product_id] = {
+                    product_id: purchase.product_id,
+                    product_name: purchase.product_name,
+                    total_quantity: 0,
+                    total_cost: 0
+                };
+            }
+            productPurchases[purchase.product_id].total_quantity += purchase.quantity;
+            productPurchases[purchase.product_id].total_cost += purchase.total_cost;
+        });
+
+        // Calculate totals
+        let totalSalesAmount = 0;
+        let totalPurchaseCost = 0;
+
+        Object.values(productSales).forEach(sale => {
+            totalSalesAmount += sale.total_sales;
+        });
+
+        Object.values(productPurchases).forEach(purchase => {
+            totalPurchaseCost += purchase.total_cost;
+        });
+
+        const grossProfit = totalSalesAmount - totalPurchaseCost;
+        const profitMargin = totalSalesAmount > 0 ? ((grossProfit / totalSalesAmount) * 100).toFixed(2) : '0.00';
+
+        // Update summary cards
+        totalSalesEl.textContent = `₹${totalSalesAmount.toFixed(2)}`;
+        totalPurchasesEl.textContent = `₹${totalPurchaseCost.toFixed(2)}`;
+        grossProfitEl.textContent = `₹${grossProfit.toFixed(2)}`;
+        profitMarginEl.textContent = `${profitMargin}%`;
+
+        // Update overall status
+        const statusClass = grossProfit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+        const statusTextClass = grossProfit >= 0 ? 'text-green-800' : 'text-red-800';
+        const statusIcon = grossProfit >= 0 ? '📈' : '📉';
+
+        overallStatusEl.className = `mb-6 p-4 rounded-lg border ${statusClass}`;
+        overallStatusEl.innerHTML = `
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">${statusIcon}</span>
+                <div>
+                    <h4 class="font-semibold ${statusTextClass}">
+                        ${grossProfit >= 0 ? 'Profit' : 'Loss'} of ₹${Math.abs(grossProfit).toFixed(2)}
+                    </h4>
+                    <p class="text-sm text-gray-600">
+                        Overall ${grossProfit >= 0 ? 'profit' : 'loss'} margin: ${profitMargin}%
+                    </p>
+                </div>
+            </div>
+        `;
+
+        // Generate product-wise breakdown
+        const productAnalysis = [];
+
+        // Get all unique product IDs
+        const allProductIds = new Set([
+            ...Object.keys(productSales),
+            ...Object.keys(productPurchases)
+        ]);
+
+        allProductIds.forEach(productId => {
+            const sales = productSales[productId] || { total_quantity: 0, total_sales: 0 };
+            const purchases = productPurchases[productId] || { total_quantity: 0, total_cost: 0 };
+
+            const product = productsData.find(p => p.id == productId);
+            const productName = sales.product_name || purchases.product_name || product?.name || 'Unknown Product';
+
+            const profit = sales.total_sales - purchases.total_cost;
+            const margin = sales.total_sales > 0 ? ((profit / sales.total_sales) * 100).toFixed(2) : '0.00';
+
+            productAnalysis.push({
+                product_id: productId,
+                product_name: productName,
+                units_sold: sales.total_quantity,
+                sales_amount: sales.total_sales,
+                purchase_cost: purchases.total_cost,
+                profit_loss: profit,
+                margin: margin
+            });
+        });
+
+        // Sort by profit/loss (highest first)
+        productAnalysis.sort((a, b) => b.profit_loss - a.profit_loss);
+
+        // Generate table rows
+        tableBodyEl.innerHTML = productAnalysis.map(product => {
+            const profitClass = product.profit_loss >= 0 ? 'text-green-600' : 'text-red-600';
+            const marginClass = product.margin >= 0 ? 'text-green-600' : 'text-red-600';
+
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="border border-gray-200 px-4 py-2 font-medium">${product.product_name}</td>
+                    <td class="border border-gray-200 px-4 py-2">${product.units_sold}</td>
+                    <td class="border border-gray-200 px-4 py-2 text-green-600">₹${product.sales_amount.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2 text-red-600">₹${product.purchase_cost.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium ${profitClass}">₹${product.profit_loss.toFixed(2)}</td>
+                    <td class="border border-gray-200 px-4 py-2 font-medium ${marginClass}">${product.margin}%</td>
+                </tr>
+            `;
+        }).join('');
+
+        // Update footer totals
+        document.getElementById('total-sales-footer').textContent = `₹${totalSalesAmount.toFixed(2)}`;
+        document.getElementById('total-purchases-footer').textContent = `₹${totalPurchaseCost.toFixed(2)}`;
+        document.getElementById('total-profit-footer').textContent = `₹${grossProfit.toFixed(2)}`;
+        document.getElementById('total-margin-footer').textContent = `${profitMargin}%`;
+    }
+
+    function applyProfitLossFilters() {
+        const dateFrom = document.getElementById('pl-date-from').value;
+        const dateTo = document.getElementById('pl-date-to').value;
+        const productId = document.getElementById('pl-product-filter').value;
+
+        let filteredSales = allSalesData;
+        let filteredPurchases = allPurchasesData;
+
+        // Filter by date range
+        if (dateFrom) {
+            filteredSales = filteredSales.filter(sale => {
+                const saleDate = new Date(sale.date).toISOString().split('T')[0];
+                return saleDate >= dateFrom;
+            });
+            filteredPurchases = filteredPurchases.filter(purchase => {
+                const purchaseDate = new Date(purchase.date).toISOString().split('T')[0];
+                return purchaseDate >= dateFrom;
+            });
+        }
+
+        if (dateTo) {
+            filteredSales = filteredSales.filter(sale => {
+                const saleDate = new Date(sale.date).toISOString().split('T')[0];
+                return saleDate <= dateTo;
+            });
+            filteredPurchases = filteredPurchases.filter(purchase => {
+                const purchaseDate = new Date(purchase.date).toISOString().split('T')[0];
+                return purchaseDate <= dateTo;
+            });
+        }
+
+        // Filter by product
+        if (productId) {
+            filteredSales = filteredSales.filter(sale => sale.product_id == productId);
+            filteredPurchases = filteredPurchases.filter(purchase => purchase.product_id == productId);
+        }
+
+        // Fetch products data for the filtered calculation
+        fetch(`${backendURL}/products`, {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+        })
+        .then(response => response.json())
+        .then(productsData => {
+            calculateAndDisplayProfitLoss(filteredSales, filteredPurchases, productsData);
+        })
+        .catch(error => {
+            console.error('Error fetching products for filtered calculation:', error);
+        });
+    }
+
+    function clearProfitLossFilters() {
+        document.getElementById('pl-date-from').value = '';
+        document.getElementById('pl-date-to').value = '';
+        document.getElementById('pl-product-filter').value = '';
+
+        // Recalculate with all data
+        fetch(`${backendURL}/products`, {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+        })
+        .then(response => response.json())
+        .then(productsData => {
+            calculateAndDisplayProfitLoss(allSalesData, allPurchasesData, productsData);
+        })
+        .catch(error => {
+            console.error('Error fetching products for clear filters:', error);
+        });
+    }
+
     // ===== UTILITY FUNCTIONS =====
     function showNotification(message) {
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) existingNotification.remove();
-        
+
         const notification = document.createElement('div');
         notification.className = 'notification fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50';
         notification.textContent = message;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.remove();
         }, 3000);
