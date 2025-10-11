@@ -24,9 +24,72 @@
         }
         /* Beautiful gradient background with grocery image */
         .gradient-bg {
-            background: linear-gradient(rgba(132, 206, 248, 0.85), rgba(172, 124, 20, 0.438)), 
+            background: linear-gradient(rgba(132, 206, 248, 0.85), rgba(172, 124, 20, 0.438)),
                         url('https://thearchitectsdiary.com/wp-content/uploads/2024/03/Supermarket-design-01-1-1536x1076.webp');
-            
+
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        /* Sales page background - Shopping experience */
+        .sales-bg {
+            background: linear-gradient(rgba(34, 197, 94, 0.85), rgba(239, 68, 68, 0.438)),
+                        url('https://cdnblog.webkul.com/blog/wp-content/uploads/2019/11/webkul-opencart-point-of-sales-frontend-1.png');
+
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        /* Purchase page background - Wholesale/Supplier */
+        .purchase-bg {
+            background: linear-gradient(rgba(59, 130, 246, 0.85), rgba(147, 51, 234, 0.438)),
+                        url('https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2128&q=80');
+
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        /* Create product background - Fresh produce/New items */
+        .create-bg {
+            background: linear-gradient(rgba(16, 185, 129, 0.85), rgba(245, 158, 11, 0.438)),
+                        url('https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=2126&q=80');
+
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        /* Delete product background - Inventory management */
+        .delete-bg {
+            background: linear-gradient(rgba(239, 68, 68, 0.85), rgba(107, 114, 128, 0.438)),
+                        url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        /* Stock ledger background - Warehouse/Storage */
+        .stock-bg {
+            background: linear-gradient(rgba(75, 85, 99, 0.85), rgba(55, 65, 81, 0.438)),
+                        url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        /* Sales ledger background - Sales records/Reports */
+        .sales-ledger-bg {
+            background: linear-gradient(rgba(34, 197, 94, 0.85), rgba(16, 185, 129, 0.438)),
+                        url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        /* Purchase ledger background - Purchase records/Supplier management */
+        .purchase-ledger-bg {
+            background: linear-gradient(rgba(59, 130, 246, 0.85), rgba(147, 51, 234, 0.438)),
+                        url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+
             background-size: cover;
             background-position: center;
             min-height: 100vh;
@@ -133,7 +196,7 @@
     <!-- ===== CONTENT PAGES ===== -->
 
     <!-- Sales Content Page -->
-    <div id="page-sales" class="page gradient-bg">
+    <div id="page-sales" class="page sales-bg">
         <main class="max-w-md p-4 space-y-4">
             <h2 class="text-xl font-semibold text-gray-700">Products</h2>
             <div id="product-list" class="grid grid-cols-2 gap-4">
@@ -167,7 +230,7 @@
     </div>
 
     <!-- Purchase Content Page -->
-    <div id="page-purchase" class="page gradient-bg">
+    <div id="page-purchase" class="page purchase-bg">
         <main class="w-full max-w-md mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Purchase Products</h2>
             
@@ -210,7 +273,7 @@
     </div>
 
     <!-- Create Product Content Page -->
-    <div id="page-create" class="page gradient-bg">
+    <div id="page-create" class="page create-bg">
         <main class="w-full max-w-md mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Create New Product</h2>
             
@@ -259,7 +322,7 @@
     </div>
 
     <!-- NEW: Delete Product Content Page -->
-    <div id="page-delete-product" class="page gradient-bg">
+    <div id="page-delete-product" class="page delete-bg">
         <main class="w-full max-w-4xl mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Delete Product</h2>
             
@@ -323,7 +386,7 @@
     </div>
 
     <!-- UPDATED: All Products Stock Ledger Page with Filters -->
-    <div id="page-all-products-ledger" class="page gradient-bg">
+    <div id="page-all-products-ledger" class="page stock-bg">
         <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">All Products Stock</h2>
             
@@ -421,7 +484,7 @@
     </div>
 
     <!-- Sales Ledger Page -->
-    <div id="page-sales-ledger" class="page gradient-bg">
+    <div id="page-sales-ledger" class="page sales-ledger-bg">
         <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Sales Ledger</h2>
             
@@ -502,7 +565,7 @@
     </div>
 
     <!-- Purchase Ledger Page -->
-    <div id="page-purchase-ledger" class="page gradient-bg">
+    <div id="page-purchase-ledger" class="page purchase-ledger-bg">
         <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Purchase Ledger</h2>
             
