@@ -2112,9 +2112,14 @@
         const overallStatusEl = document.getElementById('overall-status');
 
         try {
-            // Get stock snapshots for opening and closing stock
+            // Get opening stock (stock at the beginning of the period)
             const openingStock = await getStockSnapshot(dateFrom ? new Date(dateFrom) : null);
-            const closingStock = await getStockSnapshot(dateTo ? new Date(dateTo) : new Date());
+
+            // Get current stock as closing stock (latest stock from all products)
+            const currentStockResponse = await fetch(`${backendURL}/products`, {
+                headers: { 'ngrok-skip-browser-warning': 'true' }
+            });
+            const currentStock = await currentStockResponse.json();
 
             // Group data by product
             const productSales = {};
@@ -2169,9 +2174,11 @@
                 const sales = productSales[productId] || { total_quantity: 0, total_sales: 0 };
                 const purchases = productPurchases[productId] || { total_quantity: 0, total_cost: 0 };
 
-                // Get opening and closing stock for this product
+                // Get opening stock value for this product
                 const openingStockValue = getProductStockValue(openingStock, productId, product.purchase_price || 0);
-                const closingStockValue = getProductStockValue(closingStock, productId, product.purchase_price || 0);
+
+                // Get current stock as closing stock value for this product
+                const closingStockValue = (product.stock || 0) * (product.purchase_price || 0);
 
                 // Apply inventory formula: Opening Stock + Purchase - Sales - Closing Stock
                 const grossProfit = openingStockValue + purchases.total_cost - sales.total_sales - closingStockValue;
@@ -2219,17 +2226,19 @@
                 `;
             }).join('');
 
-            // Update summary cards with new labels
+            // Calculate final totals using the formula: Opening Stock + Purchase - Sales - Closing Stock
+            const finalGrossProfit = totalOpeningStock + totalPurchases - totalSales - totalClosingStock;
+
+            // Update summary cards
             totalSalesEl.textContent = `₹${totalSales.toFixed(2)}`;
             totalPurchasesEl.textContent = `₹${totalPurchases.toFixed(2)}`;
-            grossProfitEl.textContent = `₹${(totalOpeningStock + totalPurchases - totalSales - totalClosingStock).toFixed(2)}`;
-            profitMarginEl.textContent = `${totalSales > 0 ? (((totalOpeningStock + totalPurchases - totalSales - totalClosingStock) / totalSales) * 100).toFixed(2) : '0.00'}%`;
+            grossProfitEl.textContent = `₹${finalGrossProfit.toFixed(2)}`;
+            profitMarginEl.textContent = `${totalSales > 0 ? ((finalGrossProfit / totalSales) * 100).toFixed(2) : '0.00'}%`;
 
             // Update overall status
-            const overallProfit = totalOpeningStock + totalPurchases - totalSales - totalClosingStock;
-            const statusClass = overallProfit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-            const statusTextClass = overallProfit >= 0 ? 'text-green-800' : 'text-red-800';
-            const statusIcon = overallProfit >= 0 ? '📈' : '📉';
+            const statusClass = finalGrossProfit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+            const statusTextClass = finalGrossProfit >= 0 ? 'text-green-800' : 'text-red-800';
+            const statusIcon = finalGrossProfit >= 0 ? '📈' : '📉';
 
             overallStatusEl.className = `mb-6 p-4 rounded-lg border ${statusClass}`;
             overallStatusEl.innerHTML = `
@@ -2237,20 +2246,22 @@
                     <span class="text-2xl mr-3">${statusIcon}</span>
                     <div>
                         <h4 class="font-semibold ${statusTextClass}">
-                            ${overallProfit >= 0 ? 'Profit' : 'Loss'} of ₹${Math.abs(overallProfit).toFixed(2)}
+                            ${finalGrossProfit >= 0 ? 'Profit' : 'Loss'} of ₹${Math.abs(finalGrossProfit).toFixed(2)}
                         </h4>
                         <p class="text-sm text-gray-600">
-                            Based on inventory movement: Opening + Purchase - Sales - Closing
+                            Formula: ₹${totalOpeningStock.toFixed(2)} + ₹${totalPurchases.toFixed(2)} - ₹${totalSales.toFixed(2)} - ₹${totalClosingStock.toFixed(2)} = ₹${finalGrossProfit.toFixed(2)}
                         </p>
                     </div>
                 </div>
             `;
 
-            // Update footer totals
-            document.getElementById('total-sales-footer').textContent = `₹${totalSales.toFixed(2)}`;
+            // Update footer totals - ADD OPENING STOCK TOTAL
+            document.getElementById('total-opening-stock-footer').textContent = `₹${totalOpeningStock.toFixed(2)}`;
             document.getElementById('total-purchases-footer').textContent = `₹${totalPurchases.toFixed(2)}`;
-            document.getElementById('total-profit-footer').textContent = `₹${overallProfit.toFixed(2)}`;
-            document.getElementById('total-margin-footer').textContent = `${totalSales > 0 ? ((overallProfit / totalSales) * 100).toFixed(2) : '0.00'}%`;
+            document.getElementById('total-sales-footer').textContent = `₹${totalSales.toFixed(2)}`;
+            document.getElementById('total-closing-stock-footer').textContent = `₹${totalClosingStock.toFixed(2)}`;
+            document.getElementById('total-profit-footer').textContent = `₹${finalGrossProfit.toFixed(2)}`;
+            document.getElementById('total-margin-footer').textContent = `${totalSales > 0 ? ((finalGrossProfit / totalSales) * 100).toFixed(2) : '0.00'}%`;
 
         } catch (error) {
             console.error('Error calculating profit/loss:', error);
