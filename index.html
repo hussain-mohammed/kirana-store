@@ -2216,7 +2216,7 @@
             // }
             // If no dateTo specified, get current stock data
             // console.log(`📊 Fetching closing stock from: ${closingStockUrl}`);
-            const closingStockResponse = await fetch(`${backendURL}/complete-stock-overview`, {
+            const closingStockResponse = await fetch(`${backendURL}/all-products-stock`, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
             const closingStockData = await closingStockResponse.json();
