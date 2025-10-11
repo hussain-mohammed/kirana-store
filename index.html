@@ -2210,7 +2210,7 @@
             const openingStockData = await openingStockResponse.json();
 
             // Get closing stock data from all products stock page (as of dateTo or current)
-            let closingStockUrl = `${backendURL}/products/stock-snapshot`;
+            let closingStockUrl = `${backendURL}/all-products-stock`;
             if (dateTo) {
                 closingStockUrl += `?date_to=${dateTo}`;
             }
