@@ -359,12 +359,12 @@ async def options_handler(path: str):
 
 # --- API Endpoint to serve products to the frontend ---
 @app.get("/products")
-def get_products(db: Session = Depends(get_db)):
+async def get_products(db: Session = Depends(get_db)):
     """Returns the list of real products from database for the frontend to display."""
     try:
         db_products = db.query(Product).all()
         print(f"📦 Found {len(db_products)} products in database")
-        
+
         frontend_products = []
         image_mapping = {
             "apple": "https://placehold.co/400x400/81c784/ffffff?text=Apple",
@@ -376,7 +376,7 @@ def get_products(db: Session = Depends(get_db)):
             "rice": "https://placehold.co/400x400/f0f8ff/ffffff?text=Rice",
             "sugar": "https://placehold.co/400x400/e6e6e6/ffffff?text=Sugar"
         }
-        
+
         for product in db_products:
             image_url = image_mapping.get(product.name.lower(), "https://placehold.co/400x400/cccccc/ffffff?text=Product")
 
@@ -390,10 +390,10 @@ def get_products(db: Session = Depends(get_db)):
                 "imageUrl": image_url,
                 "stock": product.stock
             })
-        
+
         print("✅ Successfully formatted products for frontend")
         return JSONResponse(content=frontend_products, media_type="application/json")
-    
+
     except Exception as e:
         print(f"❌ Error fetching products: {e}")
         fallback_products = [
