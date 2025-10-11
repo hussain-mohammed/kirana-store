@@ -2264,8 +2264,8 @@
                 // Get current stock as closing stock value
                 const closingStockValue = (product.stock || 0) * (product.purchase_price || 0);
 
-                // Apply inventory formula: Opening Stock + Purchase - Sales - Closing Stock
-                const grossProfit = openingStockValue + purchases.total_cost - sales.total_sales - closingStockValue;
+                // Apply inventory formula: (Opening Stock + Purchase) - (Sales + Closing Stock)
+                const grossProfit = (openingStockValue + purchases.total_cost) - (sales.total_sales + closingStockValue);
 
                 // Calculate margin based on sales
                 const margin = sales.total_sales > 0 ? ((grossProfit / sales.total_sales) * 100).toFixed(2) : '0.00';
