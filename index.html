@@ -2209,11 +2209,11 @@
             });
             const openingStockData = await openingStockResponse.json();
 
-            // Get current stock as closing stock from all products stock page
-            const currentStockResponse = await fetch(`${backendURL}/products`, {
+            // Get closing stock data from all products stock page (stock snapshot)
+            const closingStockResponse = await fetch(`${backendURL}/products/stock-snapshot`, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
-            const currentStock = await currentStockResponse.json();
+            const closingStockData = await closingStockResponse.json();
 
             // Group sales data by product
             const productSales = {};

@@ -423,23 +423,36 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
 def get_opening_stock_register(db: Session = Depends(get_db)):
     """
     Get opening stock register showing all products with their creation dates and initial stock values.
-    This represents the initial stock when products were first created.
+    This represents the stock levels when products were first created, not current stock.
     """
     try:
         products = db.query(Product).all()
 
         opening_stock_data = []
         for product in products:
-            # For opening stock, we use the initial stock value when product was created
-            # Since we don't have historical data, we'll use the current stock as the opening stock
-            # In a real scenario, you'd want to track the initial stock separately
+            # Calculate what the opening stock should be by looking at all transactions
+            # Opening Stock = Current Stock + Total Sales - Total Purchases
+            # This gives us the stock level when the product was first created
+
+            # Get all purchases for this product
+            purchases = db.query(Purchase).filter(Purchase.product_id == product.id).all()
+            total_purchases = sum(p.quantity for p in purchases)
+
+            # Get all sales for this product
+            sales = db.query(Sale).filter(Sale.product_id == product.id).all()
+            total_sales = sum(s.quantity for s in sales)
+
+            # Calculate opening stock: Current Stock + Total Sales - Total Purchases
+            # This represents the stock level when the product was first created
+            initial_stock = product.stock + total_sales - total_purchases
+
             opening_stock_data.append({
                 "id": product.id,
                 "name": product.name,
                 "purchase_price": product.purchase_price,
                 "selling_price": product.selling_price,
                 "unit_type": product.unit_type,
-                "stock": product.stock,  # This represents the opening stock value
+                "stock": max(0, initial_stock),  # Ensure non-negative opening stock
                 "created_at": product.created_at
             })
 
@@ -532,9 +545,9 @@ def get_products_stock_snapshot(
             snapshots.append(ProductStockSnapshot(
                 product_id=product.id,
                 product_name=product.name,
-                price=product.selling_price,
+                price=product.purchase_price,  # Use purchase price for inventory valuation
                 stock=current_stock,
-                stock_value=product.selling_price * current_stock,
+                stock_value=product.purchase_price * current_stock,  # Calculate value using purchase price
                 unit_type=product.unit_type,
                 last_updated=datetime.now(IST)
             ))
