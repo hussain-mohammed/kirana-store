@@ -2209,14 +2209,12 @@
             });
             const openingStockData = await openingStockResponse.json();
 
-            // Get closing stock data from all products stock page (as of dateTo)
+            // Get closing stock data from all products stock page (as of dateTo or current)
             let closingStockUrl = `${backendURL}/products/stock-snapshot`;
             if (dateTo) {
                 closingStockUrl += `?date_to=${dateTo}`;
-            } else if (dateFrom) {
-                // If only dateFrom is specified, use it as dateTo
-                closingStockUrl += `?date_to=${dateFrom}`;
             }
+            // If no dateTo specified, get current stock data
             const closingStockResponse = await fetch(closingStockUrl, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
