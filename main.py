@@ -226,31 +226,78 @@ async def lifespan(app: FastAPI):
                 print(f"⚠️ Schema mismatch detected: {column_error}")
                 print("🔄 Attempting to update database schema...")
 
-                # If columns don't exist, we need to recreate the tables
-                # This is a simple approach for development - in production you'd use migrations
+                # For PostgreSQL/Render, use a safer approach
                 try:
-                    Base.metadata.drop_all(bind=engine)
-                    Base.metadata.create_all(bind=engine)
+                    # First, try to add the missing column without dropping tables
+                    try:
+                        # Check if created_at column exists
+                        result = db.execute(text("SELECT created_at FROM products LIMIT 1"))
+                        print("✅ created_at column already exists")
+                    except Exception:
+                        print("📝 Adding created_at column to products table...")
+                        # Add the missing column
+                        db.execute(text("ALTER TABLE products ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
+                        print("✅ created_at column added successfully")
+
+                    # Update existing records with current timestamp if they don't have created_at
+                    try:
+                        db.execute(text("UPDATE products SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+                        db.commit()
+                        print("✅ Existing records updated with creation timestamps")
+                    except Exception as update_error:
+                        print(f"⚠️ Could not update existing records: {update_error}")
+                        # This is not critical, so we'll continue
+
                     print("✅ Database schema updated successfully")
 
-                    # Now add sample data
-                    sample_products = [
-                        Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
-                        Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
-                        Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
-                        Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
-                        Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
-                        Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
-                        Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
-                        Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
-                    ]
-                    db.add_all(sample_products)
-                    db.commit()
-                    print("✅ Sample products added to database.")
+                    # Check if we need sample data
+                    product_count = db.query(Product).count()
+                    if product_count == 0:
+                        print("Seeding database with sample products...")
+                        sample_products = [
+                            Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
+                            Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
+                            Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
+                            Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
+                            Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
+                            Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
+                            Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
+                            Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
+                        ]
+                        db.add_all(sample_products)
+                        db.commit()
+                        print("✅ Sample products added to database.")
+                    else:
+                        print(f"Database already contains {product_count} products.")
 
                 except Exception as update_error:
                     print(f"❌ Failed to update schema: {update_error}")
-                    print("Please manually reset your database or check your DATABASE_URL")
+                    print("🔄 Falling back to table recreation method...")
+
+                    try:
+                        # As a last resort, try the drop/create method
+                        Base.metadata.drop_all(bind=engine)
+                        Base.metadata.create_all(bind=engine)
+                        print("✅ Database schema recreated successfully")
+
+                        # Now add sample data
+                        sample_products = [
+                            Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
+                            Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
+                            Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
+                            Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
+                            Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
+                            Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
+                            Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
+                            Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
+                        ]
+                        db.add_all(sample_products)
+                        db.commit()
+                        print("✅ Sample products added to database.")
+
+                    except Exception as final_error:
+                        print(f"❌ Failed to recreate schema: {final_error}")
+                        print("Please check your DATABASE_URL and ensure the database is accessible")
 
         except Exception as e:
             print(f"Database initialization error: {e}")
