@@ -729,9 +729,11 @@
                                 <tr class="bg-gray-50">
                                     <th class="border border-gray-200 px-4 py-2 text-left">Product</th>
                                     <th class="border border-gray-200 px-4 py-2 text-left">Units Sold</th>
-                                    <th class="border border-gray-200 px-4 py-2 text-left">Sales Amount (₹)</th>
-                                    <th class="border border-gray-200 px-4 py-2 text-left">Purchase Cost (₹)</th>
-                                    <th class="border border-gray-200 px-4 py-2 text-left">Profit/Loss (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Opening Stock (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Purchase (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Sales (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Closing Stock (₹)</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Gross Profit (₹)</th>
                                     <th class="border border-gray-200 px-4 py-2 text-left">Margin (%)</th>
                                 </tr>
                             </thead>
@@ -741,8 +743,10 @@
                             <tfoot>
                                 <tr class="bg-gray-50 font-bold">
                                     <td colspan="2" class="border border-gray-200 px-4 py-2 text-right">Total:</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-gray-600" id="total-opening-stock-footer">₹0.00</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-blue-600" id="total-purchases-footer">₹0.00</td>
                                     <td class="border border-gray-200 px-4 py-2 text-green-600" id="total-sales-footer">₹0.00</td>
-                                    <td class="border border-gray-200 px-4 py-2 text-red-600" id="total-purchases-footer">₹0.00</td>
+                                    <td class="border border-gray-200 px-4 py-2 text-purple-600" id="total-closing-stock-footer">₹0.00</td>
                                     <td class="border border-gray-200 px-4 py-2 text-blue-600" id="total-profit-footer">₹0.00</td>
                                     <td class="border border-gray-200 px-4 py-2 text-purple-600" id="total-margin-footer">0%</td>
                                 </tr>
@@ -2099,7 +2103,7 @@
         }
     }
 
-    function calculateAndDisplayProfitLoss(salesData, purchasesData, productsData) {
+    async function calculateAndDisplayProfitLoss(salesData, purchasesData, productsData, dateFrom = null, dateTo = null) {
         const tableBodyEl = document.getElementById('profit-loss-table-body');
         const totalSalesEl = document.getElementById('total-sales');
         const totalPurchasesEl = document.getElementById('total-purchases');
@@ -2107,134 +2111,185 @@
         const profitMarginEl = document.getElementById('profit-margin');
         const overallStatusEl = document.getElementById('overall-status');
 
-        // Group data by product
-        const productSales = {};
-        const productPurchases = {};
+        try {
+            // Get stock snapshots for opening and closing stock
+            const openingStock = await getStockSnapshot(dateFrom ? new Date(dateFrom) : null);
+            const closingStock = await getStockSnapshot(dateTo ? new Date(dateTo) : new Date());
 
-        // Process sales data
-        salesData.forEach(sale => {
-            if (!productSales[sale.product_id]) {
-                productSales[sale.product_id] = {
-                    product_id: sale.product_id,
-                    product_name: sale.product_name,
-                    total_quantity: 0,
-                    total_sales: 0
-                };
-            }
-            productSales[sale.product_id].total_quantity += sale.quantity;
-            productSales[sale.product_id].total_sales += sale.total_amount;
-        });
+            // Group data by product
+            const productSales = {};
+            const productPurchases = {};
 
-        // Process purchases data
-        purchasesData.forEach(purchase => {
-            if (!productPurchases[purchase.product_id]) {
-                productPurchases[purchase.product_id] = {
-                    product_id: purchase.product_id,
-                    product_name: purchase.product_name,
-                    total_quantity: 0,
-                    total_cost: 0
-                };
-            }
-            productPurchases[purchase.product_id].total_quantity += purchase.quantity;
-            productPurchases[purchase.product_id].total_cost += purchase.total_cost;
-        });
-
-        // Calculate totals
-        let totalSalesAmount = 0;
-        let totalPurchaseCost = 0;
-
-        Object.values(productSales).forEach(sale => {
-            totalSalesAmount += sale.total_sales;
-        });
-
-        Object.values(productPurchases).forEach(purchase => {
-            totalPurchaseCost += purchase.total_cost;
-        });
-
-        const grossProfit = totalSalesAmount - totalPurchaseCost;
-        const profitMargin = totalSalesAmount > 0 ? ((grossProfit / totalSalesAmount) * 100).toFixed(2) : '0.00';
-
-        // Update summary cards
-        totalSalesEl.textContent = `₹${totalSalesAmount.toFixed(2)}`;
-        totalPurchasesEl.textContent = `₹${totalPurchaseCost.toFixed(2)}`;
-        grossProfitEl.textContent = `₹${grossProfit.toFixed(2)}`;
-        profitMarginEl.textContent = `${profitMargin}%`;
-
-        // Update overall status
-        const statusClass = grossProfit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-        const statusTextClass = grossProfit >= 0 ? 'text-green-800' : 'text-red-800';
-        const statusIcon = grossProfit >= 0 ? '📈' : '📉';
-
-        overallStatusEl.className = `mb-6 p-4 rounded-lg border ${statusClass}`;
-        overallStatusEl.innerHTML = `
-            <div class="flex items-center">
-                <span class="text-2xl mr-3">${statusIcon}</span>
-                <div>
-                    <h4 class="font-semibold ${statusTextClass}">
-                        ${grossProfit >= 0 ? 'Profit' : 'Loss'} of ₹${Math.abs(grossProfit).toFixed(2)}
-                    </h4>
-                    <p class="text-sm text-gray-600">
-                        Overall ${grossProfit >= 0 ? 'profit' : 'loss'} margin: ${profitMargin}%
-                    </p>
-                </div>
-            </div>
-        `;
-
-        // Generate product-wise breakdown
-        const productAnalysis = [];
-
-        // Get all unique product IDs
-        const allProductIds = new Set([
-            ...Object.keys(productSales),
-            ...Object.keys(productPurchases)
-        ]);
-
-        allProductIds.forEach(productId => {
-            const sales = productSales[productId] || { total_quantity: 0, total_sales: 0 };
-            const purchases = productPurchases[productId] || { total_quantity: 0, total_cost: 0 };
-
-            const product = productsData.find(p => p.id == productId);
-            const productName = sales.product_name || purchases.product_name || product?.name || 'Unknown Product';
-
-            const profit = sales.total_sales - purchases.total_cost;
-            const margin = sales.total_sales > 0 ? ((profit / sales.total_sales) * 100).toFixed(2) : '0.00';
-
-            productAnalysis.push({
-                product_id: productId,
-                product_name: productName,
-                units_sold: sales.total_quantity,
-                sales_amount: sales.total_sales,
-                purchase_cost: purchases.total_cost,
-                profit_loss: profit,
-                margin: margin
+            // Process sales data
+            salesData.forEach(sale => {
+                if (!productSales[sale.product_id]) {
+                    productSales[sale.product_id] = {
+                        product_id: sale.product_id,
+                        product_name: sale.product_name,
+                        total_quantity: 0,
+                        total_sales: 0
+                    };
+                }
+                productSales[sale.product_id].total_quantity += sale.quantity;
+                productSales[sale.product_id].total_sales += sale.total_amount;
             });
-        });
 
-        // Sort by profit/loss (highest first)
-        productAnalysis.sort((a, b) => b.profit_loss - a.profit_loss);
+            // Process purchases data
+            purchasesData.forEach(purchase => {
+                if (!productPurchases[purchase.product_id]) {
+                    productPurchases[purchase.product_id] = {
+                        product_id: purchase.product_id,
+                        product_name: purchase.product_name,
+                        total_quantity: 0,
+                        total_cost: 0
+                    };
+                }
+                productPurchases[purchase.product_id].total_quantity += purchase.quantity;
+                productPurchases[purchase.product_id].total_cost += purchase.total_cost;
+            });
 
-        // Generate table rows
-        tableBodyEl.innerHTML = productAnalysis.map(product => {
-            const profitClass = product.profit_loss >= 0 ? 'text-green-600' : 'text-red-600';
-            const marginClass = product.margin >= 0 ? 'text-green-600' : 'text-red-600';
+            // Calculate inventory-based profit/loss for each product
+            const productAnalysis = [];
+            let totalOpeningStock = 0;
+            let totalPurchases = 0;
+            let totalSales = 0;
+            let totalClosingStock = 0;
 
-            return `
-                <tr class="hover:bg-gray-50">
-                    <td class="border border-gray-200 px-4 py-2 font-medium">${product.product_name}</td>
-                    <td class="border border-gray-200 px-4 py-2">${product.units_sold}</td>
-                    <td class="border border-gray-200 px-4 py-2 text-green-600">₹${product.sales_amount.toFixed(2)}</td>
-                    <td class="border border-gray-200 px-4 py-2 text-red-600">₹${product.purchase_cost.toFixed(2)}</td>
-                    <td class="border border-gray-200 px-4 py-2 font-medium ${profitClass}">₹${product.profit_loss.toFixed(2)}</td>
-                    <td class="border border-gray-200 px-4 py-2 font-medium ${marginClass}">${product.margin}%</td>
+            // Get all unique product IDs
+            const allProductIds = new Set([
+                ...Object.keys(productSales),
+                ...Object.keys(productPurchases),
+                ...productsData.map(p => p.id)
+            ]);
+
+            for (const productId of allProductIds) {
+                const product = productsData.find(p => p.id == productId);
+                if (!product) continue;
+
+                const sales = productSales[productId] || { total_quantity: 0, total_sales: 0 };
+                const purchases = productPurchases[productId] || { total_quantity: 0, total_cost: 0 };
+
+                // Get opening and closing stock for this product
+                const openingStockValue = getProductStockValue(openingStock, productId, product.purchase_price || 0);
+                const closingStockValue = getProductStockValue(closingStock, productId, product.purchase_price || 0);
+
+                // Apply inventory formula: Opening Stock + Purchase - Sales - Closing Stock
+                const grossProfit = openingStockValue + purchases.total_cost - sales.total_sales - closingStockValue;
+
+                // Calculate margin based on sales
+                const margin = sales.total_sales > 0 ? ((grossProfit / sales.total_sales) * 100).toFixed(2) : '0.00';
+
+                totalOpeningStock += openingStockValue;
+                totalPurchases += purchases.total_cost;
+                totalSales += sales.total_sales;
+                totalClosingStock += closingStockValue;
+
+                productAnalysis.push({
+                    product_id: productId,
+                    product_name: product.name,
+                    opening_stock: openingStockValue,
+                    purchases: purchases.total_cost,
+                    sales: sales.total_sales,
+                    closing_stock: closingStockValue,
+                    gross_profit: grossProfit,
+                    margin: margin,
+                    units_sold: sales.total_quantity
+                });
+            }
+
+            // Sort by gross profit (highest first)
+            productAnalysis.sort((a, b) => b.gross_profit - a.gross_profit);
+
+            // Generate table rows with new format
+            tableBodyEl.innerHTML = productAnalysis.map(product => {
+                const profitClass = product.gross_profit >= 0 ? 'text-green-600' : 'text-red-600';
+                const marginClass = product.margin >= 0 ? 'text-green-600' : 'text-red-600';
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="border border-gray-200 px-4 py-2 font-medium">${product.product_name}</td>
+                        <td class="border border-gray-200 px-4 py-2">${product.units_sold}</td>
+                        <td class="border border-gray-200 px-4 py-2">₹${product.opening_stock.toFixed(2)}</td>
+                        <td class="border border-gray-200 px-4 py-2 text-blue-600">₹${product.purchases.toFixed(2)}</td>
+                        <td class="border border-gray-200 px-4 py-2 text-green-600">₹${product.sales.toFixed(2)}</td>
+                        <td class="border border-gray-200 px-4 py-2 text-purple-600">₹${product.closing_stock.toFixed(2)}</td>
+                        <td class="border border-gray-200 px-4 py-2 font-medium ${profitClass}">₹${product.gross_profit.toFixed(2)}</td>
+                        <td class="border border-gray-200 px-4 py-2 font-medium ${marginClass}">${product.margin}%</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Update summary cards with new labels
+            totalSalesEl.textContent = `₹${totalSales.toFixed(2)}`;
+            totalPurchasesEl.textContent = `₹${totalPurchases.toFixed(2)}`;
+            grossProfitEl.textContent = `₹${(totalOpeningStock + totalPurchases - totalSales - totalClosingStock).toFixed(2)}`;
+            profitMarginEl.textContent = `${totalSales > 0 ? (((totalOpeningStock + totalPurchases - totalSales - totalClosingStock) / totalSales) * 100).toFixed(2) : '0.00'}%`;
+
+            // Update overall status
+            const overallProfit = totalOpeningStock + totalPurchases - totalSales - totalClosingStock;
+            const statusClass = overallProfit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+            const statusTextClass = overallProfit >= 0 ? 'text-green-800' : 'text-red-800';
+            const statusIcon = overallProfit >= 0 ? '📈' : '📉';
+
+            overallStatusEl.className = `mb-6 p-4 rounded-lg border ${statusClass}`;
+            overallStatusEl.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-2xl mr-3">${statusIcon}</span>
+                    <div>
+                        <h4 class="font-semibold ${statusTextClass}">
+                            ${overallProfit >= 0 ? 'Profit' : 'Loss'} of ₹${Math.abs(overallProfit).toFixed(2)}
+                        </h4>
+                        <p class="text-sm text-gray-600">
+                            Based on inventory movement: Opening + Purchase - Sales - Closing
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            // Update footer totals
+            document.getElementById('total-sales-footer').textContent = `₹${totalSales.toFixed(2)}`;
+            document.getElementById('total-purchases-footer').textContent = `₹${totalPurchases.toFixed(2)}`;
+            document.getElementById('total-profit-footer').textContent = `₹${overallProfit.toFixed(2)}`;
+            document.getElementById('total-margin-footer').textContent = `${totalSales > 0 ? ((overallProfit / totalSales) * 100).toFixed(2) : '0.00'}%`;
+
+        } catch (error) {
+            console.error('Error calculating profit/loss:', error);
+            tableBodyEl.innerHTML = `
+                <tr>
+                    <td colspan="8" class="border border-gray-200 px-4 py-4 text-center text-red-500">
+                        Error calculating profit & loss: ${error.message}
+                    </td>
                 </tr>
             `;
-        }).join('');
+        }
+    }
 
-        // Update footer totals
-        document.getElementById('total-sales-footer').textContent = `₹${totalSalesAmount.toFixed(2)}`;
-        document.getElementById('total-purchases-footer').textContent = `₹${totalPurchaseCost.toFixed(2)}`;
-        document.getElementById('total-profit-footer').textContent = `₹${grossProfit.toFixed(2)}`;
-        document.getElementById('total-margin-footer').textContent = `${profitMargin}%`;
+    async function getStockSnapshot(date) {
+        try {
+            let url = `${backendURL}/products/stock-snapshot`;
+            if (date) {
+                const dateStr = date.toISOString().split('T')[0];
+                url += `?date_to=${dateStr}`;
+            }
+
+            const response = await fetch(url, {
+                headers: { 'ngrok-skip-browser-warning': 'true' }
+            });
+
+            if (response.ok) {
+                return await response.json();
+            }
+            return [];
+        } catch (error) {
+            console.error('Error fetching stock snapshot:', error);
+            return [];
+        }
+    }
+
+    function getProductStockValue(stockData, productId, unitPrice) {
+        const productStock = stockData.find(stock => stock.product_id == productId);
+        const quantity = productStock ? (productStock.stock || 0) : 0;
+        return quantity * unitPrice;
     }
 
     function applyProfitLossFilters() {
