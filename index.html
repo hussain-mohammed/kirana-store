@@ -2112,20 +2112,14 @@
         const overallStatusEl = document.getElementById('overall-status');
 
         try {
-            // Get opening stock (stock at the beginning of the period)
-            const openingStock = await getStockSnapshot(dateFrom ? new Date(dateFrom) : null);
-
-            // Get current stock as closing stock (latest stock from all products)
+            // Get current stock as closing stock from all products stock page
             const currentStockResponse = await fetch(`${backendURL}/products`, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
             const currentStock = await currentStockResponse.json();
 
-            // Group data by product
+            // Group sales data by product
             const productSales = {};
-            const productPurchases = {};
-
-            // Process sales data
             salesData.forEach(sale => {
                 if (!productSales[sale.product_id]) {
                     productSales[sale.product_id] = {
@@ -2139,45 +2133,44 @@
                 productSales[sale.product_id].total_sales += sale.total_amount;
             });
 
-            // Process purchases data
+            // Group purchases data by product
+            const productPurchases = {};
             purchasesData.forEach(purchase => {
                 if (!productPurchases[purchase.product_id]) {
                     productPurchases[purchase.product_id] = {
                         product_id: purchase.product_id,
                         product_name: purchase.product_name,
-                        total_quantity: 0,
                         total_cost: 0
                     };
                 }
-                productPurchases[purchase.product_id].total_quantity += purchase.quantity;
                 productPurchases[purchase.product_id].total_cost += purchase.total_cost;
             });
 
-            // Calculate inventory-based profit/loss for each product
+            // Only include products that have actual transactions (sales or purchases)
             const productAnalysis = [];
             let totalOpeningStock = 0;
             let totalPurchases = 0;
             let totalSales = 0;
             let totalClosingStock = 0;
 
-            // Get all unique product IDs
-            const allProductIds = new Set([
+            // Get unique product IDs that have transactions
+            const transactionProductIds = new Set([
                 ...Object.keys(productSales),
-                ...Object.keys(productPurchases),
-                ...productsData.map(p => p.id)
+                ...Object.keys(productPurchases)
             ]);
 
-            for (const productId of allProductIds) {
+            for (const productId of transactionProductIds) {
                 const product = productsData.find(p => p.id == productId);
                 if (!product) continue;
 
                 const sales = productSales[productId] || { total_quantity: 0, total_sales: 0 };
-                const purchases = productPurchases[productId] || { total_quantity: 0, total_cost: 0 };
+                const purchases = productPurchases[productId] || { total_cost: 0 };
 
-                // Get opening stock value for this product
-                const openingStockValue = getProductStockValue(openingStock, productId, product.purchase_price || 0);
+                // For opening stock, we'll use 0 for now since we need to get it from create product logic
+                // This should be the initial stock when the product was created
+                const openingStockValue = 0; // TODO: Get from product creation data
 
-                // Get current stock as closing stock value for this product
+                // Get current stock as closing stock value
                 const closingStockValue = (product.stock || 0) * (product.purchase_price || 0);
 
                 // Apply inventory formula: Opening Stock + Purchase - Sales - Closing Stock
@@ -2207,7 +2200,7 @@
             // Sort by gross profit (highest first)
             productAnalysis.sort((a, b) => b.gross_profit - a.gross_profit);
 
-            // Generate table rows with new format
+            // Generate table rows - only show products with transactions
             tableBodyEl.innerHTML = productAnalysis.map(product => {
                 const profitClass = product.gross_profit >= 0 ? 'text-green-600' : 'text-red-600';
                 const marginClass = product.margin >= 0 ? 'text-green-600' : 'text-red-600';
@@ -2224,7 +2217,7 @@
                         <td class="border border-gray-200 px-4 py-2 font-medium ${marginClass}">${product.margin}%</td>
                     </tr>
                 `;
-            }).join('');
+            }).join('') || '<tr><td colspan="8" class="border border-gray-200 px-4 py-4 text-center text-gray-500">No transaction data found for the selected period</td></tr>';
 
             // Calculate final totals using the formula: Opening Stock + Purchase - Sales - Closing Stock
             const finalGrossProfit = totalOpeningStock + totalPurchases - totalSales - totalClosingStock;
@@ -2249,13 +2242,13 @@
                             ${finalGrossProfit >= 0 ? 'Profit' : 'Loss'} of ₹${Math.abs(finalGrossProfit).toFixed(2)}
                         </h4>
                         <p class="text-sm text-gray-600">
-                            Formula: ₹${totalOpeningStock.toFixed(2)} + ₹${totalPurchases.toFixed(2)} - ₹${totalSales.toFixed(2)} - ₹${totalClosingStock.toFixed(2)} = ₹${finalGrossProfit.toFixed(2)}
+                            From transactions: Sales ₹${totalSales.toFixed(2)} - Purchase ₹${totalPurchases.toFixed(2)} = ₹${(totalSales - totalPurchases).toFixed(2)}
                         </p>
                     </div>
                 </div>
             `;
 
-            // Update footer totals - ADD OPENING STOCK TOTAL
+            // Update footer totals
             document.getElementById('total-opening-stock-footer').textContent = `₹${totalOpeningStock.toFixed(2)}`;
             document.getElementById('total-purchases-footer').textContent = `₹${totalPurchases.toFixed(2)}`;
             document.getElementById('total-sales-footer').textContent = `₹${totalSales.toFixed(2)}`;
