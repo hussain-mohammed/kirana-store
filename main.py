@@ -404,7 +404,7 @@ async def get_products(db: Session = Depends(get_db)):
 
 # --- API Endpoints for Products (DB operations) ---
 @app.post("/products/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
-def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+async def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     db_product = Product(**product.dict())
     db.add(db_product)
     db.commit()
@@ -414,7 +414,7 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
 # 2. ADD THE STOCK-SNAPSHOT ENDPOINT HERE (BEFORE THE DYNAMIC ROUTE)
 # --- API Endpoint for Opening Stock Register ---
 @app.get("/opening-stock-register", response_model=List[ProductResponse])
-def get_opening_stock_register(db: Session = Depends(get_db)):
+async def get_opening_stock_register(db: Session = Depends(get_db)):
     """
     Get opening stock register showing all products with their creation dates and initial stock values.
     This represents the stock levels when products were first created, not current stock.
@@ -458,7 +458,7 @@ def get_opening_stock_register(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error generating opening stock register: {str(e)}")
 
 @app.get("/products/stock-snapshot", response_model=List[ProductStockSnapshot])
-def get_products_stock_snapshot(
+async def get_products_stock_snapshot(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     product_id: Optional[int] = None,
@@ -576,7 +576,7 @@ def update_product(product_id: int, product_data: ProductUpdate, db: Session = D
     return db_product
 
 @app.delete("/products/{product_id}", status_code=status.HTTP_200_OK)
-def delete_product(product_id: int, db: Session = Depends(get_db)):
+async def delete_product(product_id: int, db: Session = Depends(get_db)):
     """
     Delete a product and all its associated sales and purchase records.
     """
@@ -622,7 +622,7 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
         )
 # --- API Endpoints for Sales ---
 @app.post("/sales/", response_model=SaleResponse, status_code=status.HTTP_201_CREATED)
-def record_sale(sale: SaleCreate, db: Session = Depends(get_db)):
+async def record_sale(sale: SaleCreate, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == sale.product_id).first()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
@@ -648,7 +648,7 @@ def record_sale(sale: SaleCreate, db: Session = Depends(get_db)):
 
 # --- API Endpoints for Purchases ---
 @app.post("/purchases/", response_model=PurchaseResponse, status_code=status.HTTP_201_CREATED)
-def record_purchase(purchase: PurchaseCreate, db: Session = Depends(get_db)):
+async def record_purchase(purchase: PurchaseCreate, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == purchase.product_id).first()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
