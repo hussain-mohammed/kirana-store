@@ -1203,79 +1203,82 @@
         contentEl.classList.add('hidden');
 
         try {
-            // First get all products to check creation dates
-            const productsResponse = await fetch(`${backendURL}/products`, {
-                headers: { 'ngrok-skip-browser-warning': 'true' }
-            });
-            let allProducts = await productsResponse.json();
-
-            // Use the new stock-snapshot endpoint
+            // Get filter values
             const dateFrom = document.getElementById('stock-date-from').value;
             const dateTo = document.getElementById('stock-date-to').value;
             const productId = document.getElementById('stock-product-filter').value;
 
-            // Build query parameters - ONLY include dates if they have values
-            const params = new URLSearchParams();
-            if (dateFrom && dateFrom.trim() !== '') params.append('date_from', dateFrom);
-            if (dateTo && dateTo.trim() !== '') params.append('date_to', dateTo);
-            if (productId && productId.trim() !== '') params.append('product_id', productId);
+            let stockData = [];
 
-            const url = `${backendURL}/products/stock-snapshot?${params.toString()}`;
+            // If no date filters are applied, get all current stock data
+            if (!dateFrom && !dateTo) {
+                console.log('📊 No date filters - fetching current stock data');
 
-            console.log(`📊 Fetching stock snapshot from: ${url}`);
-
-            const response = await fetch(url, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-
-            if (!response.ok) {
-                let errorMessage = `Failed to fetch stock data: ${response.status}`;
-
-                // Try to get more detailed error information
-                try {
-                    const errorData = await response.json();
-                    if (errorData.detail) {
-                        errorMessage = errorData.detail;
-                    }
-                } catch (e) {
-                    // If we can't parse JSON, use the status text
-                    errorMessage = `Server error: ${response.status} ${response.statusText}`;
-                }
-
-                throw new Error(errorMessage);
-            }
-
-            let stockData = await response.json();
-            console.log(`✅ Received ${stockData.length} stock records`);
-
-            // Filter stock data based on product creation dates
-            if (dateFrom || dateTo) {
-                const filterDate = dateFrom || dateTo;
-                console.log('🔍 Filtering for date:', filterDate);
-                console.log('📦 Total products before filter:', allProducts.length);
-
-                stockData = stockData.filter(stockItem => {
-                    // Find the corresponding product to check its creation date
-                    const product = allProducts.find(p => p.id == stockItem.product_id);
-                    if (product && product.created_at) {
-                        const productCreatedDate = new Date(product.created_at).toISOString().split('T')[0];
-                        const selectedDate = new Date(filterDate).toISOString().split('T')[0];
-                        console.log(`🔍 Product ${product.name}: Created ${productCreatedDate}, Selected ${selectedDate}, Show: ${productCreatedDate <= selectedDate}`);
-                        // Only show products that were created ON OR BEFORE the selected date
-                        return productCreatedDate <= selectedDate;
-                    }
-                    console.log(`❌ Product ${stockItem.product_id}: No creation date found`);
-                    return false; // If no creation date found, don't show
+                // Get current stock data from the regular products endpoint
+                const productsResponse = await fetch(`${backendURL}/products`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
 
-                console.log('📦 Total stock items after filter:', stockData.length);
+                if (!productsResponse.ok) throw new Error('Failed to fetch current products');
+
+                const products = await productsResponse.json();
+
+                // Transform products data to match stock snapshot format
+                stockData = products.map(product => ({
+                    product_id: product.id,
+                    product_name: product.name,
+                    stock: product.stock || 0,
+                    price: product.selling_price || product.price || 0,
+                    stock_value: (product.stock || 0) * (product.selling_price || product.price || 0),
+                    unit_type: product.unit_type || 'pcs',
+                    last_updated: product.last_updated || product.created_at || new Date().toISOString()
+                }));
+
+                console.log(`✅ Loaded ${stockData.length} current stock records`);
+            } else {
+                // Date filters are applied - use stock snapshot endpoint
+                console.log('📊 Date filters applied - fetching stock snapshot');
+
+                // Build query parameters
+                const params = new URLSearchParams();
+                if (dateFrom && dateFrom.trim() !== '') params.append('date_from', dateFrom);
+                if (dateTo && dateTo.trim() !== '') params.append('date_to', dateTo);
+                if (productId && productId.trim() !== '') params.append('product_id', productId);
+
+                const url = `${backendURL}/products/stock-snapshot?${params.toString()}`;
+                console.log(`📊 Fetching stock snapshot from: ${url}`);
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `Failed to fetch stock data: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.detail) {
+                            errorMessage = errorData.detail;
+                        }
+                    } catch (e) {
+                        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                stockData = await response.json();
+                console.log(`✅ Received ${stockData.length} stock records for date range`);
+            }
+
+            // Apply product filter if specified (only for current stock, not for date-filtered data)
+            if (productId && !dateFrom && !dateTo) {
+                stockData = stockData.filter(stock => stock.product_id == productId);
+                console.log(`🔍 Filtered to ${stockData.length} records for product ${productId}`);
             }
 
             if (!Array.isArray(stockData) || stockData.length === 0) {
-                // Show empty state instead of error
                 displayFilteredStockData([]);
                 loadingEl.classList.add('hidden');
                 contentEl.classList.remove('hidden');
