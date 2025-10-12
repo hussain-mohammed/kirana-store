@@ -1197,37 +1197,43 @@
         const loadingEl = document.getElementById('all-products-ledger-loading');
         const errorEl = document.getElementById('all-products-ledger-error');
         const contentEl = document.getElementById('all-products-ledger-content');
-        
+
         loadingEl.classList.remove('hidden');
         errorEl.classList.add('hidden');
         contentEl.classList.add('hidden');
-        
+
         try {
+            // First get all products to check creation dates
+            const productsResponse = await fetch(`${backendURL}/products`, {
+                headers: { 'ngrok-skip-browser-warning': 'true' }
+            });
+            const allProducts = await productsResponse.json();
+
             // Use the new stock-snapshot endpoint
             const dateFrom = document.getElementById('stock-date-from').value;
             const dateTo = document.getElementById('stock-date-to').value;
             const productId = document.getElementById('stock-product-filter').value;
-            
+
             // Build query parameters - ONLY include dates if they have values
             const params = new URLSearchParams();
             if (dateFrom && dateFrom.trim() !== '') params.append('date_from', dateFrom);
             if (dateTo && dateTo.trim() !== '') params.append('date_to', dateTo);
             if (productId && productId.trim() !== '') params.append('product_id', productId);
-            
+
             const url = `${backendURL}/products/stock-snapshot?${params.toString()}`;
-            
+
             console.log(`📊 Fetching stock snapshot from: ${url}`);
-            
+
             const response = await fetch(url, {
                 headers: {
                     'Content-Type': 'application/json',
                     'ngrok-skip-browser-warning': 'true'
                 }
             });
-            
+
             if (!response.ok) {
                 let errorMessage = `Failed to fetch stock data: ${response.status}`;
-                
+
                 // Try to get more detailed error information
                 try {
                     const errorData = await response.json();
@@ -1238,30 +1244,46 @@
                     // If we can't parse JSON, use the status text
                     errorMessage = `Server error: ${response.status} ${response.statusText}`;
                 }
-                
+
                 throw new Error(errorMessage);
             }
-            
-            allStockData = await response.json();
-            console.log(`✅ Received ${allStockData.length} stock records`);
-            
-            if (!Array.isArray(allStockData) || allStockData.length === 0) {
+
+            let stockData = await response.json();
+            console.log(`✅ Received ${stockData.length} stock records`);
+
+            // Filter stock data based on product creation dates
+            if (dateFrom || dateTo) {
+                const filterDate = dateFrom || dateTo;
+                stockData = stockData.filter(stockItem => {
+                    // Find the corresponding product to check its creation date
+                    const product = allProducts.find(p => p.id == stockItem.product_id);
+                    if (product && product.created_at) {
+                        const productCreatedDate = new Date(product.created_at).toISOString().split('T')[0];
+                        const selectedDate = new Date(filterDate).toISOString().split('T')[0];
+                        // Only show products that were created ON OR BEFORE the selected date
+                        return productCreatedDate <= selectedDate;
+                    }
+                    return false; // If no creation date found, don't show
+                });
+            }
+
+            if (!Array.isArray(stockData) || stockData.length === 0) {
                 // Show empty state instead of error
                 displayFilteredStockData([]);
                 loadingEl.classList.add('hidden');
                 contentEl.classList.remove('hidden');
                 return;
             }
-            
+
             // Load product dropdown for filter (if not already loaded)
             await loadProductDropdownForFilter('stock-product-filter');
-            
+
             // Display the filtered data
-            displayFilteredStockData(allStockData);
-            
+            displayFilteredStockData(stockData);
+
             loadingEl.classList.add('hidden');
             contentEl.classList.remove('hidden');
-            
+
         } catch (error) {
             console.error('Error loading all products ledger:', error);
             loadingEl.classList.add('hidden');
