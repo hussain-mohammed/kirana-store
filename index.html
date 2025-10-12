@@ -2200,19 +2200,24 @@
         const overallStatusEl = document.getElementById('overall-status');
 
         try {
-            // Get opening stock data from opening stock register (historical values)
-            const openingStockResponse = await fetch(`${backendURL}/opening-stock-register`, {
+            // Get opening stock data - this should be calculated as of dateFrom (or before the selected period)
+            let openingStockUrl = `${backendURL}/products/stock-snapshot`;
+            if (dateFrom) {
+                // Get stock snapshot as of the day before dateFrom to get opening stock for the period
+                const dateFromObj = new Date(dateFrom);
+                dateFromObj.setDate(dateFromObj.getDate() - 1);
+                const openingDateStr = dateFromObj.toISOString().split('T')[0];
+                openingStockUrl += `?date_to=${openingDateStr}`;
+            }
+            const openingStockResponse = await fetch(openingStockUrl, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
             const openingStockData = await openingStockResponse.json();
 
-            // Get closing stock data from all products stock page (as of dateTo)
+            // Get closing stock data - this should be calculated as of dateTo (or end of the selected period)
             let closingStockUrl = `${backendURL}/products/stock-snapshot`;
             if (dateTo) {
                 closingStockUrl += `?date_to=${dateTo}`;
-            } else if (dateFrom) {
-                // If only dateFrom is specified, use it as dateTo
-                closingStockUrl += `?date_to=${dateFrom}`;
             }
             const closingStockResponse = await fetch(closingStockUrl, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
