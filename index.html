@@ -2200,25 +2200,45 @@
         const overallStatusEl = document.getElementById('overall-status');
 
         try {
-            // Get opening stock data - for single day, get stock as of that date
-            let openingStockUrl = `${backendURL}/products/stock-snapshot`;
-            if (dateFrom) {
-                openingStockUrl += `?date_to=${dateFrom}`;
+            // Get opening stock data - use opening stock register when no date filter, otherwise use stock snapshot
+            let openingStockData;
+            if (!dateFrom && !dateTo) {
+                // No date filter - use opening stock register (original stock levels)
+                const openingStockResponse = await fetch(`${backendURL}/opening-stock-register`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                openingStockData = await openingStockResponse.json();
+            } else {
+                // Date filter applied - use stock snapshot as of dateFrom
+                let openingStockUrl = `${backendURL}/products/stock-snapshot`;
+                if (dateFrom) {
+                    openingStockUrl += `?date_to=${dateFrom}`;
+                }
+                const openingStockResponse = await fetch(openingStockUrl, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                openingStockData = await openingStockResponse.json();
             }
-            const openingStockResponse = await fetch(openingStockUrl, {
-                headers: { 'ngrok-skip-browser-warning': 'true' }
-            });
-            let openingStockData = await openingStockResponse.json();
 
-            // Get closing stock data - for single day, get stock as of that date
-            let closingStockUrl = `${backendURL}/products/stock-snapshot`;
-            if (dateTo) {
-                closingStockUrl += `?date_to=${dateTo}`;
+            // Get closing stock data - use current stock when no date filter, otherwise use stock snapshot
+            let closingStockData;
+            if (!dateFrom && !dateTo) {
+                // No date filter - use current stock snapshot
+                const closingStockResponse = await fetch(`${backendURL}/products/stock-snapshot`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                closingStockData = await closingStockResponse.json();
+            } else {
+                // Date filter applied - use stock snapshot as of dateTo
+                let closingStockUrl = `${backendURL}/products/stock-snapshot`;
+                if (dateTo) {
+                    closingStockUrl += `?date_to=${dateTo}`;
+                }
+                const closingStockResponse = await fetch(closingStockUrl, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                closingStockData = await closingStockResponse.json();
             }
-            const closingStockResponse = await fetch(closingStockUrl, {
-                headers: { 'ngrok-skip-browser-warning': 'true' }
-            });
-            let closingStockData = await closingStockResponse.json();
 
             // Group sales data by product
             const productSales = {};
