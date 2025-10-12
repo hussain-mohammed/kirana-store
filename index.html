@@ -1254,31 +1254,24 @@
             // Filter stock data based on product creation dates
             if (dateFrom || dateTo) {
                 const filterDate = dateFrom || dateTo;
+                console.log('🔍 Filtering for date:', filterDate);
+                console.log('📦 Total products before filter:', allProducts.length);
+
                 stockData = stockData.filter(stockItem => {
                     // Find the corresponding product to check its creation date
                     const product = allProducts.find(p => p.id == stockItem.product_id);
                     if (product && product.created_at) {
                         const productCreatedDate = new Date(product.created_at).toISOString().split('T')[0];
                         const selectedDate = new Date(filterDate).toISOString().split('T')[0];
+                        console.log(`🔍 Product ${product.name}: Created ${productCreatedDate}, Selected ${selectedDate}, Show: ${productCreatedDate <= selectedDate}`);
                         // Only show products that were created ON OR BEFORE the selected date
                         return productCreatedDate <= selectedDate;
                     }
+                    console.log(`❌ Product ${stockItem.product_id}: No creation date found`);
                     return false; // If no creation date found, don't show
                 });
-            }
 
-            // Additional filtering: If date filters are applied, also filter productsData to only include products that existed on the selected date
-            if (dateFrom || dateTo) {
-                const filterDate = dateFrom || dateTo;
-                allProducts = allProducts.filter(product => {
-                    if (product.created_at) {
-                        const productCreatedDate = new Date(product.created_at).toISOString().split('T')[0];
-                        const selectedDate = new Date(filterDate).toISOString().split('T')[0];
-                        // Only include products that were created ON OR BEFORE the selected date
-                        return productCreatedDate <= selectedDate;
-                    }
-                    return false; // If no creation date found, don't include
-                });
+                console.log('📦 Total stock items after filter:', stockData.length);
             }
 
             if (!Array.isArray(stockData) || stockData.length === 0) {
