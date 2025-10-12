@@ -1267,6 +1267,20 @@
                 });
             }
 
+            // Additional filtering: If date filters are applied, also filter productsData to only include products that existed on the selected date
+            if (dateFrom || dateTo) {
+                const filterDate = dateFrom || dateTo;
+                allProducts = allProducts.filter(product => {
+                    if (product.created_at) {
+                        const productCreatedDate = new Date(product.created_at).toISOString().split('T')[0];
+                        const selectedDate = new Date(filterDate).toISOString().split('T')[0];
+                        // Only include products that were created ON OR BEFORE the selected date
+                        return productCreatedDate <= selectedDate;
+                    }
+                    return false; // If no creation date found, don't include
+                });
+            }
+
             if (!Array.isArray(stockData) || stockData.length === 0) {
                 // Show empty state instead of error
                 displayFilteredStockData([]);
