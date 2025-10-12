@@ -465,8 +465,10 @@ def get_products_stock_snapshot(
     db: Session = Depends(get_db)
 ):
     """
-    Get product stock data with date filtering.
-    Shows stock levels as of the specified date range.
+    Get product stock snapshot with date filtering.
+    Always shows purchase prices for inventory valuation.
+    Without date filters: current stock as of now
+    With date filters: stock as of the specified date/end of date range
     """
     try:
         print(f"📊 Generating stock snapshot - Date From: {date_from}, Date To: {date_to}, Product ID: {product_id}")
@@ -500,48 +502,57 @@ def get_products_stock_snapshot(
 
         snapshots = []
         for product in products:
-            # Calculate stock as of the specified date range
-            current_stock = product.stock
+            # Default to current stock for no date filters or current date scenario
+            calculated_stock = product.stock
 
-            if filter_date_from or filter_date_to:
+            # If date filters are specified, calculate stock as of that date
+            if filter_date_to:
                 # Get all purchases up to the filter date
-                purchase_query = db.query(Purchase).filter(Purchase.product_id == product.id)
-                if filter_date_to:
-                    purchase_query = purchase_query.filter(Purchase.purchase_date <= filter_date_to)
-                purchases = purchase_query.all()
+                purchases = db.query(Purchase).filter(
+                    Purchase.product_id == product.id,
+                    Purchase.purchase_date <= filter_date_to
+                ).all()
 
                 # Get all sales up to the filter date
-                sale_query = db.query(Sale).filter(Sale.product_id == product.id)
-                if filter_date_to:
-                    sale_query = sale_query.filter(Sale.sale_date <= filter_date_to)
-                sales = sale_query.all()
+                sales = db.query(Sale).filter(
+                    Sale.product_id == product.id,
+                    Sale.sale_date <= filter_date_to
+                ).all()
 
                 # Calculate stock as of the filter date
                 total_purchases = sum(p.quantity for p in purchases)
                 total_sales = sum(s.quantity for s in sales)
+                calculated_stock = total_purchases - total_sales
 
-                # If we have a date_from filter, we need to subtract purchases before that date
-                if filter_date_from:
-                    early_purchases = db.query(Purchase).filter(
-                        Purchase.product_id == product.id,
-                        Purchase.purchase_date < filter_date_from
-                    ).all()
-                    early_sales = db.query(Sale).filter(
-                        Sale.product_id == product.id,
-                        Sale.sale_date < filter_date_from
-                    ).all()
+                print(f"📊 Product {product.name}: Purchases={total_purchases}, Sales={total_sales}, Stock as of {filter_date_to.date()}={calculated_stock}")
 
-                    early_purchase_qty = sum(p.quantity for p in early_purchases)
-                    early_sale_qty = sum(s.quantity for s in early_sales)
+            elif filter_date_from:
+                # If only date_from is specified, show stock starting from that date
+                # This means stock at end of date_from period
+                purchases = db.query(Purchase).filter(
+                    Purchase.product_id == product.id,
+                    Purchase.purchase_date <= filter_date_from
+                ).all()
 
-                    current_stock = (early_purchase_qty - early_sale_qty) + (total_purchases - total_sales)
+                sales = db.query(Sale).filter(
+                    Sale.product_id == product.id,
+                    Sale.sale_date <= filter_date_from
+                ).all()
+
+                total_purchases = sum(p.quantity for p in purchases)
+                total_sales = sum(s.quantity for s in sales)
+                calculated_stock = total_purchases - total_sales
+
+            # Always use purchase price for stock valuation
+            purchase_price = product.purchase_price
+            stock_value = purchase_price * calculated_stock
 
             snapshots.append(ProductStockSnapshot(
                 product_id=product.id,
                 product_name=product.name,
-                price=product.purchase_price,  # Use purchase price for inventory valuation
-                stock=current_stock,
-                stock_value=product.purchase_price * current_stock,  # Calculate value using purchase price
+                price=purchase_price,  # Always purchase price for inventory valuation
+                stock=calculated_stock,
+                stock_value=stock_value,
                 unit_type=product.unit_type,
                 last_updated=datetime.now(IST)
             ))
