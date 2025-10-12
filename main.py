@@ -531,17 +531,21 @@ def get_products_stock_snapshot(
 
             # If date filters are specified, calculate stock as of that date
             if filter_date_to:
-                # Get all purchases up to the filter date
+                # Get all purchases before or on the filter date
                 purchases = db.query(Purchase).filter(
                     Purchase.product_id == product.id,
                     Purchase.purchase_date <= filter_date_to
                 ).all()
 
-                # Get all sales up to the filter date
+                # Get all sales before or on the filter date
                 sales = db.query(Sale).filter(
                     Sale.product_id == product.id,
                     Sale.sale_date <= filter_date_to
                 ).all()
+
+                print(f"🔍 DEBUG: Filter date: {filter_date_to}, Product: {product.name}")
+                for sale in sales:
+                    print(f"   - Sale {sale.id}: Date={sale.sale_date}, Quantity={sale.quantity}")
 
                 # Calculate stock as of the filter date
                 # Formula: Stock as of date = Opening Stock + Purchases up to date - Sales up to date
