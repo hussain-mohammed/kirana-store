@@ -420,22 +420,22 @@
                         </select>
                     </div>
                 </div>
-                <div class="text-sm text-gray-600 mb-4 p-3 bg-blue-50 rounded-lg">
-                    <strong>How it works:</strong>
-                    <ul class="mt-1 list-disc list-inside">
-                        <li>Leave dates empty to see current stock levels in your shop</li>
-                        <li>Use "Date To" to see what stock you had as of that date</li>
-                        <li>All prices shown are purchase prices for inventory valuation</li>
-                    </ul>
-                </div>
-                <div class="flex justify-end mb-4">
-                    <button onclick="applyStockFilters()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                        Apply Filters
-                    </button>
-                    <button onclick="clearStockFiltersAndReload()" class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                        Clear
-                    </button>
-                </div>
+                    <div class="text-sm text-gray-600 mb-4 p-3 bg-blue-50 rounded-lg">
+                        <strong>How it works:</strong>
+                        <ul class="mt-1 list-disc list-inside">
+                            <li>Leave dates empty to see current stock levels in your shop</li>
+                            <li>Use "Date To" to see what stock you had as of that date (historical view)</li>
+                            <li>All prices shown are purchase prices for inventory valuation</li>
+                        </ul>
+                    </div>
+                    <div class="flex justify-end mb-4">
+                        <button onclick="applyStockFilters()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            Apply Filters
+                        </button>
+                        <button onclick="clearStockFiltersAndReload()" class="ml-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                            Clear
+                        </button>
+                    </div>
                 
                 <!-- Loading State -->
                 <div id="all-products-ledger-loading" class="text-center py-8">

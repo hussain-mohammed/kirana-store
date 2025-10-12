@@ -544,11 +544,22 @@ def get_products_stock_snapshot(
                 ).all()
 
                 # Calculate stock as of the filter date
-                total_purchases = sum(p.quantity for p in purchases)
-                total_sales = sum(s.quantity for s in sales)
-                calculated_stock = total_purchases - total_sales
+                # Formula: Stock as of date = Opening Stock + Purchases up to date - Sales up to date
 
-                print(f"📊 Product {product.name}: Purchases={total_purchases}, Sales={total_sales}, Stock as of {filter_date_to.date()}={calculated_stock}")
+                total_purchases_up_to_date = sum(p.quantity for p in purchases)
+                total_sales_up_to_date = sum(s.quantity for s in sales)
+
+                # Calculate what the opening stock was when this product was created
+                # Opening Stock = Current Stock + Total Sales Ever - Total Purchases Ever
+                all_purchases_ever = db.query(Purchase).filter(Purchase.product_id == product.id).all()
+                all_sales_ever = db.query(Sale).filter(Sale.product_id == product.id).all()
+                total_purchases_ever = sum(p.quantity for p in all_purchases_ever)
+                total_sales_ever = sum(s.quantity for s in all_sales_ever)
+
+                opening_stock = product.stock + total_sales_ever - total_purchases_ever
+                calculated_stock = opening_stock + total_purchases_up_to_date - total_sales_up_to_date
+
+                print(f"📊 Product {product.name}: Opening stock={opening_stock}, Purchases up to {filter_date_to.date()}={total_purchases_up_to_date}, Sales up to {filter_date_to.date()}={total_sales_up_to_date}, Calculated stock={calculated_stock}")
 
             elif filter_date_from:
                 # If only date_from is specified, show stock starting from that date
