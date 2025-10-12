@@ -473,21 +473,45 @@ def get_products_stock_snapshot(
     try:
         print(f"📊 Generating stock snapshot - Date From: {date_from}, Date To: {date_to}, Product ID: {product_id}")
 
-        # Parse date filters
+        # Parse date filters - handle dd-mm-yyyy format from frontend
         filter_date_from = None
         filter_date_to = None
 
         if date_from:
             try:
-                filter_date_from = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                # Try ISO format first (yyyy-mm-dd)
+                try:
+                    filter_date_from = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                except ValueError:
+                    # Handle dd-mm-yyyy format from frontend date inputs
+                    if len(date_from) == 10 and date_from[2] == '-' and date_from[5] == '-':
+                        date_str = date_from  # dd-mm-yyyy format
+                        day, month, year = date_str.split('-')
+                        iso_date = f"{year}-{month}-{day}"
+                        filter_date_from = datetime.fromisoformat(iso_date)
+                    else:
+                        raise ValueError(f"Unsupported date format: {date_from}")
+
                 print(f"📅 Parsed date_from: {filter_date_from}")
             except ValueError as e:
                 print(f"⚠️ Invalid date_from format: {date_from}, error: {e}")
 
         if date_to:
             try:
-                filter_date_to = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
-                print(f"📅 Parsed date_to: {filter_date_to}")
+                # Try ISO format first (yyyy-mm-dd)
+                try:
+                    filter_date_to = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                except ValueError:
+                    # Handle dd-mm-yyyy format from frontend date inputs
+                    if len(date_to) == 10 and date_to[2] == '-' and date_to[5] == '-':
+                        date_str = date_to  # dd-mm-yyyy format
+                        day, month, year = date_str.split('-')
+                        iso_date = f"{year}-{month}-{day}"
+                        filter_date_to = datetime.fromisoformat(iso_date)
+                    else:
+                        raise ValueError(f"Unsupported date format: {date_to}")
+
+                print(f"📅 Parsed date_to: {filter_date_to} (from input: {date_to})")
             except ValueError as e:
                 print(f"⚠️ Invalid date_to format: {date_to}, error: {e}")
 
