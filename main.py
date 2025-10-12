@@ -467,11 +467,8 @@ def get_products_stock_snapshot(
     """
     Get product stock snapshot with date filtering.
     Always shows purchase prices for inventory valuation.
-
-    Logic:
-    - Without date filters: Show current stock levels
-    - With date_to specifiers: Show stock levels BEFORE the sales on that specific date
-      This means we show what stock was available before any transactions on that date occurred
+    Without date filters: current stock as of now
+    With date filters: stock as of the specified date/end of date range
     """
     try:
         print(f"📊 Generating stock snapshot - Date From: {date_from}, Date To: {date_to}, Product ID: {product_id}")
@@ -482,88 +479,107 @@ def get_products_stock_snapshot(
 
         if date_from:
             try:
-                # Handle dd-mm-yyyy format from frontend date inputs
-                if len(date_from) == 10 and date_from[2] == '-' and date_from[5] == '-':
-                    day, month, year = date_from.split('-')
-                    iso_date = f"{year}-{month}-{day}"
-                    filter_date_from = datetime.strptime(iso_date, '%Y-%m-%d')
-                else:
+                # Try ISO format first (yyyy-mm-dd)
+                try:
                     filter_date_from = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                except ValueError:
+                    # Handle dd-mm-yyyy format from frontend date inputs
+                    if len(date_from) == 10 and date_from[2] == '-' and date_from[5] == '-':
+                        date_str = date_from  # dd-mm-yyyy format
+                        day, month, year = date_str.split('-')
+                        iso_date = f"{year}-{month}-{day}"
+                        filter_date_from = datetime.fromisoformat(iso_date)
+                    else:
+                        raise ValueError(f"Unsupported date format: {date_from}")
+
                 print(f"📅 Parsed date_from: {filter_date_from}")
             except ValueError as e:
                 print(f"⚠️ Invalid date_from format: {date_from}, error: {e}")
 
         if date_to:
             try:
-                # Handle dd-mm-yyyy format from frontend date inputs
-                if len(date_to) == 10 and date_to[2] == '-' and date_to[5] == '-':
-                    day, month, year = date_to.split('-')
-                    iso_date = f"{year}-{month}-{day}"
-                    filter_date_to = datetime.strptime(iso_date, '%Y-%m-%d')
-                else:
+                # Try ISO format first (yyyy-mm-dd)
+                try:
                     filter_date_to = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                except ValueError:
+                    # Handle dd-mm-yyyy format from frontend date inputs
+                    if len(date_to) == 10 and date_to[2] == '-' and date_to[5] == '-':
+                        date_str = date_to  # dd-mm-yyyy format
+                        day, month, year = date_str.split('-')
+                        iso_date = f"{year}-{month}-{day}"
+                        filter_date_to = datetime.fromisoformat(iso_date)
+                    else:
+                        raise ValueError(f"Unsupported date format: {date_to}")
+
                 print(f"📅 Parsed date_to: {filter_date_to} (from input: {date_to})")
             except ValueError as e:
                 print(f"⚠️ Invalid date_to format: {date_to}, error: {e}")
 
         # Base query for products
         query = db.query(Product)
+
+        # Filter by product if specified
         if product_id:
             query = query.filter(Product.id == product_id)
+
         products = query.all()
 
         snapshots = []
         for product in products:
-            # Default to current stock (including all transactions)
-            all_purchases = db.query(Purchase).filter(Purchase.product_id == product.id).all()
-            all_sales = db.query(Sale).filter(Sale.product_id == product.id).all()
-            total_purchases = sum(p.quantity for p in all_purchases)
-            total_sales = sum(s.quantity for s in all_sales)
-            calculated_stock = total_purchases - total_sales
+            # Default to current stock for no date filters or current date scenario
+            calculated_stock = product.stock
 
+            # If date filters are specified, calculate stock as of that date
             if filter_date_to:
-                # Calculate stock BEFORE any sales on the filter date
-                # Get all purchases up to (but not including) the NEXT day after filter_date
-                day_after_filter = filter_date_to + timedelta(days=1)
-
-                # Get all purchases before the day after filter_date
-                purchases_up_to_date = db.query(Purchase).filter(
+                # Get all purchases before or on the filter date
+                purchases = db.query(Purchase).filter(
                     Purchase.product_id == product.id,
-                    Purchase.purchase_date < day_after_filter
+                    Purchase.purchase_date <= filter_date_to
                 ).all()
 
-                # Get all sales BEFORE the filter date (NOT including sales on the filter date)
-                # This gives us stock levels BEFORE the sales on that date occurred
-                sales_before_date = db.query(Sale).filter(
+                # Get all sales before or on the filter date
+                sales = db.query(Sale).filter(
                     Sale.product_id == product.id,
-                    Sale.sale_date < datetime.combine(filter_date_to.date(), datetime.min.time())
+                    Sale.sale_date <= filter_date_to
                 ).all()
 
-                total_purchases = sum(p.quantity for p in purchases_up_to_date)
-                total_sales = sum(s.quantity for s in sales_before_date)
+                print(f"🔍 DEBUG: Filter date: {filter_date_to}, Product: {product.name}")
+                for sale in sales:
+                    print(f"   - Sale {sale.id}: Date={sale.sale_date}, Quantity={sale.quantity}")
 
-                # Stock at the END of the previous day (before any sales on filter_date)
-                calculated_stock = total_purchases - total_sales
+                # Calculate stock as of the filter date
+                # Formula: Stock as of date = Opening Stock + Purchases up to date - Sales up to date
 
-                print(f"📊 Product {product.name}:")
-                print(f"   Purchases before {filter_date_to.date()}: {total_purchases}")
-                print(f"   Sales before {filter_date_to.date()}: {total_sales}")
-                print(f"   Stock before sales on {filter_date_to.date()}: {calculated_stock}")
+                total_purchases_up_to_date = sum(p.quantity for p in purchases)
+                total_sales_up_to_date = sum(s.quantity for s in sales)
+
+                # Calculate what the opening stock was when this product was created
+                # Opening Stock = Current Stock + Total Sales Ever - Total Purchases Ever
+                all_purchases_ever = db.query(Purchase).filter(Purchase.product_id == product.id).all()
+                all_sales_ever = db.query(Sale).filter(Sale.product_id == product.id).all()
+                total_purchases_ever = sum(p.quantity for p in all_purchases_ever)
+                total_sales_ever = sum(s.quantity for s in all_sales_ever)
+
+                opening_stock = product.stock + total_sales_ever - total_purchases_ever
+                calculated_stock = opening_stock + total_purchases_up_to_date - total_sales_up_to_date
+
+                print(f"📊 Product {product.name}: Opening stock={opening_stock}, Purchases up to {filter_date_to.date()}={total_purchases_up_to_date}, Sales up to {filter_date_to.date()}={total_sales_up_to_date}, Calculated stock={calculated_stock}")
 
             elif filter_date_from:
-                # If only date_from is specified
-                day_after_from = filter_date_from + timedelta(days=1)
-                purchases_up_to_from = db.query(Purchase).filter(
+                # If only date_from is specified, show stock starting from that date
+                # This means stock at end of date_from period
+                purchases = db.query(Purchase).filter(
                     Purchase.product_id == product.id,
-                    Purchase.purchase_date < day_after_from
-                ).all()
-                sales_before_from = db.query(Sale).filter(
-                    Sale.product_id == product.id,
-                    Sale.sale_date < datetime.combine(filter_date_from.date(), datetime.min.time())
+                    Purchase.purchase_date <= filter_date_from
                 ).all()
 
-                total_purchases = sum(p.quantity for p in purchases_up_to_from)
-                total_sales = sum(s.quantity for s in sales_before_from)
+                sales = db.query(Sale).filter(
+                    Sale.product_id == product.id,
+                    Sale.sale_date <= filter_date_from
+                ).all()
+
+                total_purchases = sum(p.quantity for p in purchases)
+                total_sales = sum(s.quantity for s in sales)
                 calculated_stock = total_purchases - total_sales
 
             # Always use purchase price for stock valuation
