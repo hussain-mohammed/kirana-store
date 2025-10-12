@@ -1,11 +1,11 @@
 from datetime import datetime, timezone, timedelta
 import os
 from contextlib import asynccontextmanager
-from typing import List, Optional, Any, Dict, Union
+from typing import List, Optional, Any, Dict
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, status, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, text, update
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from sqlalchemy import ForeignKey
 from twilio.twiml.messaging_response import MessagingResponse
@@ -543,33 +543,27 @@ def get_products_stock_snapshot(
                     Sale.sale_date <= filter_date_to
                 ).all()
 
-                print(f"🔍 Querying for purchases <= {filter_date_to} and sales <= {filter_date_to}")
-                for p in purchases:
-                    print(f"   ✅ Purchase found: ID={p.id}, Date={p.purchase_date}, Quantity={p.quantity}")
-                for s in sales:
-                    print(f"   ✅ Sale found: ID={s.id}, Date={s.sale_date}, Quantity={s.quantity}")
-
-                print(f"🔍 DEBUG: Filter date: {filter_date_to}, Product: {product.name}, Current stock in DB: {product.stock}")
+                print(f"🔍 DEBUG: Filter date: {filter_date_to}, Product: {product.name}")
                 for sale in sales:
                     print(f"   - Sale {sale.id}: Date={sale.sale_date}, Quantity={sale.quantity}")
-                print(f"   - Total sales found: {len(sales)}")
-                for purchase in purchases:
-                    print(f"   - Purchase {purchase.id}: Date={purchase.purchase_date}, Quantity={purchase.quantity}")
-                print(f"   - Total purchases found: {len(purchases)}")
-                print(f"   - Filter date input: {date_to}")
-                print(f"   - Parsed filter date: {filter_date_to}")
 
                 # Calculate stock as of the filter date
-                # Formula: Stock as of date = Purchases up to date - Sales up to date
-                # This assumes products start with 0 stock, and stock increases with purchases and decreases with sales
+                # Formula: Stock as of date = Opening Stock + Purchases up to date - Sales up to date
 
                 total_purchases_up_to_date = sum(p.quantity for p in purchases)
                 total_sales_up_to_date = sum(s.quantity for s in sales)
 
-                # Stock as of the filter date is simply: purchases - sales up to that date
-                calculated_stock = total_purchases_up_to_date - total_sales_up_to_date
+                # Calculate what the opening stock was when this product was created
+                # Opening Stock = Current Stock + Total Sales Ever - Total Purchases Ever
+                all_purchases_ever = db.query(Purchase).filter(Purchase.product_id == product.id).all()
+                all_sales_ever = db.query(Sale).filter(Sale.product_id == product.id).all()
+                total_purchases_ever = sum(p.quantity for p in all_purchases_ever)
+                total_sales_ever = sum(s.quantity for s in all_sales_ever)
 
-                print(f"📊 Product {product.name}: Purchases up to {filter_date_to.date()}={total_purchases_up_to_date}, Sales up to {filter_date_to.date()}={total_sales_up_to_date}, Calculated stock={calculated_stock} (Current stock: {product.stock})")
+                opening_stock = product.stock + total_sales_ever - total_purchases_ever
+                calculated_stock = opening_stock + total_purchases_up_to_date - total_sales_up_to_date
+
+                print(f"📊 Product {product.name}: Opening stock={opening_stock}, Purchases up to {filter_date_to.date()}={total_purchases_up_to_date}, Sales up to {filter_date_to.date()}={total_sales_up_to_date}, Calculated stock={calculated_stock}")
 
             elif filter_date_from:
                 # If only date_from is specified, show stock starting from that date
