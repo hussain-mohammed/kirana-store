@@ -514,7 +514,12 @@ def get_products_stock_snapshot(
 
         snapshots = []
         for product in products:
-            calculated_stock = product.stock  # Default to current stock
+            # Default to current stock (including all transactions)
+            all_purchases = db.query(Purchase).filter(Purchase.product_id == product.id).all()
+            all_sales = db.query(Sale).filter(Sale.product_id == product.id).all()
+            total_purchases = sum(p.quantity for p in all_purchases)
+            total_sales = sum(s.quantity for s in all_sales)
+            calculated_stock = total_purchases - total_sales
 
             if filter_date_to:
                 # Calculate stock BEFORE any sales on the filter date
