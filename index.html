@@ -2259,9 +2259,9 @@
                 const purchases = productPurchases[productId] || { total_cost: 0 };
 
                 // Get opening stock value from opening stock register
-                const openingStockProduct = openingStockData.find(p => p.product_id == productId);
+                const openingStockProduct = openingStockData.find(p => p.id == productId);
                 const openingStockValue = openingStockProduct ?
-                    ((openingStockProduct.stock || 0) * (openingStockProduct.price || 0)) : 0;
+                    ((openingStockProduct.stock || 0) * (openingStockProduct.purchase_price || 0)) : 0;
 
                 // Get closing stock value from the filtered closing stock data
                 const closingStockProduct = closingStockData.find(p => p.product_id == productId);
