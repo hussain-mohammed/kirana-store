@@ -2205,17 +2205,55 @@
             const openingStockResponse = await fetch(openingStockUrl, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
-            const openingStockData = await openingStockResponse.json();
+            let openingStockData = await openingStockResponse.json();
 
             // Get closing stock data from all products stock page (as of dateTo or end of the selected period)
             let closingStockUrl = `${backendURL}/products/stock-snapshot`;
             if (dateTo) {
                 closingStockUrl += `?date_to=${dateTo}`;
             }
+            if (dateFrom) {
+                closingStockUrl += `${closingStockUrl.includes('?') ? '&' : '?'}date_from=${dateFrom}`;
+            }
             const closingStockResponse = await fetch(closingStockUrl, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
-            const closingStockData = await closingStockResponse.json();
+            let closingStockData = await closingStockResponse.json();
+
+            // Filter opening stock data by date range if dates are selected
+            if (dateFrom || dateTo) {
+                // For opening stock, we want products that were created BEFORE the selected period
+                // This represents the stock that was available at the beginning of the period
+                openingStockData = openingStockData.filter(product => {
+                    const createdDate = new Date(product.created_at).toISOString().split('T')[0];
+                    if (dateFrom) {
+                        return createdDate < dateFrom;
+                    }
+                    return true;
+                });
+            }
+
+            // Filter closing stock data by date range if dates are selected
+            if (dateFrom || dateTo) {
+                // For closing stock, we want products that exist WITHIN the selected period
+                closingStockData = closingStockData.filter(product => {
+                    // If no date filters, show all products
+                    if (!dateFrom && !dateTo) return true;
+
+                    // If only dateFrom, show products as of that date
+                    if (dateFrom && !dateTo) {
+                        return true; // The API already filters by date_from
+                    }
+
+                    // If only dateTo, show products as of that date
+                    if (!dateFrom && dateTo) {
+                        return true; // The API already filters by date_to
+                    }
+
+                    // If both dates, the API handles the range
+                    return true;
+                });
+            }
 
             // Group sales data by product
             const productSales = {};
