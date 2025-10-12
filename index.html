@@ -1207,7 +1207,7 @@
             const productsResponse = await fetch(`${backendURL}/products`, {
                 headers: { 'ngrok-skip-browser-warning': 'true' }
             });
-            const allProducts = await productsResponse.json();
+            let allProducts = await productsResponse.json();
 
             // Use the new stock-snapshot endpoint
             const dateFrom = document.getElementById('stock-date-from').value;
