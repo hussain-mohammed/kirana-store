@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from typing import List, Optional, Any, Dict
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, status, Depends, Form
-from fastapi import security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, text
@@ -36,6 +35,9 @@ if not DATABASE_URL:
         # Don't crash the app, but it won't work without database
 else:
         print(f"📡 Connecting to database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'Local database'}")
+
+# Initialize the HTTPBearer instance
+security = HTTPBearer()
 
 # Create a SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
@@ -247,7 +249,7 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY_JWT, algorithm="HS256")
     return encoded_jwt
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY_JWT, algorithms=["HS256"])
         username: str = payload.get("sub")
