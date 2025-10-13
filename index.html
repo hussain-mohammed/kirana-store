@@ -513,9 +513,14 @@
             <div class="bg-white p-6 rounded-lg shadow-lg">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-semibold">Complete Stock Overview</h3>
-                    <button onclick="loadAllProductsLedger()" class="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors">
-                        Refresh
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="downloadData('stock')" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                            📥 Download Stock Data
+                        </button>
+                        <button onclick="loadAllProductsLedger()" class="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors">
+                            Refresh
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Filter Section -->
@@ -2835,9 +2840,19 @@
     // ===== DOWNLOAD DATA FUNCTION =====
     function downloadData(dataType) {
         try {
-            // All download endpoints use -ledger suffix in backend
-            const urlSuffix = `${dataType}-ledger`;
-            const baseUrl = `${backendURL}/download/${urlSuffix}`;
+            // Special handling: all pages except profit-loss use -ledger suffix
+            let endpoint;
+            if (dataType === 'profit-loss') {
+                endpoint = 'profit-loss';
+            } else if (dataType === 'all-products-stock') {
+                endpoint = 'all-products-stock';
+            } else if (dataType === 'stock') {
+                endpoint = 'stock-ledger';
+            } else {
+                endpoint = `${dataType}-ledger`;
+            }
+
+            const baseUrl = `${backendURL}/download/${endpoint}`;
 
             // Get filter values based on data type
             let params = new URLSearchParams();

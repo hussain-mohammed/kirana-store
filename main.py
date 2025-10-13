@@ -5,14 +5,25 @@ import csv
 from contextlib import asynccontextmanager
 from typing import List, Optional, Any, Dict
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request, status, Depends
+from fastapi import FastAPI, HTTPException, Request, status, Depends, Form
+
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+security = HTTPBearer()
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
-from sqlalchemy import ForeignKey
-from twilio.twiml.messaging_response import MessagingResponse
+from sqlalchemy import ForeignKey, Enum as SQLEnum
+import enum
+import jwt
+import bcrypt
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from twilio.twiml.messaging_response import MessagingResponse
+from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
+
+# JWT Secret Key
+SECRET_KEY_JWT = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
 
 # Load environment variables from .env file for local development
 load_dotenv()
@@ -37,6 +48,24 @@ Base = declarative_base()
 # --- Database Models ---
 IST = timezone(timedelta(hours=5, minutes=30))
 
+class UserRole(enum.Enum):
+    ADMIN = "admin"
+    MANAGER = "manager"
+    EMPLOYEE = "employee"
+
+class User(Base):
+    """User authentication and role management."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.EMPLOYEE)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(IST))
+    last_login = Column(DateTime, nullable=True)
+
 class Product(Base):
     """Represents a product in the store."""
     __tablename__ = "products"
@@ -58,7 +87,9 @@ class Sale(Base):
     quantity = Column(Integer, nullable=False)
     total_amount = Column(Float, nullable=False)
     sale_date = Column(DateTime, default=lambda: datetime.now(IST))
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     product = relationship("Product")
+    user = relationship("User", backref="sales", lazy=True)
 
 class Purchase(Base):
     """Records a purchase of stock from a supplier."""
@@ -69,7 +100,9 @@ class Purchase(Base):
     quantity = Column(Integer, nullable=False)
     total_cost = Column(Float, nullable=False)
     purchase_date = Column(DateTime, default=lambda: datetime.now(IST))
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     product = relationship("Product")
+    user = relationship("User", backref="purchases", lazy=True)
 
 # --- Pydantic Models for API Requests/Responses ---
 class ProductBase(BaseModel):
@@ -182,6 +215,51 @@ class ProductStockSnapshot(BaseModel):
     unit_type: str
     last_updated: datetime
 
+# --- Pydantic Models for Authentication ---
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+    is_active: bool
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserResponse
+
+# Authentication functions
+def authenticate_user(db: Session, username: str, password: str):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        return None
+    if not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+        return None
+    return user
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(hours=24)  # Token expires in 24 hours
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY_JWT, algorithm="HS256")
+    return encoded_jwt
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY_JWT, algorithms=["HS256"])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+        return username
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
 
 # Dependency to get a database session
 def get_db():
@@ -249,20 +327,41 @@ async def lifespan(app: FastAPI):
                     # Check if we need sample data
                     product_count = db.query(Product).count()
                     if product_count == 0:
-                        print("Seeding database with sample products...")
-                        sample_products = [
-                            Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
-                            Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
-                            Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
-                            Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
-                            Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
-                            Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
-                            Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
-                            Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
-                        ]
-                        db.add_all(sample_products)
+                    if product_count == 0:
+                    # Create default admin user if no users exist
+                    user_count = db.query(User).count()
+                    if user_count == 0:
+                        default_password = "admin123"
+                        hashed_password = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt())
+
+                        default_admin = User(
+                            username="admin",
+                            email="admin@kirana.store",
+                            password_hash=hashed_password.decode('utf-8'),
+                            role=UserRole.ADMIN,
+                            is_active=True
+                        )
+                        db.add(default_admin)
                         db.commit()
-                        print("✅ Sample products added to database.")
+                        print(f"✅ Default admin user created: username=admin, password={default_password}")
+                        print("⚠️  PLEASE CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
+
+                    print("Seeding database with sample products...")
+                    else:
+                        print(f"Database already contains {product_count} products.")
+                    sample_products = [
+                        Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
+                        Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
+                        Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
+                        Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
+                        Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
+                        Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
+                        Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
+                        Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
+                    ]
+                    db.add_all(sample_products)
+                    db.commit()
+                    print("✅ Sample products added to database.")
                     else:
                         print(f"Database already contains {product_count} products.")
 
@@ -368,20 +467,8 @@ async def get_products(db: Session = Depends(get_db)):
         print(f"📦 Found {len(db_products)} products in database")
 
         frontend_products = []
-        image_mapping = {
-            "apple": "https://placehold.co/400x400/81c784/ffffff?text=Apple",
-            "banana": "https://placehold.co/400x400/fff176/ffffff?text=Banana",
-            "orange": "https://placehold.co/400x400/ffb74d/ffffff?text=Orange",
-            "milk": "https://placehold.co/400x400/b0e0e6/ffffff?text=Milk",
-            "bread": "https://placehold.co/400x400/d7ccc8/ffffff?text=Bread",
-            "eggs": "https://placehold.co/400x400/fff9c4/ffffff?text=Eggs",
-            "rice": "https://placehold.co/400x400/f0f8ff/ffffff?text=Rice",
-            "sugar": "https://placehold.co/400x400/e6e6e6/ffffff?text=Sugar"
-        }
 
         for product in db_products:
-            image_url = image_mapping.get(product.name.lower(), "https://placehold.co/400x400/cccccc/ffffff?text=Product")
-
             frontend_products.append({
                 "id": product.id,
                 "name": product.name,
@@ -389,7 +476,7 @@ async def get_products(db: Session = Depends(get_db)):
                 "purchase_price": float(product.purchase_price),
                 "selling_price": float(product.selling_price),
                 "unit_type": str(product.unit_type),  # Ensure it's returned as string
-                "imageUrl": image_url,
+                "imageUrl": "",  # Let frontend generate dynamic images
                 "stock": product.stock
             })
 
@@ -1240,6 +1327,63 @@ def download_stock_ledger(
         raise HTTPException(status_code=500, detail=f"Error generating stock ledger CSV: {str(e)}")
 
 
+@app.get("/download/all-products-stock")
+def download_all_products_stock(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Download all products stock data as CSV file (friendly CSV format for stock management)
+    """
+    try:
+        # Get the same data as the stock snapshot endpoint
+        stock_data = get_products_stock_snapshot(date_from=date_from, date_to=date_to, product_id=product_id, db=db)
+
+        # Create a more user-friendly CSV format for stock management
+        csv_data = []
+
+        # Add summary row at the top
+        total_products = len(stock_data)
+        total_stock_quantity = sum(entry.stock for entry in stock_data)
+        total_stock_value = sum(entry.stock_value for entry in stock_data)
+
+        csv_data.append({
+            "Summary": f"Total Products: {total_products}",
+            " ": f"Total Stock Quantity: {total_stock_quantity}",
+            "  ": f"Total Stock Value: ₹{total_stock_value:.2f}",
+            "   ": "",
+            "    ": "",
+            "     ": ""
+        })
+
+        csv_data.append({})  # Empty row for separation
+
+        # Add product data
+        for entry in stock_data:
+            # Only include products with stock or that have some activity
+            if entry.stock > 0 or total_stock_value > 0:
+                # Calculate selling price if we had it, but since we don't, use a reasonable markup
+                # For simplicity, we'll just show purchase price and stock value
+                csv_data.append({
+                    "Product Name": entry.product_name,
+                    "Unit Type": entry.unit_type,
+                    "Purchase Price (₹)": f"{entry.price:.2f}",
+                    "Stock Quantity": entry.stock,
+                    "Stock Value (₹)": f"{entry.stock_value:.2f}",
+                    "Last Updated": entry.last_updated.strftime("%d/%m/%Y %H:%M") if entry.last_updated else ""
+                })
+
+        filename = "all_products_stock.csv"
+        fieldnames = ["Product Name", "Unit Type", "Purchase Price (₹)", "Stock Quantity", "Stock Value (₹)", "Last Updated"]
+
+        return create_csv_response(csv_data, filename, fieldnames)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating all products stock CSV: {str(e)}")
+
+
 @app.get("/download/profit-loss")
 def download_profit_loss(
     start_date: Optional[str] = None,
@@ -1394,16 +1538,102 @@ async def health_check(db: Session = Depends(get_db)):
     try:
         db.execute(text("SELECT 1"))
         return {
-            "status": "healthy", 
+            "status": "healthy",
             "database": "connected",
             "timestamp": datetime.now(IST).isoformat()
         }
     except Exception as e:
         return {
-            "status": "unhealthy", 
+            "status": "unhealthy",
             "database": "disconnected",
             "error": str(e)
         }
+
+# --- USER AUTHENTICATION ENDPOINTS ---
+
+@app.post("/auth/login", response_model=LoginResponse)
+async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Authenticate user and return JWT token
+    """
+    try:
+        user = authenticate_user(db, login_data.username, login_data.password)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+
+        # Update last login
+        user.last_login = datetime.now(IST)
+        db.commit()
+
+        # Create access token
+        access_token = create_access_token({"sub": user.username})
+
+        return LoginResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                role=user.role.value,
+                is_active=user.is_active
+            )
+        )
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.get("/auth/me", response_model=UserResponse)
+async def get_current_user(username: str = Depends(verify_token), db: Session = Depends(get_db)):
+    """
+    Get current authenticated user information
+    """
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            role=user.role.value,
+            is_active=user.is_active
+        )
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.get("/auth/protected")
+async def protected_route(username: str = Depends(verify_token)):
+    """
+    Example protected route that requires authentication
+    """
+    return {"message": f"Hello {username}, you are authenticated!"}
+
+# --- USER MANAGEMENT ENDPOINTS (Admin Only) ---
+
+@app.get("/users", response_model=List[UserResponse])
+async def get_users(db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    """
+    Get all users (Admin only)
+    """
+    try:
+        # Check if user is admin
+        user = db.query(User).filter(User.username == username).first()
+        if user.role != UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+
+        users = db.query(User).all()
+        return [UserResponse(
+            id=u.id,
+            username=u.username,
+            email=u.email,
+            role=u.role.value,
+            is_active=u.is_active
+        ) for u in users]
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
