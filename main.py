@@ -6,11 +6,9 @@ from contextlib import asynccontextmanager
 from typing import List, Optional, Any, Dict
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, status, Depends, Form
-
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-security = HTTPBearer()
 from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, text
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from sqlalchemy import ForeignKey, Enum as SQLEnum
 import enum
