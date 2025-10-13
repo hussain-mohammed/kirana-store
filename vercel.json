@@ -2,7 +2,15 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://kirana-store-maoc.onrender.com*"
+      "destination": "https://kirana-store-maoc.onrender.com/:path*"
+    },
+    {
+      "source": "/customer",
+      "destination": "/customer.html"
+    },
+    {
+      "source": "/(index|admin)?",
+      "destination": "/index.html"
     }
   ],
   "headers": [
