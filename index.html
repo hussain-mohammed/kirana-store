@@ -240,8 +240,49 @@
         </div>
     </header>
 
+    <!-- ===== LOGIN PAGE ===== -->
+    <div id="page-login" class="page active min-h-screen" style="background: linear-gradient(rgba(59, 130, 246, 0.9), rgba(147, 51, 234, 0.7)); background-size: cover; background-position: center;">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">Kirana Store Login</h1>
+                    <p class="text-gray-600">Please sign in to continue</p>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                        <input type="text" id="login-username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your username" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="login-password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your password" required>
+                    </div>
+
+                    <button type="submit" id="login-submit-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                        Sign In
+                    </button>
+                </form>
+
+                <!-- Login Status -->
+                <div id="login-status" class="mt-4 text-center hidden">
+                    <p id="login-status-message" class="text-sm"></p>
+                </div>
+
+                <!-- Demo Credentials -->
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</h3>
+                    <p class="text-xs text-gray-600">Username: <strong>admin</strong></p>
+                    <p class="text-xs text-gray-600">Password: <strong>admin123</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== LANDING PAGE ===== -->
-    <div id="page-home" class="page active gradient-bg">
+    <div id="page-home" class="page gradient-bg">
         <main class="w-full max-w-6xl mx-auto p-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button onclick="showContentPage('sales')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
@@ -2912,26 +2953,134 @@
         }
     }
 
+    // ===== AUTHENTICATION FUNCTIONS =====
+    let currentUser = null;
+
+    // Check if user is already logged in on page load
+    async function checkAuthentication() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            showLoginPage();
+            return false;
+        }
+
+        try {
+            // Verify token with server
+            const response = await fetch(`${backendURL}/auth/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+
+            if (response.ok) {
+                currentUser = await response.json();
+                showMainApp();
+                return true;
+            } else {
+                localStorage.removeItem('access_token');
+                showLoginPage();
+                return false;
+            }
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            localStorage.removeItem('access_token');
+            showLoginPage();
+            return false;
+        }
+    }
+
+    function showLoginPage() {
+        Object.values(pages).forEach(page => page.classList.remove('active'));
+        pages.login.classList.add('active');
+        document.getElementById('login-status').classList.add('hidden');
+        document.getElementById('login-form').reset();
+    }
+
+    function showMainApp() {
+        Object.values(pages).forEach(page => page.classList.remove('active'));
+        pages.home.classList.add('active');
+        document.getElementById('back-to-home').classList.add('hidden');
+    }
+
+    async function performLogin(username, password) {
+        const submitBtn = document.getElementById('login-submit-btn');
+        const statusEl = document.getElementById('login-status');
+        const statusMessageEl = document.getElementById('login-status-message');
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Signing In...';
+
+        try {
+            const response = await fetch(`${backendURL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem('access_token', data.access_token);
+                currentUser = data.user;
+                statusEl.classList.remove('hidden');
+                statusMessageEl.className = 'text-green-600';
+                statusMessageEl.textContent = 'Login successful! Redirecting...';
+                setTimeout(() => showMainApp(), 1000);
+            } else {
+                statusEl.classList.remove('hidden');
+                statusMessageEl.className = 'text-red-600';
+                statusMessageEl.textContent = data.detail || 'Login failed';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+            }
+        } catch (error) {
+            statusEl.classList.remove('hidden');
+            statusMessageEl.className = 'text-red-600';
+            statusMessageEl.textContent = 'Network error. Please try again.';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Sign In';
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('access_token');
+        currentUser = null;
+        showLoginPage();
+    }
+
     // ===== EVENT LISTENERS =====
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
         backButton.addEventListener('click', backToHome);
 
+        // LOGIN FORM HANDLER
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            await performLogin(username, password);
+        });
+
+        // CART AND PRODUCT INTERACTIONS
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('add-to-cart-btn')) {
                 const productId = e.target.dataset.id;
                 addToCart(productId);
             }
-            
+
             if (e.target.classList.contains('increase-quantity')) {
                 const productId = e.target.dataset.id;
                 increaseQuantity(productId);
             }
-            
+
             if (e.target.classList.contains('decrease-quantity')) {
                 const productId = e.target.dataset.id;
                 decreaseQuantity(productId);
             }
-            
+
             if (e.target.classList.contains('remove-item')) {
                 const productId = e.target.dataset.id;
                 if (cart[productId]) {
@@ -2940,19 +3089,19 @@
                     showNotification('Item removed from cart');
                 }
             }
-            
+
             // Handle delete buttons for sales and purchases
             if (e.target.classList.contains('delete-sale')) {
                 const recordId = e.target.dataset.id;
                 deleteRecord(recordId, 'sale');
             }
-            
+
             if (e.target.classList.contains('delete-purchase')) {
                 const recordId = e.target.dataset.id;
                 deleteRecord(recordId, 'purchase');
             }
-            
-            // NEW: Handle delete product buttons
+
+            // Handle delete product buttons
             if (e.target.classList.contains('delete-product-btn')) {
                 const productId = e.target.dataset.id;
                 const productName = e.target.dataset.name;
@@ -2994,11 +3143,19 @@
                 return;
             }
 
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Please log in first');
+                showLoginPage();
+                return;
+            }
+
             try {
                 const response = await fetch(`${backendURL}/purchases/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
                         'ngrok-skip-browser-warning': 'true'
                     },
                     body: JSON.stringify({
@@ -3031,6 +3188,13 @@
             const unitType = document.getElementById('product-unit-type').value;
             const stock = document.getElementById('product-stock').value;
 
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Please log in first');
+                showLoginPage();
+                return;
+            }
+
             try {
                 await createProduct({
                     name: name,
@@ -3049,7 +3213,8 @@
             }
         });
 
-        backToHome();
+        // Check authentication on page load
+        await checkAuthentication();
     });
 </script>
 </body>

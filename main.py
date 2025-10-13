@@ -949,11 +949,11 @@ def get_purchase_ledger(
     
     # Apply date filters
     if start_date:
-        start_dt = datetime.datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
         query = query.filter(Purchase.purchase_date >= start_dt)
-    
+
     if end_date:
-        end_dt = datetime.datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
         query = query.filter(Purchase.purchase_date <= end_dt)
     
     # Apply product filter
@@ -993,11 +993,11 @@ def get_sales_ledger(
     
     # Apply date filters
     if start_date:
-        start_dt = datetime.datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
         query = query.filter(Sale.sale_date >= start_dt)
-    
+
     if end_date:
-        end_dt = datetime.datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
         query = query.filter(Sale.sale_date <= end_dt)
     
     # Apply product filter
@@ -1081,7 +1081,7 @@ def get_product_stock_ledger(product_id: int, db: Session = Depends(get_db)):
     
     # Add opening entry
     history.append(ProductStockHistory(
-        date=all_transactions[0]["date"] if all_transactions else datetime.datetime.now(),
+        date=all_transactions[0]["date"] if all_transactions else datetime.now(IST),
         transaction_type="OPENING",
         reference="Opening Stock",
         quantity=opening_stock,
@@ -1150,7 +1150,7 @@ def get_ledger_summary(db: Session = Depends(get_db)):
     total_sales = db.query(Sale).count()
 
     # Recent activity (last 30 days)
-    thirty_days_ago = datetime.datetime.now() - datetime.timedelta(days=30)
+    thirty_days_ago = datetime.now(IST) - timedelta(days=30)
 
     recent_purchases = db.query(Purchase).filter(Purchase.purchase_date >= thirty_days_ago).count()
     recent_sales = db.query(Sale).filter(Sale.sale_date >= thirty_days_ago).count()
@@ -1176,7 +1176,7 @@ def get_ledger_summary(db: Session = Depends(get_db)):
             "total_sale_quantity": total_sale_qty,
             "low_stock_products": low_stock_products
         },
-        "last_updated": datetime.datetime.now()
+        "last_updated": datetime.now(IST)
     }
 
 
