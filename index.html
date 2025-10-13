@@ -2835,7 +2835,9 @@
     // ===== DOWNLOAD DATA FUNCTION =====
     function downloadData(dataType) {
         try {
-            const baseUrl = `${backendURL}/download/${dataType}-ledger`;
+            // All download endpoints use -ledger suffix in backend
+            const urlSuffix = `${dataType}-ledger`;
+            const baseUrl = `${backendURL}/download/${urlSuffix}`;
 
             // Get filter values based on data type
             let params = new URLSearchParams();
