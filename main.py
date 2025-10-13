@@ -1,5 +1,7 @@
 from datetime import datetime, timezone, timedelta
 import os
+import io
+import csv
 from contextlib import asynccontextmanager
 from typing import List, Optional, Any, Dict
 from dotenv import load_dotenv
@@ -1061,23 +1063,23 @@ def get_ledger_summary(db: Session = Depends(get_db)):
     total_products = db.query(Product).count()
     total_purchases = db.query(Purchase).count()
     total_sales = db.query(Sale).count()
-    
+
     # Recent activity (last 30 days)
     thirty_days_ago = datetime.datetime.now() - datetime.timedelta(days=30)
-    
+
     recent_purchases = db.query(Purchase).filter(Purchase.purchase_date >= thirty_days_ago).count()
     recent_sales = db.query(Sale).filter(Sale.sale_date >= thirty_days_ago).count()
-    
+
     # Total quantities
     total_purchase_quantity = db.query(Purchase.quantity).all()
     total_purchase_qty = sum([q[0] for q in total_purchase_quantity]) if total_purchase_quantity else 0
-    
+
     total_sale_quantity = db.query(Sale.quantity).all()
     total_sale_qty = sum([q[0] for q in total_sale_quantity]) if total_sale_quantity else 0
-    
+
     # Low stock products
     low_stock_products = db.query(Product).filter(Product.stock <= 10).count()
-    
+
     return {
         "summary": {
             "total_products": total_products,
@@ -1091,6 +1093,260 @@ def get_ledger_summary(db: Session = Depends(get_db)):
         },
         "last_updated": datetime.datetime.now()
     }
+
+
+# --- DOWNLOAD ENDPOINTS FOR EXCEL/CSV EXPORT ---
+
+from fastapi.responses import StreamingResponse
+
+
+def create_csv_response(data: list, filename: str, fieldnames: list):
+    """Helper function to create CSV response from data"""
+    if not data:
+        # Return empty CSV with headers
+        csv_content = io.StringIO()
+        writer = csv.DictWriter(csv_content, fieldnames=fieldnames)
+        writer.writeheader()
+        csv_content.seek(0)
+    else:
+        # Create CSV from data
+        csv_content = io.StringIO()
+        if isinstance(data[0], dict):
+            writer = csv.DictWriter(csv_content, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(data)
+        else:
+            # Handle list of lists
+            writer = csv.writer(csv_content)
+            if fieldnames:
+                writer.writerow(fieldnames)
+            writer.writerows(data)
+        csv_content.seek(0)
+
+    return StreamingResponse(
+        io.StringIO(csv_content.getvalue()),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@app.get("/download/sales-ledger")
+def download_sales_ledger(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Download sales ledger as CSV file
+    """
+    try:
+        # Get the same data as the regular sales ledger endpoint
+        ledger_data = get_sales_ledger(start_date=start_date, end_date=end_date, product_id=product_id, db=db)
+
+        # Convert to CSV format
+        csv_data = []
+        for entry in ledger_data:
+            csv_data.append({
+                "Sale ID": entry.sale_id,
+                "Date": entry.date.strftime("%d/%m/%Y %H:%M") if entry.date else "",
+                "Product ID": entry.product_id,
+                "Product Name": entry.product_name,
+                "Quantity": entry.quantity,
+                "Unit Price (₹)": f"{entry.unit_price:.2f}",
+                "Total Amount (₹)": f"{entry.total_amount:.2f}",
+                "Customer Info": entry.customer_info or ""
+            })
+
+        filename = "sales_ledger.csv"
+        fieldnames = ["Sale ID", "Date", "Product ID", "Product Name", "Quantity", "Unit Price (₹)", "Total Amount (₹)", "Customer Info"]
+
+        return create_csv_response(csv_data, filename, fieldnames)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating sales ledger CSV: {str(e)}")
+
+
+@app.get("/download/purchase-ledger")
+def download_purchase_ledger(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Download purchase ledger as CSV file
+    """
+    try:
+        # Get the same data as the regular purchase ledger endpoint
+        ledger_data = get_purchase_ledger(start_date=start_date, end_date=end_date, product_id=product_id, db=db)
+
+        # Convert to CSV format
+        csv_data = []
+        for entry in ledger_data:
+            csv_data.append({
+                "Purchase ID": entry.purchase_id,
+                "Date": entry.date.strftime("%d/%m/%Y %H:%M") if entry.date else "",
+                "Product ID": entry.product_id,
+                "Product Name": entry.product_name,
+                "Quantity": entry.quantity,
+                "Unit Cost (₹)": f"{entry.unit_cost:.2f}",
+                "Total Cost (₹)": f"{entry.total_cost:.2f}",
+                "Supplier Info": entry.supplier_info or ""
+            })
+
+        filename = "purchase_ledger.csv"
+        fieldnames = ["Purchase ID", "Date", "Product ID", "Product Name", "Quantity", "Unit Cost (₹)", "Total Cost (₹)", "Supplier Info"]
+
+        return create_csv_response(csv_data, filename, fieldnames)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating purchase ledger CSV: {str(e)}")
+
+
+@app.get("/download/stock-ledger")
+def download_stock_ledger(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Download complete product stock ledger as CSV file
+    """
+    try:
+        # Get the same data as the stock snapshot endpoint
+        stock_data = get_products_stock_snapshot(date_from=date_from, date_to=date_to, product_id=product_id, db=db)
+
+        # Convert to CSV format
+        csv_data = []
+        for entry in stock_data:
+            csv_data.append({
+                "Product ID": entry.product_id,
+                "Product Name": entry.product_name,
+                "Purchase Price (₹)": f"{entry.price:.2f}",
+                "Current Stock": entry.stock,
+                "Stock Value (₹)": f"{entry.stock_value:.2f}",
+                "Unit Type": entry.unit_type,
+                "Last Updated": entry.last_updated.strftime("%d/%m/%Y %H:%M") if entry.last_updated else ""
+            })
+
+        filename = "product_stock_ledger.csv"
+        fieldnames = ["Product ID", "Product Name", "Purchase Price (₹)", "Current Stock", "Stock Value (₹)", "Unit Type", "Last Updated"]
+
+        return create_csv_response(csv_data, filename, fieldnames)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating stock ledger CSV: {str(e)}")
+
+
+@app.get("/download/profit-loss")
+def download_profit_loss(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Download profit & loss analysis as CSV file
+    """
+    try:
+        # Fetch sales and purchase data with date/product filters
+        sales_query = db.query(Sale)
+        purchases_query = db.query(Purchase)
+        products_query = db.query(Product)
+
+        # Apply date filters
+        if start_date:
+            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            sales_query = sales_query.filter(Sale.sale_date >= start_dt)
+            purchases_query = purchases_query.filter(Purchase.purchase_date >= start_dt)
+
+        if end_date:
+            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            sales_query = sales_query.filter(Sale.sale_date <= end_dt)
+            purchases_query = purchases_query.filter(Purchase.purchase_date <= end_dt)
+
+        # Apply product filter
+        if product_id:
+            sales_query = sales_query.filter(Sale.product_id == product_id)
+            purchases_query = purchases_query.filter(Purchase.product_id == product_id)
+            products_query = products_query.filter(Product.id == product_id)
+
+        sales = sales_query.all()
+        purchases = purchases_query.all()
+        products = products_query.all()
+
+        # Get opening stock register for opening stock values
+        opening_stock_data = get_opening_stock_register(db=db)
+
+        # Get closing stock snapshot
+        closing_stock_data = get_products_stock_snapshot(date_to=end_date, product_id=product_id, db=db)
+
+        # Group data by product
+        product_analysis = []
+
+        for product in products:
+            # Filter sales and purchases for this product
+            product_sales = [s for s in sales if s.product_id == product.id]
+            product_purchases = [p for p in purchases if p.product_id == product.id]
+
+            # Get opening stock
+            opening_entry = next((os for os in opening_stock_data if os.id == product.id), None)
+            opening_stock_value = (opening_entry.stock * product.purchase_price) if opening_entry else 0
+
+            # Get closing stock
+            closing_entry = next((cs for cs in closing_stock_data if cs.product_id == product.id), None)
+            closing_stock_value = closing_entry.stock_value if closing_entry else 0
+
+            # Calculate totals
+            total_sales_amount = sum(s.total_amount for s in product_sales)
+            total_purchase_cost = sum(p.total_cost for p in product_purchases)
+            units_sold = sum(s.quantity for s in product_sales)
+
+            # Calculate profit/loss: Sales + Closing Stock - Opening Stock - Purchases
+            gross_profit = total_sales_amount + closing_stock_value - opening_stock_value - total_purchase_cost
+            margin = f"{(gross_profit / total_sales_amount * 100):.2f}%" if total_sales_amount > 0 else "0.00%"
+
+            product_analysis.append({
+                "Product ID": product.id,
+                "Product Name": product.name,
+                "Units Sold": units_sold,
+                "Opening Stock Value (₹)": f"{opening_stock_value:.2f}",
+                "Purchase Cost (₹)": f"{total_purchase_cost:.2f}",
+                "Sales Amount (₹)": f"{total_sales_amount:.2f}",
+                "Closing Stock Value (₹)": f"{closing_stock_value:.2f}",
+                "Gross Profit (₹)": f"{gross_profit:.2f}",
+                "Profit Margin (%)": margin
+            })
+
+        # Calculate totals
+        total_opening = sum(float(p["Opening Stock Value (₹)"]) for p in product_analysis)
+        total_purchases = sum(float(p["Purchase Cost (₹)"]) for p in product_analysis)
+        total_sales = sum(float(p["Sales Amount (₹)"]) for p in product_analysis)
+        total_closing = sum(float(p["Closing Stock Value (₹)"]) for p in product_analysis)
+        total_profit = sum(float(p["Gross Profit (₹)"]) for p in product_analysis)
+
+        # Add total row
+        product_analysis.append({
+            "Product ID": "TOTAL",
+            "Product Name": "ALL PRODUCTS",
+            "Units Sold": "",
+            "Opening Stock Value (₹)": f"{total_opening:.2f}",
+            "Purchase Cost (₹)": f"{total_purchases:.2f}",
+            "Sales Amount (₹)": f"{total_sales:.2f}",
+            "Closing Stock Value (₹)": f"{total_closing:.2f}",
+            "Gross Profit (₹)": f"{total_profit:.2f}",
+            "Profit Margin (%)": f"{(total_profit / total_sales * 100):.2f}%" if total_sales > 0 else "0.00%"
+        })
+
+        filename = "profit_loss_analysis.csv"
+        fieldnames = ["Product ID", "Product Name", "Units Sold", "Opening Stock Value (₹)", "Purchase Cost (₹)", "Sales Amount (₹)", "Closing Stock Value (₹)", "Gross Profit (₹)", "Profit Margin (%)"]
+
+        return create_csv_response(product_analysis, filename, fieldnames)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating profit & loss CSV: {str(e)}")
 
 
 # --- SMS Endpoint ---

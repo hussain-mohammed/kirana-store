@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raza Wholesale and Retail - Customer Order</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(rgba(132, 206, 248, 0.85), rgba(172, 124, 20, 0.438)),
+                        url('https://thearchitectsdiary.com/wp-content/uploads/2024/03/Supermarket-design-01-1-1536x1076.webp');
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        .glass-effect {
+            background: rgba(236, 49, 49, 0.842);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(64, 202, 226, 0.918);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        /* Disable hover effects on touch devices */
+        @media (hover: hover) {
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px rgba(221, 4, 4, 0.1);
+            }
+        }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+            main {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+            .glass-effect {
+                padding: 0.75rem;
+                backdrop-filter: blur(5px);
+            }
+
+            /* Make buttons stack vertically on small screens */
+            .button-container {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            /* Adjust modal on mobile */
+            #cart-modal {
+                margin: 1rem;
+                max-height: 80vh;
+            }
+
+            /* Stack summary cards in 2 columns on mobile */
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+
+            /* Make tables scrollable horizontally on mobile */
+            .table-container {
+                overflow-x: auto;
+                margin: -0.5rem -0.75rem 0 -0.75rem;
+                padding: 0 0.75rem;
+            }
+
+            /* Adjust header for mobile */
+            header .flex.items-center {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            header .logo-container {
+                max-width: 250px;
+            }
+
+            /* Smaller button padding on mobile */
+            .card-hover {
+                padding: 4px 8px !important;
+            }
+
+            /* Adjust filter sections for mobile */
+            .filter-section {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            /* Fix notification positioning on mobile */
+            .notification {
+                top: 1rem;
+                right: 1rem;
+                left: 1rem;
+                max-width: none;
+                width: auto;
+            }
+        }
+
+        /* Extra small mobile devices */
+        @media (max-width: 480px) {
+            main {
+                padding-left: 0.25rem;
+                padding-right: 0.25rem;
+            }
+
+            .glass-effect {
+                padding: 0.5rem;
+                margin: 0.25rem;
+            }
+
+            /* Stack summary cards in 1 column on tiny screens */
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            /* Adjust cart modal for very small screens */
+            #cart-modal .bg-white {
+                margin: 0.5rem;
+            }
+
+            /* Smaller text on very small screens */
+            h1 {
+                font-size: 1.25rem;
+            }
+            h2 {
+                font-size: 1.125rem;
+            }
+            .text-lg {
+                font-size: 0.9375rem;
+            }
+            .text-sm {
+                font-size: 0.8125rem;
+            }
+        }
+    </style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="w-full bg-green-500 shadow-sm p-1 sticky top-0 z-10">
+        <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <!-- Logo Section -->
+                <div class="logo-container">
+                    <img alt="" src="data:image/jpeg;base64,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" />
+                </div>
+                <div class="text-center bg-blue-500 glass-effect rounded-2xl p-1 text-white">
+                    <h1 class="text-xl font-bold mb-1">Raza Wholesale and Retail</h1>
+                    <p class="text-blue-100 mb-0">Customer Order Portal</p>
+                    <p class="text-blue-100 text-sm mb-0">Place your order easily online</p>
+                    <p class="text-blue-100 text-md mb-0"><strong>📞 Contact: +91 7075210801</strong></p>
+                    <p class="text-blue-100 text-md mb-0">🕒 Open: 24/7 | 🚚 Free Delivery</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="gradient-bg">
+        <main class="w-full max-w-md mx-auto p-4 space-y-6">
+            <h2 class="text-2xl font-semibold text-center text-white mb-6">🍎 Place Your Order</h2>
+
+            <!-- Products Section -->
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-lg font-semibold mb-4 text-center">Available Products</h3>
+                <div id="product-list" class="grid grid-cols-2 gap-4">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Order Summary Cart Modal -->
+            <div id="cart-modal" class="fixed inset-0 bg-gray-600 bg-opacity-90 hidden items-center justify-center p-4 z-20">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-gray-800">🛒 Your Order</h3>
+                        <button id="close-modal-button" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                    </div>
+                    <div id="cart-items" class="space-y-3">
+                        <!-- Cart items will be generated here -->
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="flex justify-between font-bold text-lg text-gray-800 mb-4">
+                            <span>Total:</span>
+                            <span id="cart-total">₹0.00</span>
+                        </div>
+
+                        <!-- Customer Details Form -->
+                        <form id="customer-form" class="space-y-3 mb-4">
+                            <input type="text" id="customer-name" placeholder="Your Full Name" class="w-full p-2 border border-gray-300 rounded-lg" required>
+                            <input type="tel" id="customer-phone" placeholder="Phone Number (WhatsApp)" class="w-full p-2 border border-gray-300 rounded-lg" required>
+                            <textarea id="customer-address" placeholder="Delivery Address (Optional)" class="w-full p-2 border border-gray-300 rounded-lg" rows="2"></textarea>
+                            <textarea id="customer-notes" placeholder="Special Notes (Optional)" class="w-full p-2 border border-gray-300 rounded-lg" rows="2" placeholder="Any special instructions..."></textarea>
+                        </form>
+
+                        <button id="whatsapp-checkout-button" class="w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300">
+                            📱 Place Order on WhatsApp
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ===== BACKEND CONFIGURATION =====
+        const backendURL = "https://kirana-store-maoc.onrender.com";
+        const WHATSAPP_NUMBER = "917075210801";
+
+        // Global variables
+        let products = [];
+        let cart = {};
+
+        // DOM Elements
+        const productListEl = document.getElementById('product-list');
+        const cartModal = document.getElementById('cart-modal');
+        const cartItemsEl = document.getElementById('cart-items');
+        const cartTotalEl = document.getElementById('cart-total');
+        const whatsappCheckoutButton = document.getElementById('whatsapp-checkout-button');
+        const closeModalButton = document.getElementById('close-modal-button');
+        const customerForm = document.getElementById('customer-form');
+
+        // ===== UTILITY FUNCTIONS =====
+        function formatDateTime(dateString) {
+            if (!dateString) {
+                return { date: 'N/A', time: 'N/A', full: 'N/A' };
+            }
+            try {
+                const dateObj = new Date(dateString);
+                if (isNaN(dateObj.getTime())) {
+                    return { date: 'Invalid Date', time: 'Invalid Date', full: 'Invalid Date' };
+                }
+                const day = dateObj.getDate().toString().padStart(2, '0');
+                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                const year = dateObj.getFullYear().toString().slice(-2);
+                const hours = dateObj.getHours().toString().padStart(2, '0');
+                const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                return {
+                    date: `${day}/${month}/${year}`,
+                    time: `${hours}:${minutes}`,
+                    full: `${day}/${month}/${year} ${hours}:${minutes}`
+                };
+            } catch (error) {
+                return { date: 'Error', time: 'Error', full: 'Error' };
+            }
+        }
+
+        function getUnitDisplay(unitType, quantity) {
+            if (!unitType) return `${quantity} pcs`;
+            const normalizedUnitType = unitType.toLowerCase().trim();
+            switch(normalizedUnitType) {
+                case 'kgs': case 'kg': case 'kilograms': return `${quantity} kgs`;
+                case 'ltr': case 'liter': case 'liters': case 'litre': case 'litres': return `${quantity} ltr`;
+                case 'pcs': case 'piece': case 'pieces': case 'pc': return `${quantity} pcs`;
+                default: return `${quantity} ${unitType}`;
+            }
+        }
+
+        function showNotification(message) {
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) existingNotification.remove();
+
+            const notification = document.createElement('div');
+            notification.className = 'notification fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm';
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 4000);
+        }
+
+        // ===== PRODUCT LOADING =====
+        async function fetchProducts() {
+            try {
+                const response = await fetch(`${backendURL}/products`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                products = await response.json();
+                showCartButton();
+                renderProducts();
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+                loadMockProducts();
+            }
+        }
+
+        function loadMockProducts() {
+            products = [
+                {id: 1, name: "Apple", price: 100.00, stock: 5, unit_type: "kgs"},
+                {id: 2, name: "Banana", price: 50.00, stock: 10, unit_type: "kgs"},
+                {id: 3, name: "Orange", price: 80.00, stock: 8, unit_type: "kgs"},
+                {id: 4, name: "Milk", price: 65.00, stock: 15, unit_type: "ltr"},
+                {id: 5, name: "Bread", price: 40.00, stock: 12, unit_type: "pcs"},
+            ];
+            renderProducts();
+        }
+
+        function renderProducts() {
+            if (!products || products.length === 0) {
+                productListEl.innerHTML = '<p class="text-center text-gray-500">No products available</p>';
+                return;
+            }
+
+            productListEl.innerHTML = products.map(product => {
+                const isOutOfStock = product.stock <= 0;
+                const buttonClass = isOutOfStock
+                    ? "w-full bg-gray-400 text-white text-xs font-bold py-2 px-3 rounded-lg cursor-not-allowed"
+                    : "w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors duration-300";
+                const buttonText = isOutOfStock ? "Out of Stock" : "Add to Cart";
+                const unitDisplay = getUnitDisplay(product.unit_type || 'pcs', product.stock || 0);
+
+                return `
+                    <div class="bg-white p-4 rounded-xl shadow-lg card-hover ${isOutOfStock ? 'opacity-70' : ''}">
+                        <h4 class="text-sm font-semibold text-gray-700 text-center mb-2">${product.name}</h4>
+                        <p class="text-lg font-bold text-center text-gray-800 mb-1">₹${product.price.toFixed(2)}</p>
+                        <div class="flex justify-between items-center text-xs text-gray-500 mb-3">
+                            <span>Stock: ${unitDisplay}</span>
+                            <span>Per ${product.unit_type || 'pcs'}</span>
+                        </div>
+                        <button class="add-to-cart-btn ${buttonClass}"
+                                data-id="${product.id}"
+                                ${isOutOfStock ? 'disabled' : ''}>
+                            ${buttonText}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== CART FUNCTIONS =====
+        function addToCart(productId) {
+            const product = products.find(p => p.id === parseInt(productId));
+
+            if (!product) {
+                showNotification("Product not found!");
+                return;
+            }
+
+            if (product.stock <= 0) {
+                showNotification(`Sorry, ${product.name} is out of stock!`);
+                return;
+            }
+
+            const currentCartQuantity = cart[productId] || 0;
+            if (currentCartQuantity + 1 > product.stock) {
+                showNotification(`Sorry, only ${product.stock} units of ${product.name} are available!`);
+                return;
+            }
+
+            cart[productId] = currentCartQuantity + 1;
+            updateCartUI();
+            showNotification(`✅ Added ${product.name} to order!`);
+        }
+
+        function increaseQuantity(productId) {
+            const product = products.find(p => p.id === parseInt(productId));
+
+            if (!product) {
+                showNotification("Product not found!");
+                return;
+            }
+
+            const currentCartQuantity = cart[productId] || 0;
+            if (currentCartQuantity + 1 > product.stock) {
+                showNotification(`Sorry, only ${product.stock} units of ${product.name} are available!`);
+                return;
+            }
+
+            cart[productId] = currentCartQuantity + 1;
+            updateCartUI();
+        }
+
+        function decreaseQuantity(productId) {
+            if (cart[productId] > 1) {
+                cart[productId] -= 1;
+                updateCartUI();
+            }
+        }
+
+        function updateCartUI() {
+            cartItemsEl.innerHTML = '';
+            let total = 0;
+            let totalCount = 0;
+
+            for (const productId in cart) {
+                if (cart[productId] > 0) {
+                    const product = products.find(p => p.id === parseInt(productId));
+                    if (product) {
+                        const quantity = cart[productId];
+                        const itemTotal = quantity * product.price;
+                        total += itemTotal;
+                        totalCount += quantity;
+
+                        const cartItem = document.createElement('div');
+                        cartItem.className = "flex justify-between items-center p-3 bg-gray-50 rounded-lg";
+                        cartItem.innerHTML = `
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-800">${product.name}</div>
+                                <div class="text-sm text-gray-600">₹${product.price.toFixed(2)} each</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="decrease-quantity w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors" data-id="${product.id}">-</button>
+                                <span class="quantity-display w-8 text-center font-medium">${quantity}</span>
+                                <button class="increase-quantity w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors" data-id="${product.id}">+</button>
+                            </div>
+                            <div class="text-right ml-4">
+                                <div class="font-medium text-gray-800">₹${itemTotal.toFixed(2)}</div>
+                                <button class="remove-item text-xs text-red-500 hover:text-red-700 mt-1" data-id="${product.id}">Remove</button>
+                            </div>
+                        `;
+                        cartItemsEl.appendChild(cartItem);
+                    }
+                }
+            }
+
+            cartTotalEl.textContent = `₹${total.toFixed(2)}`;
+            whatsappCheckoutButton.disabled = totalCount === 0;
+            whatsappCheckoutButton.className = totalCount === 0
+                ? "w-full mt-4 bg-gray-400 text-white font-bold py-2 px-4 rounded-lg cursor-not-allowed"
+                : "w-full mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-600 transition-colors duration-300";
+        }
+
+        function showCartButton() {
+            const existingButton = document.querySelector('.view-cart-button');
+            if (existingButton) existingButton.remove();
+
+            const cartButton = document.createElement('button');
+            cartButton.className = 'view-cart-button fixed bottom-4 right-4 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors z-10';
+            cartButton.innerHTML = '🛒 View Order';
+            cartButton.onclick = () => {
+                cartModal.classList.remove('hidden');
+                cartModal.classList.add('flex');
+            };
+
+            document.body.appendChild(cartButton);
+        }
+
+        // ===== WHATSAPP ORDER FUNCTIONS =====
+        function generateWhatsAppOrder() {
+            // Validate form
+            const customerName = document.getElementById('customer-name').value.trim();
+            const customerPhone = document.getElementById('customer-phone').value.trim();
+            const customerAddress = document.getElementById('customer-address').value.trim();
+            const customerNotes = document.getElementById('customer-notes').value.trim();
+
+            if (!customerName) {
+                alert('Please enter your name');
+                document.getElementById('customer-name').focus();
+                return;
+            }
+
+            if (!customerPhone) {
+                alert('Please enter your phone number');
+                document.getElementById('customer-phone').focus();
+                return;
+            }
+
+            // Validate phone number (basic)
+            const phoneRegex = /^[6-9]\d{9}$/;
+            if (!phoneRegex.test(customerPhone.replace(/\s+/g, ''))) {
+                alert('Please enter a valid 10-digit mobile number');
+                document.getElementById('customer-phone').focus();
+                return;
+            }
+
+            let message = `*NEW CUSTOMER ORDER*\n\n`;
+            message += `👤 Customer: ${customerName}\n`;
+            message += `📞 Phone: ${customerPhone}\n`;
+
+            if (customerAddress) {
+                message += `🏠 Address: ${customerAddress}\n`;
+            }
+
+            message += `\n📦 ORDER DETAILS:\n`;
+            message += `─`.repeat(20) + `\n`;
+
+            let total = 0;
+            const saleItems = [];
+
+            for (const productId in cart) {
+                if (cart[productId] > 0) {
+                    const product = products.find(p => p.id === parseInt(productId));
+                    if (product) {
+                        const quantity = cart[productId];
+                        const itemTotal = quantity * product.price;
+                        total += itemTotal;
+
+                        message += `${product.name} - ${quantity} ${product.unit_type || 'pcs'} × ₹${product.price.toFixed(2)} = ₹${itemTotal.toFixed(2)}\n`;
+
+                        saleItems.push({
+                            product_id: product.id,
+                            product_name: product.name,
+                            quantity: quantity,
+                            price: product.price,
+                            total: itemTotal
+                        });
+                    }
+                }
+            }
+
+            message += `─`.repeat(20) + `\n`;
+            message += `*TOTAL: ₹${total.toFixed(2)}*\n\n`;
+
+            if (customerNotes) {
+                message += `*NOTES:* ${customerNotes}\n\n`;
+            }
+
+            message += `✅ Please confirm and process this order.\n`;
+            message += `📅 Order placed on: ${new Date().toLocaleString('en-IN')}\n`;
+            message += `🏪 Raza Wholesale and Retail Store`;
+
+            // Record the sale in the backend
+            recordSale(saleItems, customerName, customerPhone).then(() => {
+                showNotification('🎉 Order sent successfully! Our team will contact you soon.');
+            }).catch(error => {
+                console.warn('Sale recording failed, but continuing to WhatsApp:', error);
+                showNotification('📱 Order sent to WhatsApp (backend recording failed)');
+            });
+
+            // Open WhatsApp
+            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+
+            // Reset cart and close modal
+            cart = {};
+            updateCartUI();
+            cartModal.classList.add('hidden');
+            cartModal.classList.remove('flex');
+
+            // Reset form
+            document.getElementById('customer-form').reset();
+        }
+
+        async function recordSale(saleItems, customerName, customerPhone) {
+            try {
+                for (const item of saleItems) {
+                    const response = await fetch(`${backendURL}/sales/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        },
+                        body: JSON.stringify({
+                            product_id: item.product_id,
+                            quantity: item.quantity
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Failed to record sale for ${item.product_name}: ${errorData.detail}`);
+                    }
+
+                    const result = await response.json();
+                    console.log(`✅ Sale recorded for ${item.product_name}:`, result);
+                }
+
+                return { message: "All sales recorded successfully" };
+            } catch (error) {
+                console.error('Error recording sale:', error);
+                throw error;
+            }
+        }
+
+        // ===== EVENT LISTENERS =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load products on page load
+            fetchProducts();
+
+            // Cart modal events
+            closeModalButton.addEventListener('click', () => {
+                cartModal.classList.add('hidden');
+                cartModal.classList.remove('flex');
+            });
+
+            whatsappCheckoutButton.addEventListener('click', generateWhatsAppOrder);
+
+            // Dynamic event listeners for cart and product buttons
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('add-to-cart-btn')) {
+                    const productId = e.target.dataset.id;
+                    addToCart(productId);
+                }
+
+                if (e.target.classList.contains('increase-quantity')) {
+                    const productId = e.target.dataset.id;
+                    increaseQuantity(productId);
+                }
+
+                if (e.target.classList.contains('decrease-quantity')) {
+                    const productId = e.target.dataset.id;
+                    decreaseQuantity(productId);
+                }
+
+                if (e.target.classList.contains('remove-item')) {
+                    const productId = e.target.dataset.id;
+                    if (cart[productId]) {
+                        delete cart[productId];
+                        updateCartUI();
+                        showNotification('🍽️ Item removed from order');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
