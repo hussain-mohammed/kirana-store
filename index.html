@@ -234,9 +234,12 @@
                     <p class="text-blue-100 text-sm mb-0">Order on whatsapp we deliver to your doorstep</p>
                 </div>
             </div>
-            <button id="back-to-home" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors hidden">
-                ← Back to Home
-            </button>
+                <button id="logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                    Logout
+                </button>
+                <button id="back-to-home" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors hidden">
+                    ← Back to Home
+                </button>
         </div>
     </header>
 
@@ -348,6 +351,13 @@
                     <div class="text-left">
                         <div class="text-xl font-bold mb-2">📊 Opening Stock</div>
                         <p class="text-yellow-100">View opening stock register with all created products</p>
+                    </div>
+                </button>
+
+                <button onclick="showContentPage('settings')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">⚙️ Settings</div>
+                        <p class="text-purple-100">Manage users and their permissions</p>
                     </div>
                 </button>
             </div>
@@ -1026,6 +1036,106 @@
         </main>
     </div>
 
+    <!-- SETTINGS PAGE -->
+    <div id="page-settings" class="page" style="background: linear-gradient(rgba(147, 51, 234, 0.85), rgba(59, 130, 246, 0.438)); background-size: cover; background-position: center; min-height: 100vh;">
+        <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">Settings</h2>
+
+            <!-- User Management Section -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">User Management</h3>
+                    <button onclick="loadUsers()" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                        Refresh Users
+                    </button>
+                </div>
+
+                <!-- Add User Button (Admin Only) -->
+                <div class="mb-6">
+                    <button onclick="showAddUserForm()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                        Add New User
+                    </button>
+                </div>
+
+                <!-- Add User Form (Hidden by default) -->
+                <div id="add-user-form" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
+                    <h4 class="text-md font-semibold mb-4">Add New User</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                            <input type="text" id="new-username" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter username">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="new-email" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="user@domain.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="new-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter password">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                            <select id="new-role" class="w-full p-2 border border-gray-300 rounded-lg">
+                                <option value="EMPLOYEE">Employee</option>
+                                <option value="MANAGER">Manager</option>
+                                <option value="ADMIN">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="addUser()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                            Create User
+                        </button>
+                        <button onclick="hideAddUserForm()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="users-loading" class="text-center py-8">
+                    <p class="text-gray-500">Loading users...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="users-error" class="text-center py-8 hidden">
+                    <p class="text-red-500">Error loading users</p>
+                </div>
+
+                <!-- Users List -->
+                <div id="users-list" class="hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-gray-200">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="border border-gray-200 px-4 py-2 text-left">ID</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Username</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Email</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Role</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Status</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Last Login</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Permissions</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Users will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current User Permissions Info -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-4">Your Access Permissions</h3>
+                <div id="current-user-permissions" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- Current user permissions will be shown here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
 <script>
     // ===== BACKEND CONFIGURATION =====
     const backendURL = "https://kirana-store-maoc.onrender.com";
@@ -1049,7 +1159,8 @@
         'sales-ledger': document.getElementById('page-sales-ledger'),
         'purchase-ledger': document.getElementById('page-purchase-ledger'),
         'profit-loss': document.getElementById('page-profit-loss'),
-        'opening-stock': document.getElementById('page-opening-stock')
+        'opening-stock': document.getElementById('page-opening-stock'),
+        settings: document.getElementById('page-settings')
     };
 
     const backButton = document.getElementById('back-to-home');
@@ -3011,8 +3122,14 @@
         submitBtn.disabled = true;
         submitBtn.textContent = 'Signing In...';
 
+        // Add logging
+        console.log('🔐 Attempting login for user:', username);
+
         try {
-            const response = await fetch(`${backendURL}/auth/login`, {
+            const loginUrl = `${backendURL}/auth/login`;
+            console.log('📡 Login URL:', loginUrl);
+
+            const response = await fetch(loginUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3021,16 +3138,36 @@
                 body: JSON.stringify({ username, password })
             });
 
+            console.log('📊 Login response status:', response.status);
+
             const data = await response.json();
+            console.log('📄 Login response data keys:', Object.keys(data));
+            console.log('📄 Login response data values:', data);
+            console.log('📄 access_token in data?', 'access_token' in data);
+            console.log('📄 data.access_token value:', data.access_token);
 
             if (response.ok) {
-                localStorage.setItem('access_token', data.access_token);
-                currentUser = data.user;
-                statusEl.classList.remove('hidden');
-                statusMessageEl.className = 'text-green-600';
-                statusMessageEl.textContent = 'Login successful! Redirecting...';
-                setTimeout(() => showMainApp(), 1000);
+                if (data.access_token) {
+                    localStorage.setItem('access_token', data.access_token);
+                    currentUser = data.user;
+                    statusEl.classList.remove('hidden');
+                    statusMessageEl.className = 'text-green-600';
+                    statusMessageEl.textContent = 'Login successful! Redirecting...';
+                    console.log('✅ Login successful, token stored');
+                    setTimeout(() => {
+                        console.log('🔄 Calling showMainApp()');
+                        showMainApp();
+                    }, 1000);
+                } else {
+                    console.log('❌ No access_token in response');
+                    statusEl.classList.remove('hidden');
+                    statusMessageEl.className = 'text-red-600';
+                    statusMessageEl.textContent = 'Invalid response from server';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                }
             } else {
+                console.log('❌ Login failed:', data.detail || 'Unknown error');
                 statusEl.classList.remove('hidden');
                 statusMessageEl.className = 'text-red-600';
                 statusMessageEl.textContent = data.detail || 'Login failed';
@@ -3038,6 +3175,7 @@
                 submitBtn.textContent = 'Sign In';
             }
         } catch (error) {
+            console.error('💥 Network error during login:', error);
             statusEl.classList.remove('hidden');
             statusMessageEl.className = 'text-red-600';
             statusMessageEl.textContent = 'Network error. Please try again.';
@@ -3213,8 +3351,451 @@
             }
         });
 
-        // Check authentication on page load
-        await checkAuthentication();
+        // ===== SETTINGS PAGE FUNCTIONS =====
+        function loadUsers() {
+            const loadingEl = document.getElementById('users-loading');
+            const errorEl = document.getElementById('users-error');
+            const contentEl = document.getElementById('users-list');
+            const tbodyEl = document.getElementById('users-table-body');
+
+            loadingEl.classList.remove('hidden');
+            errorEl.classList.add('hidden');
+            contentEl.classList.add('hidden');
+
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Please log in first');
+                showLoginPage();
+                return;
+            }
+
+            fetch(`${backendURL}/users`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(users => {
+                console.log('✅ Users loaded:', users);
+
+                if (!Array.isArray(users) || users.length === 0) {
+                    tbodyEl.innerHTML = '<tr><td colspan="8" class="border border-gray-200 px-4 py-4 text-center text-gray-500">No users found</td></tr>';
+                } else {
+                    tbodyEl.innerHTML = users.map(user => `
+                        <tr class="hover:bg-gray-50">
+                            <td class="border border-gray-200 px-4 py-2 font-medium">${user.id}</td>
+                            <td class="border border-gray-200 px-4 py-2 font-medium">${user.username}</td>
+                            <td class="border border-gray-200 px-4 py-2">${user.email}</td>
+                            <td class="border border-gray-200 px-4 py-2">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}">
+                                    ${user.role}
+                                </span>
+                            </td>
+                            <td class="border border-gray-200 px-4 py-2">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                    ${user.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                            </td>
+                            <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">Last Login</td>
+                            <td class="border border-gray-200 px-4 py-2">${getUserPermissions(user.role)}</td>
+                            <td class="border border-gray-200 px-4 py-2">
+                                <button class="edit-user-btn text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors"
+                                        data-id="${user.id}" data-username="${user.username}" data-email="${user.email}" data-role="${user.role}" data-active="${user.is_active}">
+                                    Edit
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                loadingEl.classList.add('hidden');
+                contentEl.classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('❌ Error loading users:', error);
+                loadingEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
+                errorEl.innerHTML = `<p class="text-red-500">Error loading users: ${error.message}</p>`;
+            });
+        }
+
+        function getRoleColor(role) {
+            switch(role.toLowerCase()) {
+                case 'admin':
+                    return 'bg-red-100 text-red-800';
+                case 'manager':
+                    return 'bg-blue-100 text-blue-800';
+                case 'employee':
+                    return 'bg-green-100 text-green-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function getUserPermissions(role) {
+            switch(role.toLowerCase()) {
+                case 'admin':
+                    return 'All Access';
+                case 'manager':
+                    return 'Limited Admin';
+                case 'employee':
+                    return 'Basic Access';
+                default:
+                    return 'Unknown';
+            }
+        }
+
+        function showAddUserForm() {
+            document.getElementById('add-user-form').classList.remove('hidden');
+        }
+
+        function hideAddUserForm() {
+            document.getElementById('add-user-form').classList.add('hidden');
+        }
+
+        function addUser() {
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value.trim();
+            const email = document.getElementById('new-email').value.trim();
+            const role = document.getElementById('new-role').value;
+
+            if (!username || !password || !email || !role) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Please log in first');
+                showLoginPage();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+            formData.append('email', email);
+            formData.append('role', role);
+
+            fetch(`${backendURL}/users/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.detail || `HTTP ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ User created:', data);
+                showNotification('User created successfully!');
+                hideAddUserForm();
+                // Clear form
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('new-email').value = '';
+                document.getElementById('new-role').value = 'EMPLOYEE';
+                // Reload users list
+                loadUsers();
+            })
+            .catch(error => {
+                console.error('❌ Error creating user:', error);
+                alert(`Error creating user: ${error.message}`);
+            });
+        }
+
+        function editUser(userId, username, email, role, isActive) {
+            // For now, just show an alert. You can implement editing functionality later
+            alert(`Edit user ${username} - Feature coming soon!`);
+            // You could open a modal with pre-filled form fields
+        }
+
+        // Update the settings page navigation
+        function loadPageData(pageName) {
+            switch(pageName) {
+                case 'sales':
+                    fetchProducts();
+                    break;
+                case 'purchase':
+                    loadPurchasePage();
+                    break;
+                case 'create':
+                    loadCreatePage();
+                    break;
+                case 'delete-product':
+                    loadDeleteProductPage();
+                    break;
+                case 'all-products-ledger':
+                    loadAllProductsLedger();
+                    break;
+                case 'sales-ledger':
+                    loadSalesLedger();
+                    break;
+                case 'purchase-ledger':
+                    loadPurchaseLedger();
+                    break;
+                case 'profit-loss':
+                    loadProfitLossData();
+                    break;
+                case 'opening-stock':
+                    loadOpeningStockData();
+                    break;
+                case 'settings':
+                    loadUsers();
+                    loadCurrentUserPermissions();
+                    break;
+            }
+        }
+
+        // ===== LOAD CURRENT USER PERMISSIONS =====
+        function loadCurrentUserPermissions() {
+            const permissionsEl = document.getElementById('current-user-permissions');
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+
+            fetch(`${backendURL}/auth/permissions`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                const features = data.accessible_features;
+                const featureBadges = [
+                    { name: 'Sales', key: 'sales' },
+                    { name: 'Purchase', key: 'purchase' },
+                    { name: 'Create Product', key: 'create_product' },
+                    { name: 'Delete Product', key: 'delete_product' },
+                    { name: 'Sales Ledger', key: 'sales_ledger' },
+                    { name: 'Purchase Ledger', key: 'purchase_ledger' },
+                    { name: 'Stock Ledger', key: 'stock_ledger' },
+                    { name: 'Profit & Loss', key: 'profit_loss' },
+                    { name: 'Opening Stock', key: 'opening_stock' },
+                    { name: 'User Management', key: 'user_management' }
+                ];
+
+                permissionsEl.innerHTML = featureBadges.map(feature => `
+                    <div class="text-center">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${features[feature.key] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${features[feature.key] ? '✓' : '✗'} ${feature.name}
+                        </span>
+                    </div>
+                `).join('');
+            })
+            .catch(error => {
+                console.error('Error loading permissions:', error);
+                permissionsEl.innerHTML = '<div class="col-span-full text-center text-red-500">Error loading permissions</div>';
+            });
+        }
+
+        // ===== EVENT LISTENERS ===== (UPDATED)
+        document.addEventListener('DOMContentLoaded', async function() {
+            backButton.addEventListener('click', backToHome);
+
+            // LOGOUT BUTTON HANDLER
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to logout?')) {
+                        logout();
+                        showNotification('Logged out successfully!');
+                    }
+                });
+            }
+
+            // LOGIN FORM HANDLER
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+                await performLogin(username, password);
+            });
+
+            // CART AND PRODUCT INTERACTIONS
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('add-to-cart-btn')) {
+                    const productId = e.target.dataset.id;
+                    addToCart(productId);
+                }
+
+                if (e.target.classList.contains('increase-quantity')) {
+                    const productId = e.target.dataset.id;
+                    increaseQuantity(productId);
+                }
+
+                if (e.target.classList.contains('decrease-quantity')) {
+                    const productId = e.target.dataset.id;
+                    decreaseQuantity(productId);
+                }
+
+                if (e.target.classList.contains('remove-item')) {
+                    const productId = e.target.dataset.id;
+                    if (cart[productId]) {
+                        delete cart[productId];
+                        updateCartUI();
+                        showNotification('Item removed from cart');
+                    }
+                }
+
+                // Handle delete buttons for sales and purchases
+                if (e.target.classList.contains('delete-sale')) {
+                    const recordId = e.target.dataset.id;
+                    deleteRecord(recordId, 'sale');
+                }
+
+                if (e.target.classList.contains('delete-purchase')) {
+                    const recordId = e.target.dataset.id;
+                    deleteRecord(recordId, 'purchase');
+                }
+
+                // Handle delete product buttons
+                if (e.target.classList.contains('delete-product-btn')) {
+                    const productId = e.target.dataset.id;
+                    const productName = e.target.dataset.name;
+                    deleteProduct(productId, productName);
+                }
+
+                // Handle edit user buttons
+                if (e.target.classList.contains('edit-user-btn')) {
+                    const userId = e.target.dataset.id;
+                    const username = e.target.dataset.username;
+                    const email = e.target.dataset.email;
+                    const role = e.target.dataset.role;
+                    const isActive = e.target.dataset.active;
+                    editUser(userId, username, email, role, isActive);
+                }
+            });
+
+            // Add user form submit
+            document.getElementById('add-user-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                addUser();
+            });
+
+            document.getElementById('close-modal-button').addEventListener('click', () => {
+                document.getElementById('cart-modal').classList.add('hidden');
+                document.getElementById('cart-modal').classList.remove('flex');
+            });
+
+            document.getElementById('whatsapp-checkout-button').addEventListener('click', generateWhatsAppOrder);
+
+            // Auto-populate prices when product is selected in purchase form
+            document.getElementById('purchase-product').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const unitCostField = document.getElementById('purchase-unit-cost');
+                const unitTypeField = document.getElementById('purchase-unit-type');
+
+                if (selectedOption.value) {
+                    unitCostField.value = selectedOption.dataset.purchasePrice || '';
+                    unitTypeField.value = selectedOption.dataset.unitType || '';
+                } else {
+                    unitCostField.value = '';
+                    unitTypeField.value = '';
+                }
+            });
+
+            document.getElementById('purchase-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const productId = document.getElementById('purchase-product').value;
+                const quantity = document.getElementById('purchase-quantity').value;
+                const unitCost = document.getElementById('purchase-unit-cost').value;
+
+                if (!productId) {
+                    alert('Please select a product');
+                    return;
+                }
+
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('Please log in first');
+                    showLoginPage();
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${backendURL}/purchases/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                            'ngrok-skip-browser-warning': 'true'
+                        },
+                        body: JSON.stringify({
+                            product_id: parseInt(productId),
+                            quantity: parseInt(quantity),
+                            unit_cost: parseFloat(unitCost)
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('Purchase recorded successfully!');
+                        document.getElementById('purchase-form').reset();
+                        await loadPurchaseHistory();
+                        await loadProductDropdown('purchase-product');
+                    } else {
+                        const errorData = await response.json();
+                        alert('Error recording purchase: ' + (errorData.detail || 'Unknown error'));
+                    }
+                } catch (error) {
+                    alert('Error recording purchase: ' + error.message);
+                }
+            });
+
+            document.getElementById('create-product-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const name = document.getElementById('product-name').value;
+                const purchasePrice = document.getElementById('product-purchase-price').value;
+                const sellingPrice = document.getElementById('product-selling-price').value;
+                const unitType = document.getElementById('product-unit-type').value;
+                const stock = document.getElementById('product-stock').value;
+
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert('Please log in first');
+                    showLoginPage();
+                    return;
+                }
+
+                try {
+                    await createProduct({
+                        name: name,
+                        purchase_price: parseFloat(purchasePrice),
+                        selling_price: parseFloat(sellingPrice),
+                        unit_type: unitType,
+                        stock: parseInt(stock) || 0
+                    });
+
+                    alert('Product created successfully!');
+                    document.getElementById('create-product-form').reset();
+                    await loadExistingProducts();
+
+                } catch (error) {
+                    alert('Error creating product: ' + error.message);
+                }
+            });
+
+            // Check authentication on page load
+            await checkAuthentication();
+        });
     });
 </script>
 </body>

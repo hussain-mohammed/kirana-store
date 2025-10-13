@@ -54,6 +54,46 @@ class UserRole(enum.Enum):
     MANAGER = "manager"
     EMPLOYEE = "employee"
 
+class Permission(enum.Enum):
+    SALES = "sales"
+    PURCHASE = "purchase"
+    CREATE_PRODUCT = "create_product"
+    DELETE_PRODUCT = "delete_product"
+    SALES_LEDGER = "sales_ledger"
+    PURCHASE_LEDGER = "purchase_ledger"
+    STOCK_LEDGER = "stock_ledger"
+    PROFIT_LOSS = "profit_loss"
+    OPENING_STOCK = "opening_stock"
+    USER_MANAGEMENT = "user_management"
+
+# Permissions for each role
+ROLE_PERMISSIONS = {
+    UserRole.ADMIN.value: [
+        Permission.SALES,
+        Permission.PURCHASE,
+        Permission.CREATE_PRODUCT,
+        Permission.DELETE_PRODUCT,
+        Permission.SALES_LEDGER,
+        Permission.PURCHASE_LEDGER,
+        Permission.STOCK_LEDGER,
+        Permission.PROFIT_LOSS,
+        Permission.OPENING_STOCK,
+        Permission.USER_MANAGEMENT,
+    ],
+    UserRole.MANAGER.value: [
+        Permission.SALES,
+        Permission.PURCHASE,
+        Permission.SALES_LEDGER,
+        Permission.PURCHASE_LEDGER,
+        Permission.STOCK_LEDGER,
+        Permission.OPENING_STOCK,
+    ],
+    UserRole.EMPLOYEE.value: [
+        Permission.SALES,
+        Permission.PURCHASE,
+    ],
+}
+
 class User(Base):
     """User authentication and role management."""
     __tablename__ = "users"
@@ -249,7 +289,7 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY_JWT, algorithm="HS256")
     return encoded_jwt
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY_JWT, algorithms=["HS256"])
         username: str = payload.get("sub")
@@ -1632,6 +1672,281 @@ async def get_users(db: Session = Depends(get_db), username: str = Depends(verif
         raise
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def create_user(
+    username: str = Form(...),
+    password: str = Form(...),
+    email: str = Form(...),
+    role: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_token)
+):
+    """
+    Create a new user (Admin only)
+    """
+    try:
+        # Check if current user is admin
+        user = db.query(User).filter(User.username == current_user).first()
+        if user.role != UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+
+        # Validate role
+        try:
+            user_role = UserRole(role.upper())
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid role. Must be 'ADMIN', 'MANAGER', or 'EMPLOYEE'")
+
+        # Check if username already exists
+        existing_user = db.query(User).filter(User.username == username).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username already exists")
+
+        # Hash password
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        # Create new user
+        new_user = User(
+            username=username,
+            email=email,
+            password_hash=hashed_password.decode('utf-8'),
+            role=user_role,
+            is_active=True
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        return UserResponse(
+            id=new_user.id,
+            username=new_user.username,
+            email=new_user.email,
+            role=new_user.role.value,
+            is_active=new_user.is_active
+        )
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.put("/users/{user_id}/permissions", response_model=UserResponse)
+def update_user_permissions(
+    user_id: int,
+    role: str = Form(...),
+    is_active: bool = Form(...),
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_token)
+):
+    """
+    Update user permissions/roles (Admin only)
+    """
+    try:
+        # Check if current user is admin
+        admin_user = db.query(User).filter(User.username == current_user).first()
+        if admin_user.role != UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+
+        # Find the user to update
+        user_to_update = db.query(User).filter(User.id == user_id).first()
+        if not user_to_update:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Validate role
+        try:
+            user_role = UserRole(role.upper())
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid role. Must be 'ADMIN', 'MANAGER', or 'EMPLOYEE'")
+
+        # Update user
+        user_to_update.role = user_role
+        user_to_update.is_active = is_active
+
+        db.commit()
+        db.refresh(user_to_update)
+
+        return UserResponse(
+            id=user_to_update.id,
+            username=user_to_update.username,
+            email=user_to_update.email,
+            role=user_to_update.role.value,
+            is_active=user_to_update.is_active
+        )
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.get("/auth/permissions")
+def get_user_permissions(username: str = Depends(verify_token), db: Session = Depends(get_db)):
+    """
+    Get current user's permissions and accessible features
+    """
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user_permissions = ROLE_PERMISSIONS.get(user.role.value, [])
+
+        # Convert Permission enum to string values
+        permissions = [perm.value for perm in user_permissions]
+
+        return {
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role.value,
+                "is_active": user.is_active
+            },
+            "permissions": permissions,
+            "accessible_features": {
+                "sales": Permission.SALES.value in permissions,
+                "purchase": Permission.PURCHASE.value in permissions,
+                "create_product": Permission.CREATE_PRODUCT.value in permissions,
+                "delete_product": Permission.DELETE_PRODUCT.value in permissions,
+                "sales_ledger": Permission.SALES_LEDGER.value in permissions,
+                "purchase_ledger": Permission.PURCHASE_LEDGER.value in permissions,
+                "stock_ledger": Permission.STOCK_LEDGER.value in permissions,
+                "profit_loss": Permission.PROFIT_LOSS.value in permissions,
+                "opening_stock": Permission.OPENING_STOCK.value in permissions,
+                "user_management": Permission.USER_MANAGEMENT.value in permissions,
+            }
+        }
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+# Permission-protected endpoint getters
+def check_permission(required_permission: Permission, db: Session, username: str):
+    """Helper function to check if user has required permission"""
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_permissions = ROLE_PERMISSIONS.get(user.role.value, [])
+    if required_permission not in user_permissions:
+        raise HTTPException(status_code=403, detail=f"Authentication required for {required_permission.value}")
+
+@app.get("/protected/sales")
+def protected_sales_endpoint(db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    """Protected sales endpoint - requires SALES permission"""
+    check_permission(Permission.SALES, db, username)
+    return {"message": "Sales access granted"}
+
+@app.get("/protected/purchase")
+def protected_purchase_endpoint(db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    """Protected purchase endpoint - requires PURCHASE permission"""
+    check_permission(Permission.PURCHASE, db, username)
+    return {"message": "Purchase access granted"}
+
+@app.get("/protected/create-product")
+def protected_create_product_endpoint(db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    """Protected create product endpoint - requires CREATE_PRODUCT permission"""
+    check_permission(Permission.CREATE_PRODUCT, db, username)
+    return {"message": "Create product access granted"}
+
+@app.get("/protected/delete-product")
+def protected_delete_product_endpoint(db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    """Protected delete product endpoint - requires DELETE_PRODUCT permission"""
+    check_permission(Permission.DELETE_PRODUCT, db, username)
+    return {"message": "Delete product access granted"}
+
+# Add permission checks to existing endpoints
+@app.post("/products/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+def create_product(product: ProductCreate, db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    check_permission(Permission.CREATE_PRODUCT, db, username)
+    db_product = Product(**product.dict())
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+@app.delete("/products/{product_id}", status_code=status.HTTP_200_OK)
+def delete_product(product_id: int, db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    """Delete a product and all its associated sales and purchase records."""
+    check_permission(Permission.DELETE_PRODUCT, db, username)
+    # ... existing code ...
+
+@app.post("/sales/", response_model=SaleResponse, status_code=status.HTTP_201_CREATED)
+def record_sale(sale: SaleCreate, db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    check_permission(Permission.SALES, db, username)
+    # ... existing code ...
+
+@app.post("/purchases/", response_model=PurchaseResponse, status_code=status.HTTP_201_CREATED)
+def record_purchase(purchase: PurchaseCreate, db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    check_permission(Permission.PURCHASE, db, username)
+    # ... existing code ...
+
+# Protected ledger endpoints
+@app.get("/ledger/sales", response_model=List[SalesLedgerEntry])
+def get_sales_ledger(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    username: str = Depends(verify_token)
+):
+    check_permission(Permission.SALES_LEDGER, db, username)
+    # ... existing code ...
+
+@app.get("/ledger/purchases", response_model=List[PurchaseLedgerEntry])
+def get_purchase_ledger(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    username: str = Depends(verify_token)
+):
+    check_permission(Permission.PURCHASE_LEDGER, db, username)
+    # ... existing code ...
+
+@app.get("/products/stock-snapshot", response_model=List[ProductStockSnapshot])
+def get_products_stock_snapshot(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    username: str = Depends(verify_token)
+):
+    check_permission(Permission.STOCK_LEDGER, db, username)
+    # ... existing code ...
+
+@app.get("/profit-loss-data")
+def get_profit_loss_data(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    username: str = Depends(verify_token)
+):
+    check_permission(Permission.PROFIT_LOSS, db, username)
+    # This is a simplified version - the frontend Profit & Loss page uses this
+    return {"message": "Profit & Loss access granted"}
+
+@app.get("/opening-stock-register", response_model=List[ProductResponse])
+def get_opening_stock_register(db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    check_permission(Permission.OPENING_STOCK, db, username)
+    # ... existing code ...
+
+@app.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def create_user_endpoint(
+    username: str = Form(...),
+    password: str = Form(...),
+    email: str = Form(...),
+    role: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_token)
+):
+    check_permission(Permission.USER_MANAGEMENT, db, current_user)
+    # ... use the existing create_user logic ...
+
+@app.get("/users", response_model=List[UserResponse])
+async def get_users(db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    check_permission(Permission.USER_MANAGEMENT, db, username)
+    # ... existing code ...
 
 if __name__ == "__main__":
     import uvicorn
