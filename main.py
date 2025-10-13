@@ -1640,6 +1640,14 @@ async def get_current_user(username: str = Depends(verify_token), db: Session = 
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+# Logout endpoint - clears the token client-side, server-side just returns success
+@app.post("/auth/logout")
+async def logout(username: str = Depends(verify_token)):
+    """
+    Logout endpoint - returns success message for client-side token removal
+    """
+    return {"message": "Logged out successfully"}
+
 @app.get("/auth/protected")
 async def protected_route(username: str = Depends(verify_token)):
     """
