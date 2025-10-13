@@ -234,7 +234,7 @@
                     <p class="text-blue-100 text-sm mb-0">Order on whatsapp we deliver to your doorstep</p>
                 </div>
             </div>
-                <button id="logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                <button id="logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors hidden">
                     Logout
                 </button>
                 <button id="back-to-home" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors hidden">
@@ -268,6 +268,51 @@
                         Sign In
                     </button>
                 </form>
+
+                <!-- Registration Toggle -->
+                <div class="text-center mt-6">
+                    <p class="text-gray-600">
+                        Don't have an account?
+                        <button id="show-register-btn" class="text-blue-600 font-medium hover:text-blue-800 transition-colors">
+                            Register here
+                        </button>
+                    </p>
+                </div>
+
+                <!-- Registration Form (Hidden by default) -->
+                <div id="register-form" class="space-y-6 hidden">
+                    <h2 class="text-2xl font-bold text-center text-gray-800">Register New Account</h2>
+                    <form id="registration-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                            <input type="text" id="register-username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Choose a username" required minlength="3">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" id="register-email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="your@email.com" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                            <input type="password" id="register-password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Create a password (min 6 chars)" required minlength="6">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                            <input type="password" id="register-confirm-password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Confirm your password" required>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="submit" id="register-submit-btn" class="flex-1 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-300">
+                                Register
+                            </button>
+                            <button type="button" id="back-to-login-btn" class="flex-1 bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                                Back to Login
+                            </button>
+                        </div>
+                    </form>
+                </div>
 
                 <!-- Login Status -->
                 <div id="login-status" class="mt-4 text-center hidden">
@@ -3064,6 +3109,121 @@
         }
     }
 
+    // ===== REGISTRATION FORM FUNCTIONS =====
+    function showRegistrationForm() {
+        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('register-form').classList.remove('hidden');
+        document.getElementById('login-status').classList.add('hidden');
+    }
+
+    function showLoginForm() {
+        document.getElementById('register-form').classList.add('hidden');
+        document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('login-status').classList.add('hidden');
+        document.getElementById('registration-form').reset();
+    }
+
+    async function performRegistration() {
+        const registerBtn = document.getElementById('register-submit-btn');
+        const statusEl = document.getElementById('login-status');
+        const statusMessageEl = document.getElementById('login-status-message');
+
+        // Get form values
+        const username = document.getElementById('register-username').value.trim();
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('register-confirm-password').value;
+
+        // Validate form
+        if (!username || !email || !password || !confirmPassword) {
+            showRegistrationError('Please fill in all fields');
+            return;
+        }
+
+        if (username.length < 3) {
+            showRegistrationError('Username must be at least 3 characters long');
+            return;
+        }
+
+        if (password.length < 6) {
+            showRegistrationError('Password must be at least 6 characters long');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showRegistrationError('Passwords do not match');
+            return;
+        }
+
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showRegistrationError('Please enter a valid email address');
+            return;
+        }
+
+        // Disable button and show loading
+        registerBtn.disabled = true;
+        registerBtn.textContent = 'Creating Account...';
+
+        try {
+            console.log('📝 Attempting registration for:', username);
+
+            const response = await fetch(`${backendURL}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: new URLSearchParams({
+                    username: username,
+                    email: email,
+                    password: password
+                })
+            });
+
+            console.log('📊 Registration response status:', response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Registration successful:', data);
+
+                // Show success message and switch to login
+                statusEl.classList.remove('hidden');
+                statusMessageEl.className = 'text-green-600';
+                statusMessageEl.textContent = 'Account created successfully! You can now log in.';
+
+                // Clear form and show login
+                document.getElementById('registration-form').reset();
+                setTimeout(() => {
+                    showLoginForm();
+                    statusMessageEl.textContent = '';
+                    statusEl.classList.add('hidden');
+                }, 2000);
+
+            } else {
+                const errorData = await response.json();
+                console.log('❌ Registration failed:', errorData);
+                showRegistrationError(errorData.detail || 'Registration failed');
+            }
+
+        } catch (error) {
+            console.error('💥 Network error during registration:', error);
+            showRegistrationError('Network error. Please try again.');
+        } finally {
+            registerBtn.disabled = false;
+            registerBtn.textContent = 'Register';
+        }
+    }
+
+    function showRegistrationError(message) {
+        const statusEl = document.getElementById('login-status');
+        const statusMessageEl = document.getElementById('login-status-message');
+        statusEl.classList.remove('hidden');
+        statusMessageEl.className = 'text-red-600';
+        statusMessageEl.textContent = message;
+    }
+
     // ===== AUTHENTICATION FUNCTIONS =====
     let currentUser = null;
 
@@ -3112,6 +3272,9 @@
         Object.values(pages).forEach(page => page.classList.remove('active'));
         pages.home.classList.add('active');
         document.getElementById('back-to-home').classList.add('hidden');
+
+        // Show logout button when user is logged in
+        document.getElementById('logout-btn').classList.remove('hidden');
     }
 
     async function performLogin(username, password) {
@@ -3194,13 +3357,23 @@
     document.addEventListener('DOMContentLoaded', async function() {
         backButton.addEventListener('click', backToHome);
 
-        // LOGIN FORM HANDLER
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-            await performLogin(username, password);
-        });
+            // LOGIN FORM HANDLER
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+                await performLogin(username, password);
+            });
+
+            // REGISTRATION TOGGLE HANDLERS
+            document.getElementById('show-register-btn').addEventListener('click', showRegistrationForm);
+            document.getElementById('back-to-login-btn').addEventListener('click', showLoginForm);
+
+            // REGISTRATION FORM HANDLER
+            document.getElementById('registration-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await performRegistration();
+            });
 
         // CART AND PRODUCT INTERACTIONS
         document.addEventListener('click', (e) => {

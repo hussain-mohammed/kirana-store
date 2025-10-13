@@ -1589,6 +1589,64 @@ async def health_check(db: Session = Depends(get_db)):
 
 # --- USER AUTHENTICATION ENDPOINTS ---
 
+@app.post("/auth/register", response_model=UserResponse)
+async def register_user(
+    username: str = Form(...),
+    password: str = Form(...),
+    email: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Register a new user (public endpoint, creates users with EMPLOYEE role by default)
+    """
+    try:
+        # Validate input
+        if not username or not password or not email:
+            raise HTTPException(status_code=400, detail="Username, password and email are required")
+
+        if len(password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
+
+        # Check if user already exists
+        existing_user = db.query(User).filter(
+            (User.username == username) | (User.email == email)
+        ).first()
+        if existing_user:
+            if existing_user.username == username:
+                raise HTTPException(status_code=400, detail="Username already exists")
+            else:
+                raise HTTPException(status_code=400, detail="Email already exists")
+
+        # Hash password
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        # Create new user with EMPLOYEE role by default
+        new_user = User(
+            username=username,
+            email=email,
+            password_hash=hashed_password.decode('utf-8'),
+            role=UserRole.EMPLOYEE,  # Default role for public registration
+            is_active=True
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        return UserResponse(
+            id=new_user.id,
+            username=new_user.username,
+            email=new_user.email,
+            role=new_user.role.value,
+            is_active=new_user.is_active
+        )
+    except HTTPException:
+        db.rollback()
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @app.post("/auth/login", response_model=LoginResponse)
 async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """
