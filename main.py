@@ -103,19 +103,24 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     # Individual permissions instead of roles
-    sales = Column(Boolean, default=False)
-    purchase = Column(Boolean, default=False)
-    create_product = Column(Boolean, default=False)
-    delete_product = Column(Boolean, default=False)
-    sales_ledger = Column(Boolean, default=False)
-    purchase_ledger = Column(Boolean, default=False)
-    stock_ledger = Column(Boolean, default=False)
-    profit_loss = Column(Boolean, default=False)
-    opening_stock = Column(Boolean, default=False)
-    user_management = Column(Boolean, default=False)
+    sales = Column(Boolean, default=True)
+    purchase = Column(Boolean, default=True)
+    create_product = Column(Boolean, default=True)
+    delete_product = Column(Boolean, default=True)
+    sales_ledger = Column(Boolean, default=True)
+    purchase_ledger = Column(Boolean, default=True)
+    stock_ledger = Column(Boolean, default=True)
+    profit_loss = Column(Boolean, default=True)
+    opening_stock = Column(Boolean, default=True)
+    user_management = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(IST))
     last_login = Column(DateTime, nullable=True)
+
+    # Sales relationship
+    user_sales = relationship("Sale", back_populates="user", lazy=True)
+    # Purchases relationship
+    user_purchases = relationship("Purchase", back_populates="user", lazy=True)
 
 class Product(Base):
     """Represents a product in the store."""
@@ -140,7 +145,7 @@ class Sale(Base):
     sale_date = Column(DateTime, default=lambda: datetime.now(IST))
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     product = relationship("Product")
-    user = relationship("User", backref="sales", lazy=True)
+    user = relationship("User", lazy=True)
 
 class Purchase(Base):
     """Records a purchase of stock from a supplier."""
@@ -153,7 +158,7 @@ class Purchase(Base):
     purchase_date = Column(DateTime, default=lambda: datetime.now(IST))
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     product = relationship("Product")
-    user = relationship("User", backref="purchases", lazy=True)
+    user = relationship("User", lazy=True)
 
 # --- Pydantic Models for API Requests/Responses ---
 class ProductBase(BaseModel):
