@@ -1722,6 +1722,47 @@ async def register_user(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+def authenticate_user(db: Session, username: str, password: str):
+    """Authenticate user with proper password verification for both hashed and plain text passwords."""
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            print(f"⚠️ User '{username}' not found")
+            return None
+
+        stored_password = user.password_hash
+        if not stored_password:
+            print(f"⚠️ User '{username}' has no password set")
+            return None
+
+        # Determine if the stored password is hashed (bcrypt) or plain text
+        try:
+            # First, assume it's a bcrypt hash and try to verify
+            if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                print(f"✅ Authenticated '{username}' with bcrypt hash")
+                return user
+        except (ValueError, TypeError) as e:
+            # If bcrypt verification fails, it's likely a plain text password
+            print(f"ℹ️ Bcrypt verification failed for user '{username}', checking plain text")
+
+        # If bcrypt fails or throws exception, check if it's plain text (for legacy users)
+        if stored_password == password:
+            print(f"✅ Authenticated '{username}' with plain text password")
+            # Optional: Upgrade plain text password to bcrypt hash
+            # This is commented out to avoid database writes during authentication
+            # user.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            # db.commit()
+            return user
+
+        print(f"⚠️ Invalid password for user '{username}'")
+        return None
+
+    except Exception as e:
+        print(f"❌ Authentication error for user '{username}': {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None
+
 @app.post("/auth/login", response_model=LoginResponse)
 async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """
@@ -1739,19 +1780,44 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         # Create access token
         access_token = create_access_token({"sub": user.username})
 
+        # Get permissions safely - new system only
+        permissions = [
+            k for k, v in {
+                "sales": user.sales,
+                "purchase": user.purchase,
+                "create_product": user.create_product,
+                "delete_product": user.delete_product,
+                "sales_ledger": user.sales_ledger,
+                "purchase_ledger": user.purchase_ledger,
+                "stock_ledger": user.stock_ledger,
+                "profit_loss": user.profit_loss,
+                "opening_stock": user.opening_stock,
+                "user_management": user.user_management,
+            }.items() if v
+        ]
+
+        user_response = UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            is_active=user.is_active,
+            permissions=permissions
+        )
+
         return LoginResponse(
             access_token=access_token,
             token_type="bearer",
-            user=UserResponse(
-                id=user.id,
-                username=user.username,
-                email=user.email,
-                role=user.role.value,
-                is_active=user.is_active
-            )
+            user=user_response
         )
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Log the error but return a generic message
+        print(f"Login error for user {login_data.username}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error during login")
+
+# Authentication functions
 
 @app.get("/auth/me", response_model=UserResponse)
 async def get_current_user(username: str = Depends(verify_token), db: Session = Depends(get_db)):
@@ -1802,39 +1868,28 @@ async def get_users(db: Session = Depends(get_db), username: str = Depends(verif
         users = db.query(User).all()
         user_responses = []
         for u in users:
-            # Check if user has individual permissions or legacy role system
-            if hasattr(u, 'sales') and u.sales is not None:
-                # New permission system
-                permissions = [
-                    k for k, v in {
-                        "sales": u.sales,
-                        "purchase": u.purchase,
-                        "create_product": u.create_product,
-                        "delete_product": u.delete_product,
-                        "sales_ledger": u.sales_ledger,
-                        "purchase_ledger": u.purchase_ledger,
-                        "stock_ledger": u.stock_ledger,
-                        "profit_loss": u.profit_loss,
-                        "opening_stock": u.opening_stock,
-                        "user_management": u.user_management,
-                    }.items() if v
-                ]
-                user_responses.append(UserResponse(
-                    id=u.id,
-                    username=u.username,
-                    email=u.email,
-                    is_active=u.is_active,
-                    permissions=permissions
-                ))
-            else:
-                # Legacy role system
-                user_responses.append(UserResponse(
-                    id=u.id,
-                    username=u.username,
-                    email=u.email,
-                    role=u.role.value if u.role else None,
-                    is_active=u.is_active
-                ))
+            # Use permissions-based system (all users have permissions now)
+            permissions = [
+                k for k, v in {
+                    "sales": u.sales,
+                    "purchase": u.purchase,
+                    "create_product": u.create_product,
+                    "delete_product": u.delete_product,
+                    "sales_ledger": u.sales_ledger,
+                    "purchase_ledger": u.purchase_ledger,
+                    "stock_ledger": u.stock_ledger,
+                    "profit_loss": u.profit_loss,
+                    "opening_stock": u.opening_stock,
+                    "user_management": u.user_management,
+                }.items() if v
+            ]
+            user_responses.append(UserResponse(
+                id=u.id,
+                username=u.username,
+                email=u.email,
+                is_active=u.is_active,
+                permissions=permissions
+            ))
 
         return user_responses
     except HTTPException:
