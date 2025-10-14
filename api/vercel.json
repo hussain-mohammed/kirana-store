@@ -13,6 +13,7 @@
     }
   ],
   "env": {
-    "DATABASE_URL": "@database_url"
+    "DATABASE_URL": "postgresql://kirana_user:NJ1PRl52vHnsd7pY0CuPNDsqOjqP1wod@dpg-d3hrckj3fgac73a1pilg-a.oregon-postgres.render.com/kirana_store_w58q",
+    "SECRET_KEY": "your-secret-key-change-this-in-production"
   }
 }
