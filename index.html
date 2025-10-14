@@ -3562,13 +3562,9 @@
             }
         }
 
-        console.log('🏠 Showing login page - no valid authentication');
-        const loginPage = document.getElementById('page-login');
-        if (loginPage) {
-            loginPage.classList.add('active');
-        } else {
-            console.error('Login page not found!');
-        }
+        console.log('🏠 All users must login first - redirecting to login page');
+        // Always redirect to login.html - no automatic access allowed
+        window.location.href = 'login.html';
         return false;
     }
 
