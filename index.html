@@ -3730,8 +3730,22 @@
                 localStorage.removeItem('access_token');
                 // Clear current user
                 currentUser = null;
-                // Redirect to login page immediately
-                window.location.href = 'login.html';
+                // Hide all content pages including loading page
+                Object.values(pages).forEach(page => page.classList.remove('active'));
+                const loadingPage = document.getElementById('page-loading');
+                if (loadingPage) {
+                    loadingPage.classList.remove('active');
+                }
+                // Hide user controls
+                document.getElementById('user-controls').classList.add('hidden');
+
+                // Show login page within the same app
+                const loginPage = document.getElementById('page-login');
+                if (loginPage) {
+                    loginPage.classList.add('active');
+                } else {
+                    console.error('Login page not found!');
+                }
             });
 
         // CART AND PRODUCT INTERACTIONS
