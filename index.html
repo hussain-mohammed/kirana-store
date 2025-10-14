@@ -3535,13 +3535,41 @@
     async function checkAuthentication() {
         console.log('🔍 Checking authentication...');
         const token = localStorage.getItem('access_token');
-        console.log('📋 Token exists:', !!token);
-        console.log('🔧 Backend URL:', backendURL);
 
-        // Always show the main app for demo purposes - remove authentication redirect loop
-        console.log('🏠 Directly showing main Kirana Store app');
-        showMainApp();
-        return true;
+        if (token) {
+            try {
+                // Validate the token by checking auth status
+                const response = await fetch(`${backendURL}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    currentUser = userData;
+                    console.log('✅ Token valid, user authenticated:', userData.username);
+                    showMainApp();
+                    return true;
+                } else {
+                    console.log('❌ Token invalid or expired');
+                    localStorage.removeItem('access_token');
+                }
+            } catch (error) {
+                console.log('💥 Error validating token:', error);
+                localStorage.removeItem('access_token');
+            }
+        }
+
+        console.log('🏠 Showing login page - no valid authentication');
+        const loginPage = document.getElementById('page-login');
+        if (loginPage) {
+            loginPage.classList.add('active');
+        } else {
+            console.error('Login page not found!');
+        }
+        return false;
     }
 
     function showMainApp() {
@@ -3706,17 +3734,8 @@
                 localStorage.removeItem('access_token');
                 // Clear current user
                 currentUser = null;
-                // Hide user controls
-                document.getElementById('user-controls').classList.add('hidden');
-                // Hide all content pages including loading page
-                Object.values(pages).forEach(page => page.classList.remove('active'));
-                const loadingPage = document.getElementById('page-loading');
-                if (loadingPage) loadingPage.classList.remove('active');
-                const rootEl = document.documentElement;
-                // Show login page by redirecting after a brief delay
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 500);
+                // Redirect to login page immediately
+                window.location.href = 'login.html';
             });
 
         // CART AND PRODUCT INTERACTIONS
@@ -3868,12 +3887,83 @@
             }
         });
 
-        // ===== ADD USER BUTTON HANDLER =====
-        document.getElementById('add-user-btn').addEventListener('click', function() {
-            showAddUserForm();
-        });
+        // ===== SETTINGS PAGE HELPER FUNCTIONS =====
+        function showAddUserForm() {
+            const formEl = document.getElementById('add-user-form');
+            if (formEl) {
+                formEl.classList.remove('hidden');
+                // Scroll to form
+                formEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                console.error('Add user form not found');
+            }
+        }
 
-        // ===== SETTINGS PAGE FUNCTIONS =====
+        function hideAddUserForm() {
+            document.getElementById('add-user-form').classList.add('hidden');
+        }
+
+        function addUser() {
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value.trim();
+            const email = document.getElementById('new-email').value.trim();
+            const role = document.getElementById('new-role').value;
+
+            if (!username || !password || !email || !role) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Please log in first');
+                showLoginPage();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+            formData.append('email', email);
+            formData.append('role', role);
+
+            fetch(`${backendURL}/users/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.detail || `HTTP ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ User created:', data);
+                showNotification('User created successfully!');
+                hideAddUserForm();
+                // Clear form
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('new-email').value = '';
+                document.getElementById('new-role').value = 'EMPLOYEE';
+                // Reset permissions checkboxes
+                clearAllPermissions();
+                // Reload users list to show the new user
+                loadUsers();
+                loadUsersWithActions();
+            })
+            .catch(error => {
+                console.error('❌ Error creating user:', error);
+                alert(`Error creating user: ${error.message}`);
+            });
+        }
+
         function loadUsers() {
             const loadingEl = document.getElementById('users-loading');
             const errorEl = document.getElementById('users-error');
@@ -3975,76 +4065,25 @@
             }
         }
 
-        function showAddUserForm() {
-            const formEl = document.getElementById('add-user-form');
-            if (formEl) {
-                formEl.classList.remove('hidden');
-            } else {
-                console.error('Add user form not found');
-            }
-        }
-
-        function hideAddUserForm() {
-            document.getElementById('add-user-form').classList.add('hidden');
-        }
-
-        function addUser() {
-            const username = document.getElementById('new-username').value.trim();
-            const password = document.getElementById('new-password').value.trim();
-            const email = document.getElementById('new-email').value.trim();
-            const role = document.getElementById('new-role').value;
-
-            if (!username || !password || !email || !role) {
-                alert('Please fill in all fields');
+        // ===== ADD USER BUTTON HANDLER =====
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'add-user-btn') {
+                e.preventDefault();
+                showAddUserForm();
                 return;
             }
 
-            const token = localStorage.getItem('access_token');
-            if (!token) {
-                alert('Please log in first');
-                showLoginPage();
+            if (e.target && e.target.classList.contains('edit-user-btn')) {
+                const userId = e.target.dataset.id;
+                const username = e.target.dataset.username;
+                const email = e.target.dataset.email;
+                const role = e.target.dataset.role;
+                const isActive = e.target.dataset.active === 'true';
+
+                editUser(userId, username, email, role, isActive);
                 return;
             }
-
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('password', password);
-            formData.append('email', email);
-            formData.append('role', role);
-
-            fetch(`${backendURL}/users/`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'ngrok-skip-browser-warning': 'true'
-                },
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(errorData => {
-                        throw new Error(errorData.detail || `HTTP ${response.status}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('✅ User created:', data);
-                showNotification('User created successfully!');
-                hideAddUserForm();
-                // Clear form
-                document.getElementById('new-username').value = '';
-                document.getElementById('new-password').value = '';
-                document.getElementById('new-email').value = '';
-                document.getElementById('new-role').value = 'EMPLOYEE';
-                // Reload users list
-                loadUsers();
-            })
-            .catch(error => {
-                console.error('❌ Error creating user:', error);
-                alert(`Error creating user: ${error.message}`);
-            });
-        }
+        });
 
         function editUser(userId, username, email, role, isActive) {
             // Populate edit form with user data
