@@ -3282,7 +3282,8 @@
     async function checkAuthentication() {
         const token = localStorage.getItem('access_token');
         if (!token) {
-            showLoginPage();
+            // Redirect to login page
+            window.location.href = 'login.html';
             return false;
         }
 
@@ -3301,22 +3302,17 @@
                 return true;
             } else {
                 localStorage.removeItem('access_token');
-                showLoginPage();
+                // Redirect to login page
+                window.location.href = 'login.html';
                 return false;
             }
         } catch (error) {
             console.error('Auth check failed:', error);
             localStorage.removeItem('access_token');
-            showLoginPage();
+            // Redirect to login page
+            window.location.href = 'login.html';
             return false;
         }
-    }
-
-    function showLoginPage() {
-        Object.values(pages).forEach(page => page.classList.remove('active'));
-        pages.login.classList.add('active');
-        document.getElementById('login-status').classList.add('hidden');
-        document.getElementById('login-form').reset();
     }
 
     function showMainApp() {
