@@ -238,9 +238,6 @@
             <!-- User Info and Controls -->
             <div id="user-controls" class="flex items-center gap-2 hidden">
                 <div id="welcome-message" class="bg-blue-500 glass-effect rounded-xl px-3 py-1 text-white text-sm"></div>
-                <button id="settings-btn" class="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm hidden">
-                    ⚙️ Settings
-                </button>
                 <button id="logout-btn" class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">
                     Logout
                 </button>
@@ -1030,10 +1027,316 @@
         <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Settings</h2>
 
-            <!-- User Management Section -->
+            <!-- Create User Section -->
             <div class="bg-white p-6 rounded-lg shadow-lg">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-semibold">User Management</h3>
+                    <h3 class="text-lg font-semibold">Create User</h3>
+                </div>
+                <!-- Add User Button -->
+                <div class="mb-6">
+                    <button id="add-user-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                        + Add New User
+                    </button>
+                </div>
+
+                <!-- Add User Form (Hidden by default) -->
+                <div id="add-user-form" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
+                    <h4 class="text-md font-semibold mb-4">Create New User</h4>
+                    <form id="add-user-form-element" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                            <input type="text" id="new-username" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter username" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="new-email" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="user@domain.com" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="new-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter password" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                            <select id="new-role" class="w-full p-2 border border-gray-300 rounded-lg" required>
+                                <option value="EMPLOYEE">Employee</option>
+                                <option value="MANAGER">Manager</option>
+                                <option value="ADMIN">Admin</option>
+                            </select>
+                        </div>
+                    </form>
+
+                    <!-- Permissions Section -->
+                    <div class="mt-6">
+                        <h5 class="text-sm font-semibold text-gray-800 mb-3">Set User Permissions</h5>
+                        <p class="text-xs text-gray-600 mb-4">Select which features this user can access:</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-sales" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                                <span class="text-sm font-medium text-gray-700">🛍️ Sales - Sell products and process orders</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-purchase" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                                <span class="text-sm font-medium text-gray-700">📦 Purchase - Record product purchases</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-create-product" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                                <span class="text-sm font-medium text-gray-700">➕ Create Product - Add new products</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-delete-product" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">🗑️ Delete Product - Remove products</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-sales-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                                <span class="text-sm font-medium text-gray-700">📋 Sales Ledger - View sales records</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-purchase-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                                <span class="text-sm font-medium text-gray-700">📋 Purchase Ledger - View purchase records</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-stock-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                                <span class="text-sm font-medium text-gray-700">📊 Stock Ledger - View stock information</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-profit-loss" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">💰 Profit & Loss - View financial reports</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-opening-stock" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">📊 Opening Stock - View initial stock</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                                <input type="checkbox" id="perm-user-management" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">👥 User Management - Manage other users</span>
+                            </label>
+                        </div>
+                        <div class="mt-3 flex gap-2">
+                            <button type="button" onclick="selectAllPermissions()" class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">
+                                Select All
+                            </button>
+                            <button type="button" onclick="clearAllPermissions()" class="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600">
+                                Clear All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="addUser()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                            Save User
+                        </button>
+                        <button onclick="hideAddUserForm()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit User Section -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">Edit User</h3>
+                </div>
+
+                <!-- User Selection Dropdown -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select User to Edit</label>
+                    <select id="edit-user-selector" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="">Choose a user...</option>
+                        <!-- Users will be loaded here -->
+                    </select>
+                </div>
+
+                <!-- Edit User Form (Hidden until user is selected) -->
+                <div id="edit-user-form" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
+                    <h4 class="text-md font-semibold mb-4">Edit User Details</h4>
+                    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Note:</strong> Edit user details and permissions. Leave password field empty to keep current password.
+                        </p>
+                    </div>
+                    <form id="edit-user-form-element" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="hidden" id="edit-user-id">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                            <input type="text" id="edit-username" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter username" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="edit-email" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="user@domain.com" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">New Password (Optional)</label>
+                            <input type="password" id="edit-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Leave empty to keep current password">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                            <select id="edit-role" class="w-full p-2 border border-gray-300 rounded-lg" required>
+                                <option value="EMPLOYEE">Employee - Basic Access</option>
+                                <option value="MANAGER">Manager - Limited Admin</option>
+                                <option value="ADMIN">Admin - Full Access</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="edit-is-active" class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <span class="text-sm font-medium text-gray-700">User Account Active</span>
+                            </label>
+                        </div>
+                    </form>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="updateUser()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            Update User
+                        </button>
+                        <button onclick="hideEditUserForm()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete User Section -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">Delete User</h3>
+                </div>
+
+                <!-- User Selection for Deletion -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select User to Delete</label>
+                    <select id="delete-user-selector" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="">Choose a user...</option>
+                        <!-- Users will be loaded here -->
+                    </select>
+                </div>
+
+                <!-- Delete User Warning and Button -->
+                <div id="delete-user-confirmation" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg hidden">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h4 class="text-sm font-medium text-red-800 mb-2">Delete User Confirmation</h4>
+                            <p id="delete-user-info" class="text-sm text-red-700 mb-3"></p>
+                            <div class="flex gap-2">
+                                <button onclick="deleteSelectedUser()" class="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">
+                                    Yes, Delete User
+                                </button>
+                                <button onclick="cancelDeleteUser()" class="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permissions Management Section -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">Permissions</h3>
+                    <button onclick="loadUsers()" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                        Refresh Users
+                    </button>
+                </div>
+
+                <!-- User Selection for Permissions -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select User to Manage Permissions</label>
+                    <select id="permissions-user-selector" class="w-full p-2 border border-gray-300 rounded-lg" onchange="loadUserPermissions()">
+                        <option value="">Choose a user...</option>
+                        <!-- Users will be loaded here -->
+                    </select>
+                </div>
+
+                <!-- Current Permissions Display -->
+                <div id="current-permissions-display" class="hidden mb-6 p-4 bg-blue-50 rounded-lg">
+                    <h4 class="text-sm font-semibold text-blue-800 mb-3">Current Permissions for <span id="permissions-user-name"></span></h4>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="current-permissions-list">
+                        <!-- Current permissions will be displayed here -->
+                    </div>
+                </div>
+
+                <!-- Permissions Update Form -->
+                <div id="permissions-update-form" class="hidden p-4 bg-gray-50 rounded-lg">
+                    <h4 class="text-sm font-semibold text-gray-800 mb-3">Update Permissions</h4>
+                    <p class="text-xs text-gray-600 mb-4">Select which features this user can access:</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-sales" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">🛍️ Sales - Sell products and process orders</span>
+                        </label>
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-purchase" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">📦 Purchase - Record product purchases</span>
+                        </label>
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-create-product" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">➕ Create Product - Add new products</span>
+                        </label>
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-delete-product" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">🗑️ Delete Product - Remove products</span>
+                        </label>
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-sales-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">📋 Sales Ledger - View sales records</span>
+                        </label>
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-purchase-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">📋 Purchase Ledger - View purchase records</span>
+                        </label>
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-stock-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">📊 Stock Ledger - View stock information</span>
+                        </label>
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-profit-loss" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">💰 Profit & Loss - View financial reports</span>
+                        </label>
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-opening-stock" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">📊 Opening Stock - View initial stock</span>
+                        </label>
+                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                            <input type="checkbox" id="perm-update-user-management" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">👥 User Management - Manage other users</span>
+                        </label>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="selectAllPermissionsForUpdate()" class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">
+                            Select All
+                        </button>
+                        <button onclick="clearAllPermissionsForUpdate()" class="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600">
+                            Clear All
+                        </button>
+                        <button onclick="updateUserPermissions()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
+                            Update Permissions
+                        </button>
+                        <button onclick="cancelPermissionsUpdate()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="permissions-loading" class="hidden text-center py-8">
+                    <p class="text-gray-500">Loading permissions...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="permissions-error" class="hidden text-center py-8">
+                    <p class="text-red-500">Error loading permissions</p>
+                </div>
+            </div>
+
+            <!-- Users List Section -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold">All Users</h3>
                     <button onclick="loadUsers()" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
                         Refresh Users
                     </button>
@@ -3487,7 +3790,14 @@
     function logout() {
         localStorage.removeItem('access_token');
         currentUser = null;
-        showLoginPage();
+        // Hide all pages
+        Object.values(pages).forEach(page => page.classList.remove('active'));
+        const loginPage = document.getElementById('page-login');
+        if (loginPage) loginPage.classList.remove('active');
+        // Hide user controls
+        document.getElementById('user-controls').classList.add('hidden');
+        // Redirect to login page
+        window.location.href = 'login.html';
     }
 
         // ===== EVENT LISTENERS =====
@@ -4083,6 +4393,303 @@
                     loadCurrentUserPermissions();
                     break;
             }
+        }
+
+        // ===== SETTINGS PAGE USER MANAGEMENT FUNCTIONS =====
+        function loadUsersWithActions() {
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+
+            // Load users for edit selector
+            fetch(`${backendURL}/users`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            })
+            .then(response => response.json())
+            .then(users => {
+                if (Array.isArray(users) && users.length > 0) {
+                    // Populate edit user selector
+                    const editSelector = document.getElementById('edit-user-selector');
+                    const deleteSelector = document.getElementById('delete-user-selector');
+                    const permissionsSelector = document.getElementById('permissions-user-selector');
+
+                    // Clear existing options except first
+                    editSelector.innerHTML = '<option value="">Choose a user...</option>';
+                    deleteSelector.innerHTML = '<option value="">Choose a user...</option>';
+                    permissionsSelector.innerHTML = '<option value="">Choose a user...</option>';
+
+                    // Add users to all selectors
+                    users.forEach(user => {
+                        const option = `<option value="${user.id}" data-username="${user.username}" data-email="${user.email}" data-role="${user.role}" data-active="${user.is_active}">${user.username}</option>`;
+                        editSelector.insertAdjacentHTML('beforeend', option);
+                        deleteSelector.insertAdjacentHTML('beforeend', option);
+                        permissionsSelector.insertAdjacentHTML('beforeend', option);
+                    });
+
+                    console.log('✅ Users loaded into selectors');
+                }
+            })
+            .catch(error => console.error('Error loading users for selectors:', error));
+        }
+
+        // Handle edit user selector change
+        function handleEditUserSelection() {
+            const selector = document.getElementById('edit-user-selector');
+            const selectedOption = selector.options[selector.selectedIndex];
+            const editForm = document.getElementById('edit-user-form');
+
+            if (!selectedOption || selectedOption.value === '') {
+                editForm.classList.add('hidden');
+                return;
+            }
+
+            // Populate edit form with user data
+            document.getElementById('edit-user-id').value = selectedOption.value;
+            document.getElementById('edit-username').value = selectedOption.dataset.username || '';
+            document.getElementById('edit-email').value = selectedOption.dataset.email || '';
+            document.getElementById('edit-role').value = selectedOption.dataset.role || 'EMPLOYEE';
+            document.getElementById('edit-is-active').checked = selectedOption.dataset.active === 'true';
+
+            // Clear password field for security
+            document.getElementById('edit-password').value = '';
+
+            editForm.classList.remove('hidden');
+        }
+
+        // Handle delete user selector change
+        function handleDeleteUserSelection() {
+            const selector = document.getElementById('delete-user-selector');
+            const selectedOption = selector.options[selector.selectedIndex];
+            const confirmationDiv = document.getElementById('delete-user-confirmation');
+
+            if (!selectedOption || selectedOption.value === '') {
+                confirmationDiv.classList.add('hidden');
+                return;
+            }
+
+            // Populate confirmation message
+            const username = selectedOption.dataset.username;
+            document.getElementById('delete-user-info').innerHTML = `
+                Are you sure you want to delete user "<strong>${username}</strong>"?<br>
+                <span class="text-sm text-gray-600">This action cannot be undone and will permanently remove the user account.</span>
+            `;
+            confirmationDiv.classList.remove('hidden');
+        }
+
+        function deleteSelectedUser() {
+            const selector = document.getElementById('delete-user-selector');
+            const selectedValue = selector.value;
+
+            if (!selectedValue || selectedValue === '') {
+                alert('Please select a user to delete');
+                return;
+            }
+
+            const selectedOption = selector.options[selector.selectedIndex];
+            const username = selectedOption.dataset.username;
+
+            if (!confirm(`Are you sure you want to permanently delete user "${username}"?\n\nThis action cannot be undone!`)) {
+                return;
+            }
+
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Please log in first');
+                return;
+            }
+
+            fetch(`${backendURL}/users/${selectedValue}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                showNotification(`User "${username}" deleted successfully!`);
+
+                // Reset form
+                document.getElementById('delete-user-confirmation').classList.add('hidden');
+                selector.value = '';
+                cancelDeleteUser();
+
+                // Reload users
+                loadUsersWithActions();
+                loadUsers();
+            })
+            .catch(error => {
+                console.error('Error deleting user:', error);
+                alert(`Error deleting user: ${error.message}`);
+            });
+        }
+
+        function cancelDeleteUser() {
+            document.getElementById('delete-user-selector').value = '';
+            document.getElementById('delete-user-confirmation').classList.add('hidden');
+        }
+
+        // Handle permissions user selector change
+        function loadUserPermissions() {
+            const selector = document.getElementById('permissions-user-selector');
+            const selectedValue = selector.value;
+            const displayDiv = document.getElementById('current-permissions-display');
+            const updateForm = document.getElementById('permissions-update-form');
+            const usernameSpan = document.getElementById('permissions-user-name');
+
+            if (!selectedValue || selectedValue === '') {
+                displayDiv.classList.add('hidden');
+                updateForm.classList.add('hidden');
+                return;
+            }
+
+            // Set username display
+            usernameSpan.textContent = selector.options[selector.selectedIndex].text;
+
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+
+            // Load user's permissions
+            fetch(`${backendURL}/users/${selectedValue}/permissions`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(permissions => {
+                // Display current permissions
+                const permissionsList = document.getElementById('current-permissions-list');
+                const featureBadges = [
+                    { name: 'Sales', key: 'sales' },
+                    { name: 'Purchase', key: 'purchase' },
+                    { name: 'Create Product', key: 'create_product' },
+                    { name: 'Delete Product', key: 'delete_product' },
+                    { name: 'Sales Ledger', key: 'sales_ledger' },
+                    { name: 'Purchase Ledger', key: 'purchase_ledger' },
+                    { name: 'Stock Ledger', key: 'stock_ledger' },
+                    { name: 'Profit & Loss', key: 'profit_loss' },
+                    { name: 'Opening Stock', key: 'opening_stock' },
+                    { name: 'User Management', key: 'user_management' }
+                ];
+
+                permissionsList.innerHTML = featureBadges.map(feature => `
+                    <div class="text-center">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${permissions[feature.key] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${permissions[feature.key] ? '✓' : '✗'} ${feature.name}
+                        </span>
+                    </div>
+                `).join('');
+
+                displayDiv.classList.remove('hidden');
+
+                // Populate update form
+                document.getElementById('perm-update-sales').checked = permissions.sales || false;
+                document.getElementById('perm-update-purchase').checked = permissions.purchase || false;
+                document.getElementById('perm-update-create-product').checked = permissions.create_product || false;
+                document.getElementById('perm-update-delete-product').checked = permissions.delete_product || false;
+                document.getElementById('perm-update-sales-ledger').checked = permissions.sales_ledger || false;
+                document.getElementById('perm-update-purchase-ledger').checked = permissions.purchase_ledger || false;
+                document.getElementById('perm-update-stock-ledger').checked = permissions.stock_ledger || false;
+                document.getElementById('perm-update-profit-loss').checked = permissions.profit_loss || false;
+                document.getElementById('perm-update-opening-stock').checked = permissions.opening_stock || false;
+                document.getElementById('perm-update-user-management').checked = permissions.user_management || false;
+
+                updateForm.classList.remove('hidden');
+                document.getElementById('permissions-loading').classList.add('hidden');
+            })
+            .catch(error => {
+                console.error('Error loading user permissions:', error);
+                document.getElementById('permissions-error').classList.remove('hidden');
+                document.getElementById('permissions-loading').classList.add('hidden');
+            });
+        }
+
+        function selectAllPermissionsForUpdate() {
+            const checkboxes = document.querySelectorAll('#permissions-update-form input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        }
+
+        function clearAllPermissionsForUpdate() {
+            const checkboxes = document.querySelectorAll('#permissions-update-form input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        function updateUserPermissions() {
+            const selector = document.getElementById('permissions-user-selector');
+            const userId = selector.value;
+
+            if (!userId || userId === '') {
+                alert('Please select a user');
+                return;
+            }
+
+            // Collect permissions from form
+            const permissions = {
+                sales: document.getElementById('perm-update-sales').checked,
+                purchase: document.getElementById('perm-update-purchase').checked,
+                create_product: document.getElementById('perm-update-create-product').checked,
+                delete_product: document.getElementById('perm-update-delete-product').checked,
+                sales_ledger: document.getElementById('perm-update-sales-ledger').checked,
+                purchase_ledger: document.getElementById('perm-update-purchase-ledger').checked,
+                stock_ledger: document.getElementById('perm-update-stock-ledger').checked,
+                profit_loss: document.getElementById('perm-update-profit-loss').checked,
+                opening_stock: document.getElementById('perm-update-opening-stock').checked,
+                user_management: document.getElementById('perm-update-user-management').checked
+            };
+
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Please log in first');
+                return;
+            }
+
+            fetch(`${backendURL}/users/${userId}/permissions`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: JSON.stringify(permissions)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                const username = selector.options[selector.selectedIndex].text;
+                showNotification(`Permissions updated successfully for "${username}"!`);
+
+                // Reload the current permissions display
+                loadUserPermissions();
+            })
+            .catch(error => {
+                console.error('Error updating permissions:', error);
+                alert(`Error updating permissions: ${error.message}`);
+            });
+        }
+
+        function cancelPermissionsUpdate() {
+            document.getElementById('permissions-user-selector').value = '';
+            document.getElementById('current-permissions-display').classList.add('hidden');
+            document.getElementById('permissions-update-form').classList.add('hidden');
         }
 
         // ===== LOAD CURRENT USER PERMISSIONS =====
