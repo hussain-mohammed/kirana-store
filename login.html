@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Kirana Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background: linear-gradient(rgba(59, 130, 246, 0.9), rgba(147, 51, 234, 0.7));
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .form-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Header/Logo -->
+        <div class="text-center mb-8">
+            <div class="glass-effect rounded-2xl p-6 text-white mb-6">
+                <h1 class="text-3xl font-bold mb-2">Raza Wholesale and Retail</h1>
+                <p class="text-blue-100 mb-0">Kirana Store</p>
+                <p class="text-blue-100 text-sm mb-0">Tolichowki,Hyderabad</p>
+                <p class="text-blue-100 text-sm mb-0">Contact: +91 7075210801</p>
+                <p class="text-blue-100 text-sm mb-0">Order on whatsapp we deliver to your doorstep</p>
+            </div>
+        </div>
+
+        <!-- Login Form Container -->
+        <div id="login-container" class="form-container rounded-xl shadow-2xl p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h1>
+                <p class="text-gray-600">Please sign in to continue</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <input type="text" id="login-username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" placeholder="Enter your username" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="login-password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit" id="login-submit-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200">
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Registration Toggle -->
+            <div class="text-center mt-6">
+                <p class="text-gray-600">
+                    Don't have an account?
+                    <button id="show-register-btn" class="text-blue-600 font-medium hover:text-blue-800 transition-colors underline">
+                        Create Account
+                    </button>
+                </p>
+            </div>
+
+            <!-- Login Status -->
+            <div id="login-status" class="mt-4 text-center hidden">
+                <div id="status-message" class="text-sm"></div>
+            </div>
+
+            <!-- Demo Credentials -->
+            <div class="mt-8 p-4 bg-gray-50 rounded-lg border">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</h3>
+                <p class="text-xs text-gray-600">Username: <strong>raza123</strong></p>
+                <p class="text-xs text-gray-600">Password: <strong>admin123</strong></p>
+            </div>
+        </div>
+
+        <!-- Registration Form Container -->
+        <div id="register-container" class="form-container rounded-xl shadow-2xl p-8 hidden">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Create Account</h1>
+                <p class="text-gray-600">Join our kirana store management system</p>
+            </div>
+
+            <!-- Registration Form -->
+            <form id="registration-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <input type="text" id="register-username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" placeholder="Choose a username" required minlength="3">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="register-email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" placeholder="your@email.com" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="register-password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" placeholder="Create a password (min 6 chars)" required minlength="6">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                    <input type="password" id="register-confirm-password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" placeholder="Confirm your password" required>
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="submit" id="register-submit-btn" class="flex-1 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200">
+                        Register
+                    </button>
+                    <button type="button" id="back-to-login-btn" class="flex-1 bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200">
+                        Back to Login
+                    </button>
+                </div>
+            </form>
+
+            <!-- Registration Status -->
+            <div id="register-status" class="mt-4 text-center hidden">
+                <div id="register-status-message" class="text-sm"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== BACKEND CONFIGURATION =====
+        const backendURL = "https://kirana-store-maoc.onrender.com";
+
+        // ===== UTILITY FUNCTIONS =====
+        function showStatus(message, isError = false, container = 'login-status') {
+            const statusEl = document.getElementById(container);
+            const messageEl = statusEl.querySelector('.text-sm') || document.getElementById(container.replace('status', 'status-message')) || statusEl;
+
+            statusEl.classList.remove('hidden');
+            if (messageEl.classList.contains('text-sm') || messageEl.id.includes('message')) {
+                messageEl.className = `text-sm ${isError ? 'text-red-600' : 'text-green-600'}`;
+                messageEl.textContent = message;
+            } else {
+                messageEl.innerHTML = `<div class="text-sm ${isError ? 'text-red-600' : 'text-green-600'}">${message}</div>`;
+            }
+        }
+
+        function hideStatus(container = 'login-status') {
+            document.getElementById(container).classList.add('hidden');
+        }
+
+        function showLoginForm() {
+            document.getElementById('login-container').classList.remove('hidden');
+            document.getElementById('register-container').classList.add('hidden');
+            hideStatus('login-status');
+            hideStatus('register-status');
+            document.getElementById('login-form').reset();
+        }
+
+        function showRegisterForm() {
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('register-container').classList.remove('hidden');
+            hideStatus('register-status');
+            document.getElementById('registration-form').reset();
+        }
+
+        function redirectToApp() {
+            window.location.href = 'index.html';
+        }
+
+        // ===== AUTHENTICATION FUNCTIONS =====
+        async function performLogin(username, password) {
+            const submitBtn = document.getElementById('login-submit-btn');
+            const originalText = submitBtn.textContent;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing In...';
+
+            try {
+                console.log('🔐 Attempting login for user:', username);
+
+                const response = await fetch(`${backendURL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.access_token) {
+                    localStorage.setItem('access_token', data.access_token);
+                    console.log('✅ Login successful, redirecting to app...');
+                    showStatus('Login successful! Redirecting...', false, 'login-status');
+                    setTimeout(redirectToApp, 1000);
+                } else {
+                    console.log('❌ Login failed:', data.detail || 'Unknown error');
+                    showStatus(data.detail || 'Invalid username or password', true, 'login-status');
+                }
+            } catch (error) {
+                console.error('💥 Network error during login:', error);
+                showStatus('Network error. Please try again.', true, 'login-status');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        }
+
+        async function performRegistration() {
+            const registerBtn = document.getElementById('register-submit-btn');
+            const originalText = registerBtn.textContent;
+
+            const username = document.getElementById('register-username').value.trim();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+
+            // Client-side validation
+            if (!username || !email || !password || !confirmPassword) {
+                showStatus('Please fill in all fields', true, 'register-status');
+                return;
+            }
+
+            if (username.length < 3) {
+                showStatus('Username must be at least 3 characters long', true, 'register-status');
+                return;
+            }
+
+            if (password.length < 6) {
+                showStatus('Password must be at least 6 characters long', true, 'register-status');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showStatus('Passwords do not match', true, 'register-status');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showStatus('Please enter a valid email address', true, 'register-status');
+                return;
+            }
+
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Creating Account...';
+
+            try {
+                console.log('📝 Attempting registration for:', username);
+
+                const response = await fetch(`${backendURL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        username: username,
+                        password: password,
+                        email: email
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    console.log('✅ Registration successful');
+                    showStatus('Account created successfully! You can now log in.', false, 'register-status');
+                    setTimeout(() => {
+                        showLoginForm();
+                    }, 2000);
+                } else {
+                    console.log('❌ Registration failed:', data.detail || 'Unknown error');
+                    showStatus(data.detail || 'Registration failed', true, 'register-status');
+                }
+            } catch (error) {
+                console.error('💥 Network error during registration:', error);
+                showStatus('Network error. Please try again.', true, 'register-status');
+            } finally {
+                registerBtn.disabled = false;
+                registerBtn.textContent = originalText;
+            }
+        }
+
+        // ===== EVENT LISTENERS =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if already logged in and redirect to app
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                // Optional: You could verify the token here, but for now just redirect
+                redirectToApp();
+            }
+
+            // Login form submission
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideStatus('login-status');
+                const username = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+                await performLogin(username, password);
+            });
+
+            // Registration form submission
+            document.getElementById('registration-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideStatus('register-status');
+                await performRegistration();
+            });
+
+            // Toggle forms
+            document.getElementById('show-register-btn').addEventListener('click', showRegisterForm);
+            document.getElementById('back-to-login-btn').addEventListener('click', showLoginForm);
+
+            // Enter key support
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const activeForm = document.querySelector('form:not(.hidden)');
+                    if (activeForm) {
+                        const submitBtn = activeForm.querySelector('button[type="submit"]:not(:disabled)');
+                        if (submitBtn) {
+                            submitBtn.click();
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

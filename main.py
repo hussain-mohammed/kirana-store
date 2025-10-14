@@ -310,9 +310,12 @@ class LoginResponse(BaseModel):
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(User).filter(User.username == username).first()
     if not user:
+        print(f"⚠️ User '{username}' not found")
         return None
     if not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+        print(f"⚠️ Invalid password for user '{username}'")
         return None
+    print(f"✅ Authentication successful for user '{username}'")
     return user
 
 def create_access_token(data: dict):
@@ -411,7 +414,17 @@ async def lifespan(app: FastAPI):
                                 username="raza123",
                                 email="admin@kirana.store",
                                 password_hash=hashed_password.decode('utf-8'),
-                                role=UserRole.ADMIN,
+                                # New permission system - give all permissions to default admin
+                                sales=True,
+                                purchase=True,
+                                create_product=True,
+                                delete_product=True,
+                                sales_ledger=True,
+                                purchase_ledger=True,
+                                stock_ledger=True,
+                                profit_loss=True,
+                                opening_stock=True,
+                                user_management=True,
                                 is_active=True
                             )
                             db.add(default_admin)
