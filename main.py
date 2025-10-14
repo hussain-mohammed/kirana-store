@@ -1637,18 +1637,21 @@ async def health_check(db: Session = Depends(get_db)):
 
 @app.post("/auth/register", response_model=UserResponse)
 async def register_user(
-    username: str = Form(...),
-    password: str = Form(...),
-    email: str = Form(...),
+    user_data: LoginRequest,
     db: Session = Depends(get_db)
 ):
     """
     Register a new user (public endpoint, creates users with EMPLOYEE role by default)
     """
     try:
+        # Extract data from request
+        username = user_data.username
+        password = user_data.password
+        email = username + "@example.com"  # Generate email from username since LoginRequest doesn't have email
+
         # Validate input
-        if not username or not password or not email:
-            raise HTTPException(status_code=400, detail="Username, password and email are required")
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="Username and password are required")
 
         if len(password) < 6:
             raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
@@ -1666,12 +1669,22 @@ async def register_user(
         # Hash password
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-        # Create new user with EMPLOYEE role by default
+        # Create new user with basic permissions for public registration
         new_user = User(
             username=username,
             email=email,
             password_hash=hashed_password.decode('utf-8'),
-            role=UserRole.EMPLOYEE,  # Default role for public registration
+            # Basic permissions for new users - can be modified by admin later
+            sales=True,
+            purchase=True,
+            create_product=False,
+            delete_product=False,
+            sales_ledger=False,
+            purchase_ledger=False,
+            stock_ledger=False,
+            profit_loss=False,
+            opening_stock=False,
+            user_management=False,
             is_active=True
         )
 
@@ -1679,12 +1692,28 @@ async def register_user(
         db.commit()
         db.refresh(new_user)
 
+        # Return response with permissions
+        permissions = [
+            k for k, v in {
+                "sales": new_user.sales,
+                "purchase": new_user.purchase,
+                "create_product": new_user.create_product,
+                "delete_product": new_user.delete_product,
+                "sales_ledger": new_user.sales_ledger,
+                "purchase_ledger": new_user.purchase_ledger,
+                "stock_ledger": new_user.stock_ledger,
+                "profit_loss": new_user.profit_loss,
+                "opening_stock": new_user.opening_stock,
+                "user_management": new_user.user_management,
+            }.items() if v
+        ]
+
         return UserResponse(
             id=new_user.id,
             username=new_user.username,
             email=new_user.email,
-            role=new_user.role.value,
-            is_active=new_user.is_active
+            is_active=new_user.is_active,
+            permissions=permissions
         )
     except HTTPException:
         db.rollback()
