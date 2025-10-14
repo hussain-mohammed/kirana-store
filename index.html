@@ -3423,9 +3423,12 @@
         showLoginPage();
     }
 
-    // ===== EVENT LISTENERS =====
-    document.addEventListener('DOMContentLoaded', async function() {
-        backButton.addEventListener('click', backToHome);
+        // ===== EVENT LISTENERS =====
+        document.addEventListener('DOMContentLoaded', async function() {
+            backButton.addEventListener('click', backToHome);
+
+            // Check authentication on page load
+            await checkAuthentication();
 
             // LOGIN FORM HANDLER
             document.getElementById('login-form').addEventListener('submit', async (e) => {
