@@ -3280,34 +3280,48 @@
 
     // Check if user is already logged in on page load
     async function checkAuthentication() {
+        console.log('🔍 Checking authentication...');
         const token = localStorage.getItem('access_token');
+        console.log('📋 Token exists:', !!token);
+        console.log('🔧 Backend URL:', backendURL);
+
         if (!token) {
+            console.log('⚠️ No token found, redirecting to login');
             // Redirect to login page
             window.location.href = 'login.html';
             return false;
         }
 
         try {
+            console.log('🛡️  Verifying token with backend...');
             // Verify token with server
             const response = await fetch(`${backendURL}/auth/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'ngrok-skip-browser-warning': 'true'
+                    'ngrok-skip-browser-warning': 'true',
+                    'Content-Type': 'application/json'
                 }
             });
 
+            console.log('📊 Auth response status:', response.status);
+
             if (response.ok) {
                 currentUser = await response.json();
+                console.log('✅ Auth successful:', currentUser);
+                console.log('🎯 Showing main app...');
                 showMainApp();
                 return true;
             } else {
+                const errorText = await response.text().catch(() => 'Unknown error');
+                console.error('❌ Auth failed with status:', response.status, errorText);
                 localStorage.removeItem('access_token');
                 // Redirect to login page
                 window.location.href = 'login.html';
                 return false;
             }
         } catch (error) {
-            console.error('Auth check failed:', error);
+            console.error('💥 Auth check failed with error:', error);
+            console.error('🌐 Error details:', error.message);
             localStorage.removeItem('access_token');
             // Redirect to login page
             window.location.href = 'login.html';
@@ -3333,9 +3347,9 @@
             welcomeEl.innerHTML = `Welcome, ${currentUser.username}!`;
         }
 
-        // Show admin settings button if user is admin
+        // Show admin settings button if user has user_management permission
         const adminSettingsEl = document.getElementById('admin-settings');
-        if (currentUser && currentUser.role === 'ADMIN') {
+        if (currentUser && currentUser.permissions && currentUser.permissions.includes('user_management')) {
             adminSettingsEl.classList.remove('hidden');
             adminSettingsEl.onclick = () => showContentPage('settings');
         } else {
@@ -3942,197 +3956,7 @@
             });
         }
 
-        // ===== EVENT LISTENERS ===== (UPDATED)
-        document.addEventListener('DOMContentLoaded', async function() {
-            backButton.addEventListener('click', backToHome);
-
-            // LOGOUT BUTTON HANDLER
-            const logoutBtn = document.getElementById('logout-btn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', () => {
-                    if (confirm('Are you sure you want to logout?')) {
-                        logout();
-                        showNotification('Logged out successfully!');
-                    }
-                });
-            }
-
-            // LOGIN FORM HANDLER
-            document.getElementById('login-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const username = document.getElementById('login-username').value;
-                const password = document.getElementById('login-password').value;
-                await performLogin(username, password);
-            });
-
-            // CART AND PRODUCT INTERACTIONS
-            document.addEventListener('click', (e) => {
-                if (e.target.classList.contains('add-to-cart-btn')) {
-                    const productId = e.target.dataset.id;
-                    addToCart(productId);
-                }
-
-                if (e.target.classList.contains('increase-quantity')) {
-                    const productId = e.target.dataset.id;
-                    increaseQuantity(productId);
-                }
-
-                if (e.target.classList.contains('decrease-quantity')) {
-                    const productId = e.target.dataset.id;
-                    decreaseQuantity(productId);
-                }
-
-                if (e.target.classList.contains('remove-item')) {
-                    const productId = e.target.dataset.id;
-                    if (cart[productId]) {
-                        delete cart[productId];
-                        updateCartUI();
-                        showNotification('Item removed from cart');
-                    }
-                }
-
-                // Handle delete buttons for sales and purchases
-                if (e.target.classList.contains('delete-sale')) {
-                    const recordId = e.target.dataset.id;
-                    deleteRecord(recordId, 'sale');
-                }
-
-                if (e.target.classList.contains('delete-purchase')) {
-                    const recordId = e.target.dataset.id;
-                    deleteRecord(recordId, 'purchase');
-                }
-
-                // Handle delete product buttons
-                if (e.target.classList.contains('delete-product-btn')) {
-                    const productId = e.target.dataset.id;
-                    const productName = e.target.dataset.name;
-                    deleteProduct(productId, productName);
-                }
-
-                // Handle edit user buttons
-                if (e.target.classList.contains('edit-user-btn')) {
-                    const userId = e.target.dataset.id;
-                    const username = e.target.dataset.username;
-                    const email = e.target.dataset.email;
-                    const role = e.target.dataset.role;
-                    const isActive = e.target.dataset.active;
-                    editUser(userId, username, email, role, isActive);
-                }
-            });
-
-            // Add user form submit
-            document.getElementById('add-user-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                addUser();
-            });
-
-            document.getElementById('close-modal-button').addEventListener('click', () => {
-                document.getElementById('cart-modal').classList.add('hidden');
-                document.getElementById('cart-modal').classList.remove('flex');
-            });
-
-            document.getElementById('whatsapp-checkout-button').addEventListener('click', generateWhatsAppOrder);
-
-            // Auto-populate prices when product is selected in purchase form
-            document.getElementById('purchase-product').addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const unitCostField = document.getElementById('purchase-unit-cost');
-                const unitTypeField = document.getElementById('purchase-unit-type');
-
-                if (selectedOption.value) {
-                    unitCostField.value = selectedOption.dataset.purchasePrice || '';
-                    unitTypeField.value = selectedOption.dataset.unitType || '';
-                } else {
-                    unitCostField.value = '';
-                    unitTypeField.value = '';
-                }
-            });
-
-            document.getElementById('purchase-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const productId = document.getElementById('purchase-product').value;
-                const quantity = document.getElementById('purchase-quantity').value;
-                const unitCost = document.getElementById('purchase-unit-cost').value;
-
-                if (!productId) {
-                    alert('Please select a product');
-                    return;
-                }
-
-                const token = localStorage.getItem('access_token');
-                if (!token) {
-                    alert('Please log in first');
-                    showLoginPage();
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`${backendURL}/purchases/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`,
-                            'ngrok-skip-browser-warning': 'true'
-                        },
-                        body: JSON.stringify({
-                            product_id: parseInt(productId),
-                            quantity: parseInt(quantity),
-                            unit_cost: parseFloat(unitCost)
-                        })
-                    });
-
-                    if (response.ok) {
-                        alert('Purchase recorded successfully!');
-                        document.getElementById('purchase-form').reset();
-                        await loadPurchaseHistory();
-                        await loadProductDropdown('purchase-product');
-                    } else {
-                        const errorData = await response.json();
-                        alert('Error recording purchase: ' + (errorData.detail || 'Unknown error'));
-                    }
-                } catch (error) {
-                    alert('Error recording purchase: ' + error.message);
-                }
-            });
-
-            document.getElementById('create-product-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const name = document.getElementById('product-name').value;
-                const purchasePrice = document.getElementById('product-purchase-price').value;
-                const sellingPrice = document.getElementById('product-selling-price').value;
-                const unitType = document.getElementById('product-unit-type').value;
-                const stock = document.getElementById('product-stock').value;
-
-                const token = localStorage.getItem('access_token');
-                if (!token) {
-                    alert('Please log in first');
-                    showLoginPage();
-                    return;
-                }
-
-                try {
-                    await createProduct({
-                        name: name,
-                        purchase_price: parseFloat(purchasePrice),
-                        selling_price: parseFloat(sellingPrice),
-                        unit_type: unitType,
-                        stock: parseInt(stock) || 0
-                    });
-
-                    alert('Product created successfully!');
-                    document.getElementById('create-product-form').reset();
-                    await loadExistingProducts();
-
-                } catch (error) {
-                    alert('Error creating product: ' + error.message);
-                }
-            });
-
-            // Check authentication on page load
-            await checkAuthentication();
-        });
+        // The main event listeners are already defined below, so this DOMContentLoaded handler is not needed here
     });
 </script>
 </body>

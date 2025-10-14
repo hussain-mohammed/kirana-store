@@ -1829,12 +1829,28 @@ async def get_current_user(username: str = Depends(verify_token), db: Session = 
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
+        # Get permissions safely - new system only
+        permissions = [
+            k for k, v in {
+                "sales": user.sales,
+                "purchase": user.purchase,
+                "create_product": user.create_product,
+                "delete_product": user.delete_product,
+                "sales_ledger": user.sales_ledger,
+                "purchase_ledger": user.purchase_ledger,
+                "stock_ledger": user.stock_ledger,
+                "profit_loss": user.profit_loss,
+                "opening_stock": user.opening_stock,
+                "user_management": user.user_management,
+            }.items() if v
+        ]
+
         return UserResponse(
             id=user.id,
             username=user.username,
             email=user.email,
-            role=user.role.value,
-            is_active=user.is_active
+            is_active=user.is_active,
+            permissions=permissions
         )
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
