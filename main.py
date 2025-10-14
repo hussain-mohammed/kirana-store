@@ -375,7 +375,7 @@ async def lifespan(app: FastAPI):
                             hashed_password = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt())
 
                             default_admin = User(
-                                username="admin",
+                                username="raza123",
                                 email="admin@kirana.store",
                                 password_hash=hashed_password.decode('utf-8'),
                                 role=UserRole.ADMIN,
@@ -383,7 +383,7 @@ async def lifespan(app: FastAPI):
                             )
                             db.add(default_admin)
                             db.commit()
-                            print(f"✅ Default admin user created: username=admin, password={default_password}")
+                            print(f"✅ Default admin user created: username=raza123, password={default_password}")
                             print("⚠️  PLEASE CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
 
                         print("Seeding database with sample products...")
