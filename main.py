@@ -247,7 +247,7 @@ class ProductStockLedger(BaseModel):
     total_sales: int
     history: List[ProductStockHistory]
 
-class ProductStockSnapshot(BaseModel):
+iclass ProductStockSnapshot(BaseModel):
     product_id: int
     product_name: str
     price: float

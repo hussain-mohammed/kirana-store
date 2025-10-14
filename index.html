@@ -238,6 +238,9 @@
             <!-- User Info and Controls -->
             <div id="user-controls" class="flex items-center gap-2 hidden">
                 <div id="welcome-message" class="bg-blue-500 glass-effect rounded-xl px-3 py-1 text-white text-sm"></div>
+                <button id="settings-btn" class="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm">
+                    ⚙️ Settings
+                </button>
                 <button id="logout-btn" class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">
                     Logout
                 </button>
@@ -813,6 +816,11 @@
 
     <!-- Purchase Ledger Page -->
     <div id="page-purchase-ledger" class="page purchase-ledger-bg">
+        <!-- Settings Button for Ledger Pages -->
+        <button onclick="showContentPage('settings')" class="fixed top-20 right-4 z-40 bg-purple-500 text-white p-3 rounded-full shadow-lg hover:bg-purple-600 transition-colors">
+            ⚙️ Settings
+        </button>
+
         <main class="w-full max-w-6xl mx-auto p-4 space-y-6">
             <h2 class="text-xl font-semibold text-gray-700">Purchase Ledger</h2>
             
@@ -1110,41 +1118,88 @@
 
                 <!-- Add User Button (Admin Only) -->
                 <div class="mb-6">
-                    <button onclick="showAddUserForm()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                    <button id="add-user-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
                         Add New User
                     </button>
                 </div>
 
                 <!-- Add User Form (Hidden by default) -->
                 <div id="add-user-form" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
-                    <h4 class="text-md font-semibold mb-4">Add New User</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h4 class="text-md font-semibold mb-4">Create New User</h4>
+                    <form id="add-user-form-element" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                            <input type="text" id="new-username" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter username">
+                            <input type="text" id="new-username" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter username" required>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" id="new-email" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="user@domain.com">
+                            <input type="email" id="new-email" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="user@domain.com" required>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                            <input type="password" id="new-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter password">
+                            <input type="password" id="new-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter password" required>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                            <select id="new-role" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <select id="new-role" class="w-full p-2 border border-gray-300 rounded-lg" required>
                                 <option value="EMPLOYEE">Employee</option>
                                 <option value="MANAGER">Manager</option>
                                 <option value="ADMIN">Admin</option>
                             </select>
                         </div>
-                    </div>
+                    </form>
                     <div class="mt-4 flex gap-2">
                         <button onclick="addUser()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-                            Create User
+                            Save User
                         </button>
                         <button onclick="hideAddUserForm()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Edit User Form (Hidden by default) -->
+                <div id="edit-user-form" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
+                    <h4 class="text-md font-semibold mb-4">Edit User</h4>
+                    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Note:</strong> Edit user details and permissions. Leave password field empty to keep current password.
+                        </p>
+                    </div>
+                    <form id="edit-user-form-element" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="hidden" id="edit-user-id">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                            <input type="text" id="edit-username" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter username" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="edit-email" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="user@domain.com" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">New Password (Optional)</label>
+                            <input type="password" id="edit-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Leave empty to keep current password">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Role / Permissions</label>
+                            <select id="edit-role" class="w-full p-2 border border-gray-300 rounded-lg" required>
+                                <option value="EMPLOYEE">Employee - Basic Access</option>
+                                <option value="MANAGER">Manager - Limited Admin</option>
+                                <option value="ADMIN">Admin - Full Access</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="edit-is-active" class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <span class="text-sm font-medium text-gray-700">User Account Active</span>
+                            </label>
+                        </div>
+                    </form>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="updateUser()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            Update User
+                        </button>
+                        <button onclick="hideEditUserForm()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
                             Cancel
                         </button>
                     </div>
@@ -1668,39 +1723,64 @@
         const loadingEl = document.getElementById('sales-ledger-loading');
         const errorEl = document.getElementById('sales-ledger-error');
         const contentEl = document.getElementById('sales-ledger-content');
-            
-            loadingEl.classList.remove('hidden');
-            errorEl.classList.add('hidden');
-            contentEl.classList.add('hidden');
-            
-            try {
-                const response = await fetch(`${backendURL}/ledger/sales`, {
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true'
-                    }
-                });
-                
-                if (!response.ok) throw new Error('Failed to fetch sales ledger');
-                
-                allSalesData = await response.json();
-                console.log('📊 Sales data received:', allSalesData);
-                
-                // Load product dropdown for filter
-                await loadProductDropdownForFilter('sales-product-filter');
-                
-                // Display all data initially
-                displayFilteredSalesData(allSalesData);
-                
-                loadingEl.classList.add('hidden');
-                contentEl.classList.remove('hidden');
-                
-            } catch (error) {
-                console.error('Error loading sales ledger:', error);
-                loadingEl.classList.add('hidden');
-                errorEl.classList.remove('hidden');
-                errorEl.innerHTML = `<p class="text-red-500">Error loading sales records: ${error.message}</p>`;
-            }
+
+        loadingEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        contentEl.classList.add('hidden');
+
+        // Check authentication
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<div class="text-center"><p class="text-red-500 font-semibold">Authentication Required</p><p class="text-gray-600">Please log in first to view sales data.</p></div>`;
+            return;
         }
+
+        try {
+            console.log('📊 Fetching sales ledger from:', `${backendURL}/ledger/sales`);
+
+            const response = await fetch(`${backendURL}/ledger/sales`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('📊 Sales response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('🚫 Sales API error:', response.status, errorText);
+                throw new Error(`Server returned ${response.status}: ${errorText}`);
+            }
+
+            allSalesData = await response.json();
+            console.log('✅ Sales data received:', allSalesData);
+
+            // Load product dropdown for filter
+            await loadProductDropdownForFilter('sales-product-filter');
+
+            // Display all data initially
+            displayFilteredSalesData(allSalesData);
+
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+
+        } catch (error) {
+            console.error('❌ Error loading sales ledger:', error);
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<div class="text-center">
+                <p class="text-red-500 font-semibold">Error Loading Sales Data</p>
+                <p class="text-gray-600 mt-2">${error.message}</p>
+                <button onclick="loadSalesLedger()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Retry
+                </button>
+            </div>`;
+        }
+    }
 
     function displayFilteredSalesData(salesData) {
         const tableBodyEl = document.getElementById('sales-ledger-table-body');
@@ -1792,37 +1872,62 @@
         const loadingEl = document.getElementById('purchase-ledger-loading');
         const errorEl = document.getElementById('purchase-ledger-error');
         const contentEl = document.getElementById('purchase-ledger-content');
-        
+
         loadingEl.classList.remove('hidden');
         errorEl.classList.add('hidden');
         contentEl.classList.add('hidden');
-        
-        try {
-            const response = await fetch(`${backendURL}/ledger/purchases`, {
-                headers: {
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-            
-            if (!response.ok) throw new Error('Failed to fetch purchase ledger');
-            
-            allPurchasesData = await response.json();
-            console.log('📊 Purchases data received:', allPurchasesData);
-            
-            // Load product dropdown for filter
-            await loadProductDropdownForFilter('purchase-product-filter');
-            
-            // Display all data initially
-            displayFilteredPurchaseData(allPurchasesData);
-            
-            loadingEl.classList.add('hidden');
-            contentEl.classList.remove('hidden');
-            
-        } catch (error) {
-            console.error('Error loading purchase ledger:', error);
+
+        // Check authentication
+        const token = localStorage.getItem('access_token');
+        if (!token) {
             loadingEl.classList.add('hidden');
             errorEl.classList.remove('hidden');
-            errorEl.innerHTML = `<p class="text-red-500">Error loading purchase records: ${error.message}</p>`;
+            errorEl.innerHTML = `<div class="text-center"><p class="text-red-500 font-semibold">Authentication Required</p><p class="text-gray-600">Please log in first to view purchase data.</p></div>`;
+            return;
+        }
+
+        try {
+            console.log('📊 Fetching purchase ledger from:', `${backendURL}/ledger/purchases`);
+
+            const response = await fetch(`${backendURL}/ledger/purchases`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('📊 Purchase response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('🚫 Purchase API error:', response.status, errorText);
+                throw new Error(`Server returned ${response.status}: ${errorText}`);
+            }
+
+            allPurchasesData = await response.json();
+            console.log('✅ Purchase data received:', allPurchasesData);
+
+            // Load product dropdown for filter
+            await loadProductDropdownForFilter('purchase-product-filter');
+
+            // Display all data initially
+            displayFilteredPurchaseData(allPurchasesData);
+
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+
+        } catch (error) {
+            console.error('❌ Error loading purchase ledger:', error);
+            loadingEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            errorEl.innerHTML = `<div class="text-center">
+                <p class="text-red-500 font-semibold">Error Loading Purchase Data</p>
+                <p class="text-gray-600 mt-2">${error.message}</p>
+                <button onclick="loadPurchaseLedger()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Retry
+                </button>
+            </div>`;
         }
     }
 
@@ -3552,6 +3657,11 @@
             }
         });
 
+        // ===== ADD USER BUTTON HANDLER =====
+        document.getElementById('add-user-btn').addEventListener('click', function() {
+            showAddUserForm();
+        });
+
         // ===== SETTINGS PAGE FUNCTIONS =====
         function loadUsers() {
             const loadingEl = document.getElementById('users-loading');
@@ -3588,6 +3698,8 @@
                 if (!Array.isArray(users) || users.length === 0) {
                     tbodyEl.innerHTML = '<tr><td colspan="8" class="border border-gray-200 px-4 py-4 text-center text-gray-500">No users found</td></tr>';
                 } else {
+                     // Sort users by ID
+                     users.sort((a, b) => b.id - a.id); // Newest first
                     tbodyEl.innerHTML = users.map(user => `
                         <tr class="hover:bg-gray-50">
                             <td class="border border-gray-200 px-4 py-2 font-medium">${user.id}</td>
@@ -3653,7 +3765,12 @@
         }
 
         function showAddUserForm() {
-            document.getElementById('add-user-form').classList.remove('hidden');
+            const formEl = document.getElementById('add-user-form');
+            if (formEl) {
+                formEl.classList.remove('hidden');
+            } else {
+                console.error('Add user form not found');
+            }
         }
 
         function hideAddUserForm() {
@@ -3719,9 +3836,92 @@
         }
 
         function editUser(userId, username, email, role, isActive) {
-            // For now, just show an alert. You can implement editing functionality later
-            alert(`Edit user ${username} - Feature coming soon!`);
-            // You could open a modal with pre-filled form fields
+            // Populate edit form with user data
+            document.getElementById('edit-user-id').value = userId;
+            document.getElementById('edit-username').value = username;
+            document.getElementById('edit-email').value = email;
+            document.getElementById('edit-role').value = role;
+            document.getElementById('edit-is-active').checked = isActive;
+
+            // Show the edit form
+            document.getElementById('edit-user-form').classList.remove('hidden');
+
+            // Hide add user form if it's visible
+            document.getElementById('add-user-form').classList.add('hidden');
+        }
+
+        function updateUser() {
+            const userId = document.getElementById('edit-user-id').value;
+            const username = document.getElementById('edit-username').value.trim();
+            const email = document.getElementById('edit-email').value.trim();
+            const password = document.getElementById('edit-password').value.trim();
+            const role = document.getElementById('edit-role').value;
+            const isActive = document.getElementById('edit-is-active').checked;
+
+            if (!username || !email || !role) {
+                alert('Username, email, and role are required fields');
+                return;
+            }
+
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Please log in first');
+                showLoginPage();
+                return;
+            }
+
+            // Prepare update data
+            const updateData = {
+                username: username,
+                email: email,
+                role: role,
+                is_active: isActive
+            };
+
+            // Only include password if it was provided
+            if (password) {
+                updateData.password = password;
+            }
+
+            fetch(`${backendURL}/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.detail || `HTTP ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ User updated:', data);
+                showNotification('User updated successfully!');
+                hideEditUserForm();
+                // Clear form
+                document.getElementById('edit-user-id').value = '';
+                document.getElementById('edit-username').value = '';
+                document.getElementById('edit-email').value = '';
+                document.getElementById('edit-password').value = '';
+                document.getElementById('edit-role').value = 'EMPLOYEE';
+                document.getElementById('edit-is-active').checked = true;
+                // Reload users list
+                loadUsers();
+            })
+            .catch(error => {
+                console.error('❌ Error updating user:', error);
+                alert(`Error updating user: ${error.message}`);
+            });
+        }
+
+        function hideEditUserForm() {
+            document.getElementById('edit-user-form').classList.add('hidden');
         }
 
         // Update the settings page navigation
