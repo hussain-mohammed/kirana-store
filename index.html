@@ -1263,47 +1263,87 @@
                 <!-- Permissions Update Form -->
                 <div id="permissions-update-form" class="hidden p-4 bg-gray-50 rounded-lg">
                     <h4 class="text-sm font-semibold text-gray-800 mb-3">Update Permissions</h4>
-                    <p class="text-xs text-gray-600 mb-4">Select which features this user can access:</p>
+                    <p class="text-xs text-gray-600 mb-4">Select which main page buttons this user can access:</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" id="perm-update-sales" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">🛍️ Sales - Sell products and process orders</span>
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">🛍️</span>
+                                Sales
+                                <span class="text-xs text-gray-500 block">Sell products to customers</span>
+                            </span>
                         </label>
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" id="perm-update-purchase" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">📦 Purchase - Record product purchases</span>
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">📦</span>
+                                Purchase
+                                <span class="text-xs text-gray-500 block">Record product purchases</span>
+                            </span>
                         </label>
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" id="perm-update-create-product" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">➕ Create Product - Add new products</span>
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">➕</span>
+                                Create Product
+                                <span class="text-xs text-gray-500 block">Add new products to inventory</span>
+                            </span>
                         </label>
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" id="perm-update-delete-product" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">🗑️ Delete Product - Remove products</span>
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">🗑️</span>
+                                Delete Product
+                                <span class="text-xs text-gray-500 block">Remove products from inventory</span>
+                            </span>
                         </label>
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                            <input type="checkbox" id="perm-update-sales-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">📋 Sales Ledger - View sales records</span>
-                        </label>
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                            <input type="checkbox" id="perm-update-purchase-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">📋 Purchase Ledger - View purchase records</span>
-                        </label>
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" id="perm-update-stock-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">📊 Stock Ledger - View stock information</span>
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">📋</span>
+                                All Products Stock
+                                <span class="text-xs text-gray-500 block">View stock details with filters</span>
+                            </span>
                         </label>
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" id="perm-update-sales-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">📋</span>
+                                Sales Ledger
+                                <span class="text-xs text-gray-500 block">View and manage sales records</span>
+                            </span>
+                        </label>
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" id="perm-update-purchase-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">📋</span>
+                                Purchase Ledger
+                                <span class="text-xs text-gray-500 block">View and manage purchase records</span>
+                            </span>
+                        </label>
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" id="perm-update-profit-loss" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">💰 Profit & Loss - View financial reports</span>
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">💰</span>
+                                Profit & Loss
+                                <span class="text-xs text-gray-500 block">View profit and loss analysis</span>
+                            </span>
                         </label>
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" id="perm-update-opening-stock" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">📊 Opening Stock - View initial stock</span>
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">📊</span>
+                                Opening Stock
+                                <span class="text-xs text-gray-500 block">View opening stock register</span>
+                            </span>
                         </label>
-                        <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
+                        <label class="flex items-center p-3 bg-white rounded border hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" id="perm-update-user-management" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                            <span class="text-sm font-medium text-gray-700">👥 User Management - Manage other users</span>
+                            <span class="text-sm font-medium text-gray-700">
+                                <span class="text-lg mr-2">⚙️</span>
+                                Settings
+                                <span class="text-xs text-gray-500 block">Manage users and permissions</span>
+                            </span>
                         </label>
                     </div>
                     <div class="flex gap-2">
@@ -1342,152 +1382,6 @@
                     </button>
                 </div>
 
-                <!-- Add User Button (Admin Only) -->
-                <div class="mb-6">
-                    <button id="add-user-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-                        Add New User
-                    </button>
-                </div>
-
-                <!-- Add User Form (Hidden by default) -->
-                <div id="add-user-form" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
-                    <h4 class="text-md font-semibold mb-4">Create New User</h4>
-                    <form id="add-user-form-element" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                            <input type="text" id="new-username" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter username" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" id="new-email" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="user@domain.com" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                            <input type="password" id="new-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter password" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                            <select id="new-role" class="w-full p-2 border border-gray-300 rounded-lg" required>
-                                <option value="EMPLOYEE">Employee</option>
-                                <option value="MANAGER">Manager</option>
-                                <option value="ADMIN">Admin</option>
-                            </select>
-                        </div>
-                    </form>
-
-                    <!-- Permissions Section -->
-                    <div class="mt-6">
-                        <h5 class="text-sm font-semibold text-gray-800 mb-3">Set Permissions</h5>
-                        <p class="text-xs text-gray-600 mb-4">Select the features this user can access:</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-sales" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
-                                <span class="text-sm font-medium text-gray-700">🛍️ Sales - Sell products and process orders</span>
-                            </label>
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-purchase" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
-                                <span class="text-sm font-medium text-gray-700">📦 Purchase - Record product purchases</span>
-                            </label>
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-create-product" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
-                                <span class="text-sm font-medium text-gray-700">➕ Create Product - Add new products</span>
-                            </label>
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-delete-product" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                                <span class="text-sm font-medium text-gray-700">🗑️ Delete Product - Remove products</span>
-                            </label>
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-sales-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
-                                <span class="text-sm font-medium text-gray-700">📋 Sales Ledger - View sales records</span>
-                            </label>
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-purchase-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
-                                <span class="text-sm font-medium text-gray-700">📋 Purchase Ledger - View purchase records</span>
-                            </label>
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-stock-ledger" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
-                                <span class="text-sm font-medium text-gray-700">📊 Stock Ledger - View stock information</span>
-                            </label>
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-profit-loss" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                                <span class="text-sm font-medium text-gray-700">💰 Profit & Loss - View financial reports</span>
-                            </label>
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-opening-stock" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                                <span class="text-sm font-medium text-gray-700">📊 Opening Stock - View initial stock</span>
-                            </label>
-                            <label class="flex items-center p-2 bg-white rounded border hover:bg-gray-50">
-                                <input type="checkbox" id="perm-user-management" class="mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
-                                <span class="text-sm font-medium text-gray-700">👥 User Management - Manage other users</span>
-                            </label>
-                        </div>
-                        <div class="mt-3 flex gap-2">
-                            <button type="button" onclick="selectAllPermissions()" class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">
-                                Select All
-                            </button>
-                            <button type="button" onclick="clearAllPermissions()" class="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600">
-                                Clear All
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 flex gap-2">
-                        <button onclick="addUser()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-                            Save User
-                        </button>
-                        <button onclick="hideAddUserForm()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Edit User Form (Hidden by default) -->
-                <div id="edit-user-form" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
-                    <h4 class="text-md font-semibold mb-4">Edit User</h4>
-                    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p class="text-sm text-yellow-800">
-                            <strong>Note:</strong> Edit user details and permissions. Leave password field empty to keep current password.
-                        </p>
-                    </div>
-                    <form id="edit-user-form-element" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="hidden" id="edit-user-id">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                            <input type="text" id="edit-username" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter username" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" id="edit-email" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="user@domain.com" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">New Password (Optional)</label>
-                            <input type="password" id="edit-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Leave empty to keep current password">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Role / Permissions</label>
-                            <select id="edit-role" class="w-full p-2 border border-gray-300 rounded-lg" required>
-                                <option value="EMPLOYEE">Employee - Basic Access</option>
-                                <option value="MANAGER">Manager - Limited Admin</option>
-                                <option value="ADMIN">Admin - Full Access</option>
-                            </select>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" id="edit-is-active" class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                <span class="text-sm font-medium text-gray-700">User Account Active</span>
-                            </label>
-                        </div>
-                    </form>
-                    <div class="mt-4 flex gap-2">
-                        <button onclick="updateUser()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                            Update User
-                        </button>
-                        <button onclick="hideEditUserForm()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Loading State -->
                 <div id="users-loading" class="text-center py-8">
                     <p class="text-gray-500">Loading users...</p>
@@ -1509,8 +1403,7 @@
                                     <th class="border border-gray-200 px-4 py-2 text-left">Email</th>
                                     <th class="border border-gray-200 px-4 py-2 text-left">Role</th>
                                     <th class="border border-gray-200 px-4 py-2 text-left">Status</th>
-                                    <th class="border border-gray-200 px-4 py-2 text-left">Last Login</th>
-                                    <th class="border border-gray-200 px-4 py-2 text-left">Permissions</th>
+                                    <th class="border border-gray-200 px-4 py-2 text-left">Created Date</th>
                                     <th class="border border-gray-200 px-4 py-2 text-left">Actions</th>
                                 </tr>
                             </thead>
@@ -3645,56 +3538,10 @@
         console.log('📋 Token exists:', !!token);
         console.log('🔧 Backend URL:', backendURL);
 
-        // If no token, immediately show demo mode
-        if (!token) {
-            console.log('⚠️ No token found, showing demo mode');
-            // For demo/development, show the main app even without authentication
-            showMainApp();
-            return true;
-        }
-
-        try {
-            console.log('🛡️  Verifying token with backend...');
-            // Verify token with server
-            const response = await fetch(`${backendURL}/auth/me`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'ngrok-skip-browser-warning': 'true',
-                    'Content-Type': 'application/json'
-                },
-                // Add timeout to prevent hanging
-                signal: AbortSignal.timeout(10000) // 10 second timeout
-            });
-
-            console.log('📊 Auth response status:', response.status);
-
-            if (response.ok) {
-                currentUser = await response.json();
-                console.log('✅ Auth successful:', currentUser);
-                console.log('🎯 Showing main app...');
-                showMainApp();
-                return true;
-            } else {
-                console.warn('❌ Auth failed with status:', response.status);
-                const errorText = await response.text().catch(() => 'Unknown error');
-                console.warn('❌ Auth error details:', errorText);
-
-                // Clear invalid token and show demo mode
-                localStorage.removeItem('access_token');
-                console.log('🧹 Cleared invalid token, showing demo mode');
-                showMainApp();
-                return true;
-            }
-        } catch (error) {
-            console.error('💥 Auth check failed with error:', error);
-            console.error('🌐 Error details:', error.message);
-
-            // Clear potentially invalid token and show demo mode
-            localStorage.removeItem('access_token');
-            console.log('🧹 Network error, cleared token and showing demo mode');
-            showMainApp();
-            return true;
-        }
+        // Always show the main app for demo purposes - remove authentication redirect loop
+        console.log('🏠 Directly showing main Kirana Store app');
+        showMainApp();
+        return true;
     }
 
     function showMainApp() {
@@ -3812,14 +3659,20 @@
     function logout() {
         localStorage.removeItem('access_token');
         currentUser = null;
-        // Hide all pages
+        // Hide all content pages including loading page
         Object.values(pages).forEach(page => page.classList.remove('active'));
-        const loginPage = document.getElementById('page-login');
-        if (loginPage) loginPage.classList.remove('active');
+        const loadingPage = document.getElementById('page-loading');
+        if (loadingPage) loadingPage.classList.remove('active');
         // Hide user controls
         document.getElementById('user-controls').classList.add('hidden');
-        // Redirect to login page
-        window.location.href = 'login.html';
+
+        // Show login page within the same app
+        const loginPage = document.getElementById('page-login');
+        if (loginPage) {
+            loginPage.classList.add('active');
+        } else {
+            console.error('Login page not found!');
+        }
     }
 
         // ===== EVENT LISTENERS =====
@@ -3855,10 +3708,11 @@
                 currentUser = null;
                 // Hide user controls
                 document.getElementById('user-controls').classList.add('hidden');
-                // Hide all pages
+                // Hide all content pages including loading page
                 Object.values(pages).forEach(page => page.classList.remove('active'));
-                // Show loading page first
-                document.getElementById('page-loading').classList.add('active');
+                const loadingPage = document.getElementById('page-loading');
+                if (loadingPage) loadingPage.classList.remove('active');
+                const rootEl = document.documentElement;
                 // Show login page by redirecting after a brief delay
                 setTimeout(() => {
                     window.location.href = 'login.html';
@@ -4413,6 +4267,7 @@
                 case 'settings':
                     loadUsers();
                     loadCurrentUserPermissions();
+                    loadUsersWithActions(); // Load users for dropdown selectors
                     break;
             }
         }
