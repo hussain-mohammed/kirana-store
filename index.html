@@ -1345,14 +1345,24 @@
 
     // ===== NAVIGATION FUNCTIONS =====
     function showContentPage(pageName) {
+        // Hide all pages including login page
         Object.values(pages).forEach(page => page.classList.remove('active'));
+        // Also hide login page explicitly since it's not in pages object
+        const loginPage = document.getElementById('page-login');
+        if (loginPage) loginPage.classList.remove('active');
+
         pages[pageName].classList.add('active');
         backButton.classList.remove('hidden');
         loadPageData(pageName);
     }
 
     function backToHome() {
+        // Hide all pages including login page
         Object.values(pages).forEach(page => page.classList.remove('active'));
+        // Also hide login page explicitly since it's not in pages object
+        const loginPage = document.getElementById('page-login');
+        if (loginPage) loginPage.classList.remove('active');
+
         pages.home.classList.add('active');
         backButton.classList.add('hidden');
     }
@@ -3387,27 +3397,31 @@
     }
 
     function showMainApp() {
+        // Hide all pages including login page
         Object.values(pages).forEach(page => page.classList.remove('active'));
+        const loginPage = document.getElementById('page-login');
+        if (loginPage) loginPage.classList.remove('active');
+
         pages.home.classList.add('active');
         document.getElementById('back-to-home').classList.add('hidden');
 
         // Show logout button when user is logged in
-            document.getElementById('user-controls').classList.remove('hidden');
+        document.getElementById('user-controls').classList.remove('hidden');
 
-            // Update welcome message with username
-            const welcomeEl = document.getElementById('welcome-message');
-            if (currentUser && currentUser.username) {
-                welcomeEl.innerHTML = `Welcome, ${currentUser.username}!`;
-            }
+        // Update welcome message with username
+        const welcomeEl = document.getElementById('welcome-message');
+        if (currentUser && currentUser.username) {
+            welcomeEl.innerHTML = `Welcome, ${currentUser.username}!`;
+        }
 
-            // Show admin settings button if user is admin
-            const adminSettingsEl = document.getElementById('admin-settings');
-            if (currentUser && currentUser.role === 'ADMIN') {
-                adminSettingsEl.classList.remove('hidden');
-                adminSettingsEl.onclick = () => showContentPage('settings');
-            } else {
-                adminSettingsEl.classList.add('hidden');
-            }
+        // Show admin settings button if user is admin
+        const adminSettingsEl = document.getElementById('admin-settings');
+        if (currentUser && currentUser.role === 'ADMIN') {
+            adminSettingsEl.classList.remove('hidden');
+            adminSettingsEl.onclick = () => showContentPage('settings');
+        } else {
+            adminSettingsEl.classList.add('hidden');
+        }
     }
 
     async function performLogin(username, password) {

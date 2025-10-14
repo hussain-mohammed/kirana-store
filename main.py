@@ -102,7 +102,17 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.EMPLOYEE)
+    # Individual permissions instead of roles
+    sales = Column(Boolean, default=False)
+    purchase = Column(Boolean, default=False)
+    create_product = Column(Boolean, default=False)
+    delete_product = Column(Boolean, default=False)
+    sales_ledger = Column(Boolean, default=False)
+    purchase_ledger = Column(Boolean, default=False)
+    stock_ledger = Column(Boolean, default=False)
+    profit_loss = Column(Boolean, default=False)
+    opening_stock = Column(Boolean, default=False)
+    user_management = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(IST))
     last_login = Column(DateTime, nullable=True)
@@ -265,8 +275,26 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
-    role: str
+    # Optionally include role for legacy users
+    role: Optional[str] = None
     is_active: bool
+    # Include permissions for new system
+    permissions: Optional[List[str]] = None
+
+class UserCreateRequest(BaseModel):
+    username: str
+    password: str
+    email: str
+    sales: bool = False
+    purchase: bool = False
+    create_product: bool = False
+    delete_product: bool = False
+    sales_ledger: bool = False
+    purchase_ledger: bool = False
+    stock_ledger: bool = False
+    profit_loss: bool = False
+    opening_stock: bool = False
+    user_management: bool = False
 
 class LoginResponse(BaseModel):
     access_token: str
@@ -1718,22 +1746,50 @@ async def protected_route(username: str = Depends(verify_token)):
 @app.get("/users", response_model=List[UserResponse])
 async def get_users(db: Session = Depends(get_db), username: str = Depends(verify_token)):
     """
-    Get all users (Admin only)
+    Get all users (Admin only or user with user_management permission)
     """
     try:
-        # Check if user is admin
-        user = db.query(User).filter(User.username == username).first()
-        if user.role != UserRole.ADMIN:
-            raise HTTPException(status_code=403, detail="Admin privileges required")
+        # Check permissions
+        check_permission(Permission.USER_MANAGEMENT, db, username)
 
         users = db.query(User).all()
-        return [UserResponse(
-            id=u.id,
-            username=u.username,
-            email=u.email,
-            role=u.role.value,
-            is_active=u.is_active
-        ) for u in users]
+        user_responses = []
+        for u in users:
+            # Check if user has individual permissions or legacy role system
+            if hasattr(u, 'sales') and u.sales is not None:
+                # New permission system
+                permissions = [
+                    k for k, v in {
+                        "sales": u.sales,
+                        "purchase": u.purchase,
+                        "create_product": u.create_product,
+                        "delete_product": u.delete_product,
+                        "sales_ledger": u.sales_ledger,
+                        "purchase_ledger": u.purchase_ledger,
+                        "stock_ledger": u.stock_ledger,
+                        "profit_loss": u.profit_loss,
+                        "opening_stock": u.opening_stock,
+                        "user_management": u.user_management,
+                    }.items() if v
+                ]
+                user_responses.append(UserResponse(
+                    id=u.id,
+                    username=u.username,
+                    email=u.email,
+                    is_active=u.is_active,
+                    permissions=permissions
+                ))
+            else:
+                # Legacy role system
+                user_responses.append(UserResponse(
+                    id=u.id,
+                    username=u.username,
+                    email=u.email,
+                    role=u.role.value if u.role else None,
+                    is_active=u.is_active
+                ))
+
+        return user_responses
     except HTTPException:
         raise
     except SQLAlchemyError as e:
@@ -1741,42 +1797,45 @@ async def get_users(db: Session = Depends(get_db), username: str = Depends(verif
 
 @app.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
-    username: str = Form(...),
-    password: str = Form(...),
-    email: str = Form(...),
-    role: str = Form(...),
+    user_data: UserCreateRequest,
     db: Session = Depends(get_db),
     current_user: str = Depends(verify_token)
 ):
     """
-    Create a new user (Admin only)
+    Create a new user with individual permissions
     """
     try:
-        # Check if current user is admin
-        user = db.query(User).filter(User.username == current_user).first()
-        if user.role != UserRole.ADMIN:
-            raise HTTPException(status_code=403, detail="Admin privileges required")
-
-        # Validate role
-        try:
-            user_role = UserRole(role.upper())
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid role. Must be 'ADMIN', 'MANAGER', or 'EMPLOYEE'")
+        # Check permissions
+        check_permission(Permission.USER_MANAGEMENT, db, current_user)
 
         # Check if username already exists
-        existing_user = db.query(User).filter(User.username == username).first()
+        existing_user = db.query(User).filter(User.username == user_data.username).first()
         if existing_user:
             raise HTTPException(status_code=400, detail="Username already exists")
 
-        # Hash password
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        # Check if email already exists
+        existing_user = db.query(User).filter(User.email == user_data.email).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already exists")
 
-        # Create new user
+        # Hash password
+        hashed_password = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt())
+
+        # Create new user with individual permissions
         new_user = User(
-            username=username,
-            email=email,
+            username=user_data.username,
+            email=user_data.email,
             password_hash=hashed_password.decode('utf-8'),
-            role=user_role,
+            sales=user_data.sales,
+            purchase=user_data.purchase,
+            create_product=user_data.create_product,
+            delete_product=user_data.delete_product,
+            sales_ledger=user_data.sales_ledger,
+            purchase_ledger=user_data.purchase_ledger,
+            stock_ledger=user_data.stock_ledger,
+            profit_loss=user_data.profit_loss,
+            opening_stock=user_data.opening_stock,
+            user_management=user_data.user_management,
             is_active=True
         )
 
@@ -1784,12 +1843,28 @@ def create_user(
         db.commit()
         db.refresh(new_user)
 
+        # Return response with permissions
+        permissions = [
+            k for k, v in {
+                "sales": new_user.sales,
+                "purchase": new_user.purchase,
+                "create_product": new_user.create_product,
+                "delete_product": new_user.delete_product,
+                "sales_ledger": new_user.sales_ledger,
+                "purchase_ledger": new_user.purchase_ledger,
+                "stock_ledger": new_user.stock_ledger,
+                "profit_loss": new_user.profit_loss,
+                "opening_stock": new_user.opening_stock,
+                "user_management": new_user.user_management,
+            }.items() if v
+        ]
+
         return UserResponse(
             id=new_user.id,
             username=new_user.username,
             email=new_user.email,
-            role=new_user.role.value,
-            is_active=new_user.is_active
+            is_active=new_user.is_active,
+            permissions=permissions
         )
     except HTTPException:
         raise
@@ -1797,48 +1872,110 @@ def create_user(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@app.put("/users/{user_id}/permissions", response_model=UserResponse)
-def update_user_permissions(
+class UserUpdateRequest(BaseModel):
+    sales: Optional[bool] = None
+    purchase: Optional[bool] = None
+    create_product: Optional[bool] = None
+    delete_product: Optional[bool] = None
+    sales_ledger: Optional[bool] = None
+    purchase_ledger: Optional[bool] = None
+    stock_ledger: Optional[bool] = None
+    profit_loss: Optional[bool] = None
+    opening_stock: Optional[bool] = None
+    user_management: Optional[bool] = None
+    is_active: Optional[bool] = None
+    password: Optional[str] = None
+    email: Optional[str] = None
+
+@app.put("/users/{user_id}", response_model=UserResponse)
+def update_user(
     user_id: int,
-    role: str = Form(...),
-    is_active: bool = Form(...),
+    user_data: UserUpdateRequest,
     db: Session = Depends(get_db),
     current_user: str = Depends(verify_token)
 ):
     """
-    Update user permissions/roles (Admin only)
+    Update user permissions and details
     """
     try:
-        # Check if current user is admin
-        admin_user = db.query(User).filter(User.username == current_user).first()
-        if admin_user.role != UserRole.ADMIN:
-            raise HTTPException(status_code=403, detail="Admin privileges required")
+        # Check permissions
+        check_permission(Permission.USER_MANAGEMENT, db, current_user)
 
         # Find the user to update
         user_to_update = db.query(User).filter(User.id == user_id).first()
         if not user_to_update:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # Validate role
-        try:
-            user_role = UserRole(role.upper())
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid role. Must be 'ADMIN', 'MANAGER', or 'EMPLOYEE'")
-
-        # Update user
-        user_to_update.role = user_role
-        user_to_update.is_active = is_active
+        # Update permissions and other fields
+        for field in user_data.__fields__:
+            value = getattr(user_data, field)
+            if value is not None:
+                if field == "password" and value:
+                    # Hash new password
+                    hashed_password = bcrypt.hashpw(value.encode('utf-8'), bcrypt.gensalt())
+                    setattr(user_to_update, "password_hash", hashed_password.decode('utf-8'))
+                elif field != "password":  # Don't set password directly
+                    setattr(user_to_update, field, value)
 
         db.commit()
         db.refresh(user_to_update)
+
+        # Return response with updated permissions
+        permissions = [
+            k for k, v in {
+                "sales": user_to_update.sales,
+                "purchase": user_to_update.purchase,
+                "create_product": user_to_update.create_product,
+                "delete_product": user_to_update.delete_product,
+                "sales_ledger": user_to_update.sales_ledger,
+                "purchase_ledger": user_to_update.purchase_ledger,
+                "stock_ledger": user_to_update.stock_ledger,
+                "profit_loss": user_to_update.profit_loss,
+                "opening_stock": user_to_update.opening_stock,
+                "user_management": user_to_update.user_management,
+            }.items() if v
+        ]
 
         return UserResponse(
             id=user_to_update.id,
             username=user_to_update.username,
             email=user_to_update.email,
-            role=user_to_update.role.value,
-            is_active=user_to_update.is_active
+            is_active=user_to_update.is_active,
+            permissions=permissions
         )
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.delete("/users/{user_id}", status_code=status.HTTP_200_OK)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_token)
+):
+    """
+    Delete a user
+    """
+    try:
+        # Check permissions
+        check_permission(Permission.USER_MANAGEMENT, db, current_user)
+
+        # Find the user to delete
+        user_to_delete = db.query(User).filter(User.id == user_id).first()
+        if not user_to_delete:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Prevent deleting self
+        current_user_obj = db.query(User).filter(User.username == current_user).first()
+        if current_user_obj and current_user_obj.id == user_id:
+            raise HTTPException(status_code=400, detail="Cannot delete your own account")
+
+        db.delete(user_to_delete)
+        db.commit()
+
+        return {"status": "success", "message": f"User {user_to_delete.username} deleted successfully"}
     except HTTPException:
         raise
     except SQLAlchemyError as e:
@@ -1855,33 +1992,72 @@ def get_user_permissions(username: str = Depends(verify_token), db: Session = De
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        user_permissions = ROLE_PERMISSIONS.get(user.role.value, [])
-
-        # Convert Permission enum to string values
-        permissions = [perm.value for perm in user_permissions]
-
-        return {
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "role": user.role.value,
-                "is_active": user.is_active
-            },
-            "permissions": permissions,
-            "accessible_features": {
-                "sales": Permission.SALES.value in permissions,
-                "purchase": Permission.PURCHASE.value in permissions,
-                "create_product": Permission.CREATE_PRODUCT.value in permissions,
-                "delete_product": Permission.DELETE_PRODUCT.value in permissions,
-                "sales_ledger": Permission.SALES_LEDGER.value in permissions,
-                "purchase_ledger": Permission.PURCHASE_LEDGER.value in permissions,
-                "stock_ledger": Permission.STOCK_LEDGER.value in permissions,
-                "profit_loss": Permission.PROFIT_LOSS.value in permissions,
-                "opening_stock": Permission.OPENING_STOCK.value in permissions,
-                "user_management": Permission.USER_MANAGEMENT.value in permissions,
+        # Check if user has individual permissions (new system) or fallback to roles (legacy)
+        if hasattr(user, 'sales') and user.sales is not None:
+            # User has individual permissions
+            return {
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "is_active": user.is_active
+                },
+                "permissions": [
+                    k for k, v in {
+                        "sales": user.sales,
+                        "purchase": user.purchase,
+                        "create_product": user.create_product,
+                        "delete_product": user.delete_product,
+                        "sales_ledger": user.sales_ledger,
+                        "purchase_ledger": user.purchase_ledger,
+                        "stock_ledger": user.stock_ledger,
+                        "profit_loss": user.profit_loss,
+                        "opening_stock": user.opening_stock,
+                        "user_management": user.user_management,
+                    }.items() if v
+                ],
+                "accessible_features": {
+                    "sales": user.sales,
+                    "purchase": user.purchase,
+                    "create_product": user.create_product,
+                    "delete_product": user.delete_product,
+                    "sales_ledger": user.sales_ledger,
+                    "purchase_ledger": user.purchase_ledger,
+                    "stock_ledger": user.stock_ledger,
+                    "profit_loss": user.profit_loss,
+                    "opening_stock": user.opening_stock,
+                    "user_management": user.user_management,
+                }
             }
-        }
+        else:
+            # Fallback to role-based permissions (legacy users)
+            user_permissions = ROLE_PERMISSIONS.get(user.role.value, [])
+
+            # Convert Permission enum to string values
+            permissions = [perm.value for perm in user_permissions]
+
+            return {
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role.value,
+                    "is_active": user.is_active
+                },
+                "permissions": permissions,
+                "accessible_features": {
+                    "sales": Permission.SALES.value in permissions,
+                    "purchase": Permission.PURCHASE.value in permissions,
+                    "create_product": Permission.CREATE_PRODUCT.value in permissions,
+                    "delete_product": Permission.DELETE_PRODUCT.value in permissions,
+                    "sales_ledger": Permission.SALES_LEDGER.value in permissions,
+                    "purchase_ledger": Permission.PURCHASE_LEDGER.value in permissions,
+                    "stock_ledger": Permission.STOCK_LEDGER.value in permissions,
+                    "profit_loss": Permission.PROFIT_LOSS.value in permissions,
+                    "opening_stock": Permission.OPENING_STOCK.value in permissions,
+                    "user_management": Permission.USER_MANAGEMENT.value in permissions,
+                }
+            }
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
@@ -1892,9 +2068,17 @@ def check_permission(required_permission: Permission, db: Session, username: str
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_permissions = ROLE_PERMISSIONS.get(user.role.value, [])
-    if required_permission not in user_permissions:
-        raise HTTPException(status_code=403, detail=f"Authentication required for {required_permission.value}")
+    # Check if user has individual permissions (new system) or fallback to roles (legacy)
+    if hasattr(user, 'sales') and user.sales is not None:
+        # Check individual permission
+        perm_attr = required_permission.value
+        if not getattr(user, perm_attr, False):
+            raise HTTPException(status_code=403, detail=f"Permission required: {required_permission.value}")
+    else:
+        # Fallback to role-based permissions
+        user_permissions = ROLE_PERMISSIONS.get(user.role.value, [])
+        if required_permission not in user_permissions:
+            raise HTTPException(status_code=403, detail=f"Authentication required for {required_permission.value}")
 
 @app.get("/protected/sales")
 def protected_sales_endpoint(db: Session = Depends(get_db), username: str = Depends(verify_token)):
