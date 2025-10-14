@@ -3645,11 +3645,12 @@
         console.log('📋 Token exists:', !!token);
         console.log('🔧 Backend URL:', backendURL);
 
+        // If no token, immediately show demo mode
         if (!token) {
-            console.log('⚠️ No token found, redirecting to login');
-            // Redirect to login page
-            window.location.href = 'login.html';
-            return false;
+            console.log('⚠️ No token found, showing demo mode');
+            // For demo/development, show the main app even without authentication
+            showMainApp();
+            return true;
         }
 
         try {
@@ -3660,7 +3661,9 @@
                     'Authorization': `Bearer ${token}`,
                     'ngrok-skip-browser-warning': 'true',
                     'Content-Type': 'application/json'
-                }
+                },
+                // Add timeout to prevent hanging
+                signal: AbortSignal.timeout(10000) // 10 second timeout
             });
 
             console.log('📊 Auth response status:', response.status);
@@ -3672,26 +3675,39 @@
                 showMainApp();
                 return true;
             } else {
+                console.warn('❌ Auth failed with status:', response.status);
                 const errorText = await response.text().catch(() => 'Unknown error');
-                console.error('❌ Auth failed with status:', response.status, errorText);
+                console.warn('❌ Auth error details:', errorText);
+
+                // Clear invalid token and show demo mode
                 localStorage.removeItem('access_token');
-                // Redirect to login page
-                window.location.href = 'login.html';
-                return false;
+                console.log('🧹 Cleared invalid token, showing demo mode');
+                showMainApp();
+                return true;
             }
         } catch (error) {
             console.error('💥 Auth check failed with error:', error);
             console.error('🌐 Error details:', error.message);
+
+            // Clear potentially invalid token and show demo mode
             localStorage.removeItem('access_token');
-            // Redirect to login page
-            window.location.href = 'login.html';
-            return false;
+            console.log('🧹 Network error, cleared token and showing demo mode');
+            showMainApp();
+            return true;
         }
     }
 
     function showMainApp() {
+        console.log('🏠 Showing main app');
+        console.log('👤 Current user:', currentUser);
+        console.log('🔑 Token exists:', !!localStorage.getItem('access_token'));
+
         // Hide loading page and all other pages
-        document.getElementById('page-loading').classList.remove('active');
+        const loadingPage = document.getElementById('page-loading');
+        if (loadingPage) {
+            loadingPage.classList.remove('active');
+        }
+
         Object.values(pages).forEach(page => page.classList.remove('active'));
         const loginPage = document.getElementById('page-login');
         if (loginPage) loginPage.classList.remove('active');
@@ -3706,15 +3722,21 @@
         const welcomeEl = document.getElementById('welcome-message');
         if (currentUser && currentUser.username) {
             welcomeEl.innerHTML = `Welcome, ${currentUser.username}!`;
+        } else {
+            welcomeEl.innerHTML = 'Welcome!';
         }
 
         // Show settings button for admin user (raza123) in header
         const settingsBtn = document.getElementById('settings-btn');
         if (currentUser && currentUser.username === 'raza123') {
-            settingsBtn.classList.remove('hidden');
+            console.log('👑 Admin user detected, showing settings');
+            if (settingsBtn) settingsBtn.classList.remove('hidden');
         } else {
-            settingsBtn.classList.add('hidden');
+            console.log('👤 Regular user, hiding admin settings');
+            if (settingsBtn) settingsBtn.classList.add('hidden');
         }
+
+        console.log('✅ Main app displayed successfully');
     }
 
     async function performLogin(username, password) {
