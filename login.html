@@ -103,6 +103,10 @@
         }
 
         // ===== AUTHENTICATION FUNCTIONS =====
+        function redirectToApp() {
+            window.location.href = 'index.html';
+        }
+
         async function performLogin(username, password) {
             const submitBtn = document.getElementById('login-submit-btn');
             const originalText = submitBtn.textContent;
