@@ -1723,44 +1723,13 @@ async def register_user(
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 def authenticate_user(db: Session, username: str, password: str):
-    """Authenticate user, handling missing permission columns."""
+    """Authenticate user using ORM with backwards compatibility."""
     try:
-        # Execute raw SQL query to avoid SQLAlchemy trying to select missing columns
-        sql = """
-        SELECT id, username, email, password_hash, is_active, created_at, last_login
-        FROM users
-        WHERE username = %s
-        LIMIT 1
-        """
-
-        result = db.execute(text(sql), (username,)).fetchone()
-        if not result:
+        # Query the user using ORM
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
             print(f"⚠️ User '{username}' not found")
             return None
-
-        # Convert result to a simple object mimicking user attributes
-        class TempUser:
-            def __init__(self, result):
-                self.id = result[0]
-                self.username = result[1]
-                self.email = result[2]
-                self.password_hash = result[3]
-                self.is_active = result[4]
-                self.created_at = result[5]
-                self.last_login = result[6]
-                # Set default permissions to avoid permission check issues
-                self.sales = True
-                self.purchase = True
-                self.create_product = True
-                self.delete_product = True
-                self.sales_ledger = True
-                self.purchase_ledger = True
-                self.stock_ledger = True
-                self.profit_loss = True
-                self.opening_stock = True
-                self.user_management = True
-
-        user = TempUser(result)
 
         # Get the stored password
         stored_password = user.password_hash
@@ -1768,17 +1737,16 @@ def authenticate_user(db: Session, username: str, password: str):
             print(f"⚠️ User '{username}' has no password set")
             return None
 
-        # Determine if the stored password is hashed (bcrypt) or plain text
+        # Try bcrypt verification first (for modern hashed passwords)
         try:
-            # First, assume it's a bcrypt hash and try to verify
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                 print(f"✅ Authenticated '{username}' with bcrypt hash")
                 return user
         except (ValueError, TypeError) as e:
-            # If bcrypt verification fails, it's likely a plain text password
-            print(f"ℹ️ Bcrypt verification failed for user '{username}', checking plain text")
+            # If bcrypt verification fails, it might be plain text (legacy support)
+            pass
 
-        # If bcrypt fails or throws exception, check if it's plain text (for legacy users)
+        # Check if it's plain text (for legacy users)
         if stored_password == password:
             print(f"✅ Authenticated '{username}' with plain text password")
             return user
