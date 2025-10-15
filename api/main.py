@@ -407,7 +407,7 @@ async def lifespan(app: FastAPI):
             try:
                 # Try to access the new columns to see if they exist
                 db.query(Product.purchase_price, Product.selling_price, Product.unit_type).first()
-                print("â New database schema detected")
+                print("✅ New database schema detected")
 
                 product_count = db.query(Product).count()
                 if product_count == 0:
@@ -417,8 +417,8 @@ async def lifespan(app: FastAPI):
                     print(f"Database already contains {product_count} products.")
 
             except Exception as column_error:
-                print(f"â ď¸ Schema mismatch detected: {column_error}")
-                print("đ Attempting to update database schema...")
+                print(f"⚠️ Schema mismatch detected: {column_error}")
+                print("🔄 Attempting to update database schema...")
 
                 # For PostgreSQL/Render, use a safer approach
                 try:
@@ -426,23 +426,23 @@ async def lifespan(app: FastAPI):
                     try:
                         # Check if created_at column exists
                         result = db.execute(text("SELECT created_at FROM products LIMIT 1"))
-                        print("â created_at column already exists")
+                        print("✅ created_at column already exists")
                     except Exception:
-                        print("đ Adding created_at column to products table...")
+                        print("📝 Adding created_at column to products table...")
                         # Add the missing column
                         db.execute(text("ALTER TABLE products ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
-                        print("â created_at column added successfully")
+                        print("✅ created_at column added successfully")
 
                     # Update existing records with current timestamp if they don't have created_at
                     try:
                         db.execute(text("UPDATE products SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
                         db.commit()
-                        print("â Existing records updated with creation timestamps")
+                        print("✅ Existing records updated with creation timestamps")
                     except Exception as update_error:
-                        print(f"â ď¸ Could not update existing records: {update_error}")
+                        print(f"⚠️ Could not update existing records: {update_error}")
                         # This is not critical, so we'll continue
 
-                    print("â Database schema updated successfully")
+                    print("✅ Database schema updated successfully")
 
                     # Check if we need sample data
                     product_count = db.query(Product).count()
@@ -472,8 +472,8 @@ async def lifespan(app: FastAPI):
                             )
                             db.add(default_admin)
                             db.commit()
-                            print(f"â Default admin user created: username=raza123, password={default_password}")
-                            print("â ď¸  PLEASE CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
+                            print(f"✅ Default admin user created: username=raza123, password={default_password}")
+                            print("⚠️  PLEASE CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
 
                         print("Seeding database with sample products...")
                         sample_products = [
@@ -488,19 +488,19 @@ async def lifespan(app: FastAPI):
                         ]
                         db.add_all(sample_products)
                         db.commit()
-                        print("â Sample products added to database.")
+                        print("✅ Sample products added to database.")
                     else:
                         print(f"Database already contains {product_count} products.")
 
                 except Exception as update_error:
-                    print(f"â Failed to update schema: {update_error}")
-                    print("đ Falling back to table recreation method...")
+                    print(f"❌ Failed to update schema: {update_error}")
+                    print("🔄 Falling back to table recreation method...")
 
                     try:
                         # As a last resort, try the drop/create method
                         Base.metadata.drop_all(bind=engine)
                         Base.metadata.create_all(bind=engine)
-                        print("â Database schema recreated successfully")
+                        print("✅ Database schema recreated successfully")
 
                         # Now add sample data
                         sample_products = [
@@ -515,10 +515,10 @@ async def lifespan(app: FastAPI):
                         ]
                         db.add_all(sample_products)
                         db.commit()
-                        print("â Sample products added to database.")
+                        print("✅ Sample products added to database.")
 
                     except Exception as final_error:
-                        print(f"â Failed to recreate schema: {final_error}")
+                        print(f"❌ Failed to recreate schema: {final_error}")
                         print("Please check your DATABASE_URL and ensure the database is accessible")
 
         except Exception as e:
@@ -529,7 +529,7 @@ async def lifespan(app: FastAPI):
             db.close()
 
     except Exception as e:
-        print(f"â Critical database error: {e}")
+        print(f"❌ Critical database error: {e}")
         # Don't let database errors crash the entire app
         pass
 
@@ -582,383 +582,306 @@ async def options_handler(path: str):
             "Access-Control-Max-Age": "600"
         }
     )
-#   T h i s   f i l e   c o n t a i n s   t h e   m i s s i n g   A P I   e n d p o i n t s   -   a p p e n d   t h i s   t o   a p i / m a i n . p y 
- 
- 
- 
- #   - - -   A P I   E n d p o i n t   t o   s e r v e   p r o d u c t s   t o   t h e   f r o n t e n d   - - - 
- 
- @ a p p . g e t ( " / p r o d u c t s " ) 
- 
- a s y n c   d e f   g e t _ p r o d u c t s ( d b :   S e s s i o n   =   D e p e n d s ( g e t _ d b ) ) : 
- 
-         " " " R e t u r n s   t h e   l i s t   o f   r e a l   p r o d u c t s   f r o m   d a t a b a s e   f o r   t h e   f r o n t e n d   t o   d i s p l a y . " " " 
- 
-         t r y : 
- 
-                 d b _ p r o d u c t s   =   d b . q u e r y ( P r o d u c t ) . a l l ( ) 
- 
-                 p r i n t ( f " đ x Ś   F o u n d   { l e n ( d b _ p r o d u c t s ) }   p r o d u c t s   i n   d a t a b a s e " ) 
- 
- 
- 
-                 f r o n t e n d _ p r o d u c t s   =   [ ] 
- 
- 
- 
-                 f o r   p r o d u c t   i n   d b _ p r o d u c t s : 
- 
-                         f r o n t e n d _ p r o d u c t s . a p p e n d ( { 
- 
-                                 " i d " :   p r o d u c t . i d , 
- 
-                                 " n a m e " :   p r o d u c t . n a m e , 
- 
-                                 " p r i c e " :   f l o a t ( p r o d u c t . s e l l i n g _ p r i c e ) ,     #   U s e   s e l l i n g _ p r i c e   f o r   f r o n t e n d   d i s p l a y 
- 
-                                 " p u r c h a s e _ p r i c e " :   f l o a t ( p r o d u c t . p u r c h a s e _ p r i c e ) , 
- 
-                                 " s e l l i n g _ p r i c e " :   f l o a t ( p r o d u c t . s e l l i n g _ p r i c e ) , 
- 
-                                 " u n i t _ t y p e " :   s t r ( p r o d u c t . u n i t _ t y p e ) ,     #   E n s u r e   i t ' s   r e t u r n e d   a s   s t r i n g 
- 
-                                 " i m a g e U r l " :   " " ,     #   L e t   f r o n t e n d   g e n e r a t e   d y n a m i c   i m a g e s 
- 
-                                 " s t o c k " :   p r o d u c t . s t o c k 
- 
-                         } ) 
- 
- 
- 
-                 p r i n t ( " â S&   S u c c e s s f u l l y   f o r m a t t e d   p r o d u c t s   f o r   f r o n t e n d " ) 
- 
-                 r e t u r n   J S O N R e s p o n s e ( c o n t e n t = f r o n t e n d _ p r o d u c t s ,   m e d i a _ t y p e = " a p p l i c a t i o n / j s o n " ) 
- 
- 
- 
-         e x c e p t   E x c e p t i o n   a s   e : 
- 
-                 p r i n t ( f " â  R  E r r o r   f e t c h i n g   p r o d u c t s :   { e } " ) 
- 
-                 f a l l b a c k _ p r o d u c t s   =   [ 
- 
-                         { " i d " :   1 ,   " n a m e " :   " A p p l e " ,   " p r i c e " :   1 0 0 . 0 0 ,   " i m a g e U r l " :   " h t t p s : / / p l a c e h o l d . c o / 4 0 0 x 4 0 0 / 8 1 c 7 8 4 / f f f f f f ? t e x t = A p p l e " ,   " s t o c k " :   5 0 } , 
- 
-                         { " i d " :   2 ,   " n a m e " :   " B a n a n a " ,   " p r i c e " :   5 0 . 0 0 ,   " i m a g e U r l " :   " h t t p s : / / p l a c e h o l d . c o / 4 0 0 x 4 0 0 / f f f 1 7 6 / f f f f f f ? t e x t = B a n a n a " ,   " s t o c k " :   3 0 } , 
- 
-                 ] 
- 
-                 r e t u r n   J S O N R e s p o n s e ( c o n t e n t = f a l l b a c k _ p r o d u c t s ,   m e d i a _ t y p e = " a p p l i c a t i o n / j s o n " ) 
- 
- 
- 
- #   - - -   A P I   E n d p o i n t s   f o r   P r o d u c t s   ( D B   o p e r a t i o n s )   - - - 
- 
- @ a p p . p o s t ( " / p r o d u c t s / " ,   r e s p o n s e _ m o d e l = P r o d u c t R e s p o n s e ,   s t a t u s _ c o d e = s t a t u s . H T T P _ 2 0 1 _ C R E A T E D ) 
- 
- d e f   c r e a t e _ p r o d u c t ( p r o d u c t :   P r o d u c t C r e a t e ,   d b :   S e s s i o n   =   D e p e n d s ( g e t _ d b ) ) : 
- 
-         d b _ p r o d u c t   =   P r o d u c t ( * * p r o d u c t . d i c t ( ) ) 
- 
-         d b . a d d ( d b _ p r o d u c t ) 
- 
-         d b . c o m m i t ( ) 
- 
-         d b . r e f r e s h ( d b _ p r o d u c t ) 
- 
-         r e t u r n   d b _ p r o d u c t 
- 
- 
- 
- @ a p p . g e t ( " / p r o d u c t s / s t o c k - s n a p s h o t " ,   r e s p o n s e _ m o d e l = L i s t [ P r o d u c t S t o c k S n a p s h o t ] ) 
- 
- d e f   g e t _ p r o d u c t s _ s t o c k _ s n a p s h o t ( 
- 
-         d a t e _ f r o m :   O p t i o n a l [ s t r ]   =   N o n e , 
- 
-         d a t e _ t o :   O p t i o n a l [ s t r ]   =   N o n e , 
- 
-         p r o d u c t _ i d :   O p t i o n a l [ i n t ]   =   N o n e , 
- 
-         d b :   S e s s i o n   =   D e p e n d s ( g e t _ d b ) 
- 
- ) : 
- 
-         " " " 
- 
-         G e t   p r o d u c t   s t o c k   s n a p s h o t   w i t h   d a t e   f i l t e r i n g . 
- 
-         A l w a y s   s h o w s   p u r c h a s e   p r i c e s   f o r   i n v e n t o r y   v a l u a t i o n . 
- 
-         " " " 
- 
-         t r y : 
- 
-                 p r i n t ( f " đ x `  G e n e r a t i n g   s t o c k   s n a p s h o t   -   D a t e   F r o m :   { d a t e _ f r o m } ,   D a t e   T o :   { d a t e _ t o } ,   P r o d u c t   I D :   { p r o d u c t _ i d } " ) 
- 
- 
- 
-                 #   P a r s e   d a t e   f i l t e r s 
- 
-                 f i l t e r _ d a t e _ f r o m   =   N o n e 
- 
-                 f i l t e r _ d a t e _ t o   =   N o n e 
- 
- 
- 
-                 i f   d a t e _ f r o m : 
- 
-                         t r y : 
- 
-                                 t r y : 
- 
-                                         f i l t e r _ d a t e _ f r o m   =   d a t e t i m e . f r o m i s o f o r m a t ( d a t e _ f r o m . r e p l a c e ( ' Z ' ,   ' + 0 0 : 0 0 ' ) ) 
- 
-                                 e x c e p t   V a l u e E r r o r : 
- 
-                                         i f   l e n ( d a t e _ f r o m )   = =   1 0 : 
- 
-                                                 f i l t e r _ d a t e _ f r o m   =   d a t e t i m e . f r o m i s o f o r m a t ( d a t e _ f r o m ) 
- 
-                                         e l s e : 
- 
-                                                 r a i s e   V a l u e E r r o r ( f " U n s u p p o r t e d   d a t e   f o r m a t :   { d a t e _ f r o m } " ) 
- 
-                                 p r i n t ( f " đ x &   P a r s e d   d a t e _ f r o m :   { f i l t e r _ d a t e _ f r o m } " ) 
- 
-                         e x c e p t   V a l u e E r r o r   a s   e : 
- 
-                                 p r i n t ( f " â a  ď ¸    I n v a l i d   d a t e _ f r o m   f o r m a t :   { d a t e _ f r o m } ,   e r r o r :   { e } " ) 
- 
- 
- 
-                 i f   d a t e _ t o : 
- 
-                         t r y : 
- 
-                                 t r y : 
- 
-                                         f i l t e r _ d a t e _ t o   =   d a t e t i m e . f r o m i s o f o r m a t ( d a t e _ t o . r e p l a c e ( ' Z ' ,   ' + 0 0 : 0 0 ' ) ) 
- 
-                                 e x c e p t   V a l u e E r r o r : 
- 
-                                         i f   l e n ( d a t e _ t o )   = =   1 0 : 
- 
-                                                 f i l t e r _ d a t e _ t o   =   d a t e t i m e . f r o m i s o f o r m a t ( d a t e _ t o ) 
- 
-                                         e l s e : 
- 
-                                                 r a i s e   V a l u e E r r o r ( f " U n s u p p o r t e d   d a t e   f o r m a t :   { d a t e _ t o } " ) 
- 
-                                 p r i n t ( f " đ x &   P a r s e d   d a t e _ t o :   { f i l t e r _ d a t e _ t o } " ) 
- 
-                         e x c e p t   V a l u e E r r o r   a s   e : 
- 
-                                 p r i n t ( f " â a  ď ¸    I n v a l i d   d a t e _ t o   f o r m a t :   { d a t e _ t o } ,   e r r o r :   { e } " ) 
- 
- 
- 
-                 #   B a s e   q u e r y   f o r   p r o d u c t s 
- 
-                 q u e r y   =   d b . q u e r y ( P r o d u c t ) 
- 
- 
- 
-                 #   F i l t e r   b y   p r o d u c t   i f   s p e c i f i e d 
- 
-                 i f   p r o d u c t _ i d : 
- 
-                         q u e r y   =   q u e r y . f i l t e r ( P r o d u c t . i d   = =   p r o d u c t _ i d ) 
- 
- 
- 
-                 p r o d u c t s   =   q u e r y . a l l ( ) 
- 
- 
- 
-                 s n a p s h o t s   =   [ ] 
- 
-                 f o r   p r o d u c t   i n   p r o d u c t s : 
- 
-                         c a l c u l a t e d _ s t o c k   =   p r o d u c t . s t o c k 
- 
- 
- 
-                         i f   f i l t e r _ d a t e _ t o : 
- 
-                                 p u r c h a s e s   =   d b . q u e r y ( P u r c h a s e ) . f i l t e r ( 
- 
-                                         P u r c h a s e . p r o d u c t _ i d   = =   p r o d u c t . i d , 
- 
-                                         P u r c h a s e . p u r c h a s e _ d a t e   < =   f i l t e r _ d a t e _ t o 
- 
-                                 ) . a l l ( ) 
- 
- 
- 
-                                 s a l e s   =   d b . q u e r y ( S a l e ) . f i l t e r ( 
- 
-                                         S a l e . p r o d u c t _ i d   = =   p r o d u c t . i d , 
- 
-                                         S a l e . s a l e _ d a t e   < =   f i l t e r _ d a t e _ t o 
- 
-                                 ) . a l l ( ) 
- 
- 
- 
-                                 t o t a l _ p u r c h a s e s _ u p _ t o _ d a t e   =   s u m ( p . q u a n t i t y   f o r   p   i n   p u r c h a s e s ) 
- 
-                                 t o t a l _ s a l e s _ u p _ t o _ d a t e   =   s u m ( s . q u a n t i t y   f o r   s   i n   s a l e s ) 
- 
- 
- 
-                                 a l l _ p u r c h a s e s _ e v e r   =   d b . q u e r y ( P u r c h a s e ) . f i l t e r ( P u r c h a s e . p r o d u c t _ i d   = =   p r o d u c t . i d ) . a l l ( ) 
- 
-                                 a l l _ s a l e s _ e v e r   =   d b . q u e r y ( S a l e ) . f i l t e r ( S a l e . p r o d u c t _ i d   = =   p r o d u c t . i d ) . a l l ( ) 
- 
-                                 t o t a l _ p u r c h a s e s _ e v e r   =   s u m ( p . q u a n t i t y   f o r   p   i n   a l l _ p u r c h a s e s _ e v e r ) 
- 
-                                 t o t a l _ s a l e s _ e v e r   =   s u m ( s . q u a n t i t y   f o r   s   i n   a l l _ s a l e s _ e v e r ) 
- 
- 
- 
-                                 o p e n i n g _ s t o c k   =   p r o d u c t . s t o c k   +   t o t a l _ s a l e s _ e v e r   -   t o t a l _ p u r c h a s e s _ e v e r 
- 
-                                 c a l c u l a t e d _ s t o c k   =   o p e n i n g _ s t o c k   +   t o t a l _ p u r c h a s e s _ u p _ t o _ d a t e   -   t o t a l _ s a l e s _ u p _ t o _ d a t e 
- 
- 
- 
-                         p u r c h a s e _ p r i c e   =   p r o d u c t . p u r c h a s e _ p r i c e 
- 
-                         s t o c k _ v a l u e   =   p u r c h a s e _ p r i c e   *   c a l c u l a t e d _ s t o c k 
- 
- 
- 
-                         s n a p s h o t s . a p p e n d ( P r o d u c t S t o c k S n a p s h o t ( 
- 
-                                 p r o d u c t _ i d = p r o d u c t . i d , 
- 
-                                 p r o d u c t _ n a m e = p r o d u c t . n a m e , 
- 
-                                 p r i c e = p u r c h a s e _ p r i c e , 
- 
-                                 s t o c k = c a l c u l a t e d _ s t o c k , 
- 
-                                 s t o c k _ v a l u e = s t o c k _ v a l u e , 
- 
-                                 u n i t _ t y p e = p r o d u c t . u n i t _ t y p e , 
- 
-                                 l a s t _ u p d a t e d = d a t e t i m e . n o w ( I S T ) 
- 
-                         ) ) 
- 
- 
- 
-                 p r i n t ( f " â S&   G e n e r a t e d   { l e n ( s n a p s h o t s ) }   s t o c k   s n a p s h o t s " ) 
- 
-                 r e t u r n   s n a p s h o t s 
- 
- 
- 
-         e x c e p t   E x c e p t i o n   a s   e : 
- 
-                 p r i n t ( f " â  R  E r r o r   g e n e r a t i n g   s t o c k   s n a p s h o t :   { e } " ) 
- 
-                 r a i s e   H T T P E x c e p t i o n ( s t a t u s _ c o d e = 5 0 0 ,   d e t a i l = f " E r r o r   g e n e r a t i n g   s t o c k   d a t a :   { s t r ( e ) } " ) 
- 
- 
- 
- @ a p p . p o s t ( " / s a l e s / " ,   r e s p o n s e _ m o d e l = S a l e R e s p o n s e ,   s t a t u s _ c o d e = s t a t u s . H T T P _ 2 0 1 _ C R E A T E D ) 
- 
- d e f   r e c o r d _ s a l e ( s a l e :   S a l e C r e a t e ,   d b :   S e s s i o n   =   D e p e n d s ( g e t _ d b ) ,   u s e r n a m e :   s t r   =   D e p e n d s ( v e r i f y _ t o k e n ) ) : 
- 
-         c h e c k _ p e r m i s s i o n ( P e r m i s s i o n . S A L E S ,   d b ,   u s e r n a m e ) 
- 
-         p r o d u c t   =   d b . q u e r y ( P r o d u c t ) . f i l t e r ( P r o d u c t . i d   = =   s a l e . p r o d u c t _ i d ) . f i r s t ( ) 
- 
-         i f   n o t   p r o d u c t : 
- 
-                 r a i s e   H T T P E x c e p t i o n ( s t a t u s _ c o d e = s t a t u s . H T T P _ 4 0 4 _ N O T _ F O U N D ,   d e t a i l = " P r o d u c t   n o t   f o u n d " ) 
- 
-         i f   p r o d u c t . s t o c k   <   s a l e . q u a n t i t y : 
- 
-                 r a i s e   H T T P E x c e p t i o n ( s t a t u s _ c o d e = s t a t u s . H T T P _ 4 0 0 _ B A D _ R E Q U E S T ,   d e t a i l = " N o t   e n o u g h   s t o c k   a v a i l a b l e " ) 
- 
- 
- 
-         s e l l i n g _ p r i c e   =   p r o d u c t . s e l l i n g _ p r i c e 
- 
-         t o t a l _ a m o u n t   =   s e l l i n g _ p r i c e   *   s a l e . q u a n t i t y 
- 
- 
- 
-         d b _ s a l e   =   S a l e ( 
- 
-                 p r o d u c t _ i d = s a l e . p r o d u c t _ i d , 
- 
-                 q u a n t i t y = s a l e . q u a n t i t y , 
- 
-                 t o t a l _ a m o u n t = t o t a l _ a m o u n t , 
- 
-                 s a l e _ d a t e = d a t e t i m e . n o w ( I S T ) , 
- 
-                 c r e a t e d _ b y = d b . q u e r y ( U s e r ) . f i l t e r ( U s e r . u s e r n a m e   = =   u s e r n a m e ) . f i r s t ( ) . i d 
- 
-         ) 
- 
-         p r o d u c t . s t o c k   - =   s a l e . q u a n t i t y 
- 
- 
- 
-         d b . a d d ( d b _ s a l e ) 
- 
-         d b . c o m m i t ( ) 
- 
-         d b . r e f r e s h ( d b _ s a l e ) 
- 
-         r e t u r n   d b _ s a l e 
- 
- 
- 
- @ a p p . p o s t ( " / p u r c h a s e s / " ,   r e s p o n s e _ m o d e l = P u r c h a s e R e s p o n s e ,   s t a t u s _ c o d e = s t a t u s . H T T P _ 2 0 1 _ C R E A T E D ) 
- 
- d e f   r e c o r d _ p u r c h a s e ( p u r c h a s e :   P u r c h a s e C r e a t e ,   d b :   S e s s i o n   =   D e p e n d s ( g e t _ d b ) ,   u s e r n a m e :   s t r   =   D e p e n d s ( v e r i f y _ t o k e n ) ) : 
- 
-         c h e c k _ p e r m i s s i o n ( P e r m i s s i o n . P U R C H A S E ,   d b ,   u s e r n a m e ) 
- 
-         p r o d u c t   =   d b . q u e r y ( P r o d u c t ) . f i l t e r ( P r o d u c t . i d   = =   p u r c h a s e . p r o d u c t _ i d ) . f i r s t ( ) 
- 
-         i f   n o t   p r o d u c t : 
- 
-                 r a i s e   H T T P E x c e p t i o n ( s t a t u s _ c o d e = s t a t u s . H T T P _ 4 0 4 _ N O T _ F O U N D ,   d e t a i l = " P r o d u c t   n o t   f o u n d " ) 
- 
- 
- 
-         t o t a l _ c o s t   =   p u r c h a s e . u n i t _ c o s t   *   p u r c h a s e . q u a n t i t y 
- 
-         d b _ p u r c h a s e   =   P u r c h a s e ( 
- 
-                 p r o d u c t _ i d = p u r c h a s e . p r o d u c t _ i d , 
- 
-                 q u a n t i t y = p u r c h a s e . q u a n t i t y , 
- 
-                 t o t a l _ c o s t = t o t a l _ c o s t , 
- 
-                 p u r c h a s e _ d a t e = d a t e t i m e . n o w ( I S T ) , 
- 
-                 c r e a t e d _ b y = d b . q u e r y ( U s e r ) . f i l t e r ( U s e r . u s e r n a m e   = =   u s e r n a m e ) . f i r s t ( ) . i d 
- 
-         ) 
- 
-         p r o d u c t . s t o c k   + =   p u r c h a s e . q u a n t i t y 
- 
- 
- 
-         d b . a d d ( d b _ p u r c h a s e ) 
- 
-         d b . c o m m i t ( ) 
- 
-         d b . r e f r e s h ( d b _ p u r c h a s e ) 
- 
-         r e t u r n   d b _ p u r c h a s e 
- 
+
+# This file contains missing API endpoints
+# --- Authentication endpoints ---
+@app.post("/auth/login", response_model=LoginResponse)
+async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+    try:
+        user = authenticate_user(db, login_data.username, login_data.password)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+
+        user.last_login = datetime.now(IST)
+        db.commit()
+
+        access_token = create_access_token({"sub": user.username})
+
+        permissions = [
+            k for k, v in {
+                "sales": user.sales,
+                "purchase": user.purchase,
+                "create_product": user.create_product,
+                "delete_product": user.delete_product,
+                "sales_ledger": user.sales_ledger,
+                "purchase_ledger": user.purchase_ledger,
+                "stock_ledger": user.stock_ledger,
+                "profit_loss": user.profit_loss,
+                "opening_stock": user.opening_stock,
+                "user_management": user.user_management,
+            }.items() if v
+        ]
+
+        user_response = UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            is_active=user.is_active,
+            permissions=permissions
+        )
+
+        return LoginResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=user_response
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Login error for user {login_data.username}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error during login")
+
+@app.get("/auth/me", response_model=UserResponse)
+async def get_current_user(username: str = Depends(verify_token), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    permissions = [
+        k for k, v in {
+            "sales": user.sales,
+            "purchase": user.purchase,
+            "create_product": user.create_product,
+            "delete_product": user.delete_product,
+            "sales_ledger": user.sales_ledger,
+            "purchase_ledger": user.purchase_ledger,
+            "stock_ledger": user.stock_ledger,
+            "profit_loss": user.profit_loss,
+            "opening_stock": user.opening_stock,
+            "user_management": user.user_management,
+        }.items() if v
+    ]
+
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        is_active=user.is_active,
+        permissions=permissions
+    )
+
+@app.post("/auth/logout")
+async def logout(username: str = Depends(verify_token)):
+    return {"message": "Logged out successfully"}
+
+# --- API Endpoint to serve products to the frontend ---
+@app.get("/products")
+async def get_products(db: Session = Depends(get_db)):
+    """Returns the list of real products from database for the frontend to display."""
+    try:
+        db_products = db.query(Product).all()
+        print(f"📦 Found {len(db_products)} products in database")
+
+        frontend_products = []
+
+        for product in db_products:
+            frontend_products.append({
+                "id": product.id,
+                "name": product.name,
+                "price": float(product.selling_price),  # Use selling_price for frontend display
+                "purchase_price": float(product.purchase_price),
+                "selling_price": float(product.selling_price),
+                "unit_type": str(product.unit_type),  # Ensure it's returned as string
+                "imageUrl": "",  # Let frontend generate dynamic images
+                "stock": product.stock
+            })
+
+        print("✅ Successfully formatted products for frontend")
+        return JSONResponse(content=frontend_products, media_type="application/json")
+
+    except Exception as e:
+        print(f"❌ Error fetching products: {e}")
+        fallback_products = [
+            {"id": 1, "name": "Apple", "price": 100.00, "imageUrl": "https://placehold.co/400x400/81c784/ffffff?text=Apple", "stock": 50},
+            {"id": 2, "name": "Banana", "price": 50.00, "imageUrl": "https://placehold.co/400x400/fff176/ffffff?text=Banana", "stock": 30},
+        ]
+        return JSONResponse(content=fallback_products, media_type="application/json")
+
+# --- API Endpoints for Products (DB operations) ---
+@app.post("/products/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+    db_product = Product(**product.dict())
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+@app.get("/products/stock-snapshot", response_model=List[ProductStockSnapshot])
+def get_products_stock_snapshot(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    product_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Get product stock snapshot with date filtering.
+    Always shows purchase prices for inventory valuation.
+    """
+    try:
+        print(f"📊 Generating stock snapshot - Date From: {date_from}, Date To: {date_to}, Product ID: {product_id}")
+
+        # Parse date filters
+        filter_date_from = None
+        filter_date_to = None
+
+        if date_from:
+            try:
+                try:
+                    filter_date_from = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                except ValueError:
+                    if len(date_from) == 10:
+                        filter_date_from = datetime.fromisoformat(date_from)
+                    else:
+                        raise ValueError(f"Unsupported date format: {date_from}")
+                print(f"📅 Parsed date_from: {filter_date_from}")
+            except ValueError as e:
+                print(f"⚠️ Invalid date_from format: {date_from}, error: {e}")
+
+        if date_to:
+            try:
+                try:
+                    filter_date_to = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                except ValueError:
+                    if len(date_to) == 10:
+                        filter_date_to = datetime.fromisoformat(date_to)
+                    else:
+                        raise ValueError(f"Unsupported date format: {date_to}")
+                print(f"📅 Parsed date_to: {filter_date_to}")
+            except ValueError as e:
+                print(f"⚠️ Invalid date_to format: {date_to}, error: {e}")
+
+        # Base query for products
+        query = db.query(Product)
+
+        # Filter by product if specified
+        if product_id:
+            query = query.filter(Product.id == product_id)
+
+        products = query.all()
+
+        snapshots = []
+        for product in products:
+            calculated_stock = product.stock
+
+            if filter_date_to:
+                purchases = db.query(Purchase).filter(
+                    Purchase.product_id == product.id,
+                    Purchase.purchase_date <= filter_date_to
+                ).all()
+
+                sales = db.query(Sale).filter(
+                    Sale.product_id == product.id,
+                    Sale.sale_date <= filter_date_to
+                ).all()
+
+                total_purchases_up_to_date = sum(p.quantity for p in purchases)
+                total_sales_up_to_date = sum(s.quantity for s in sales)
+
+                all_purchases_ever = db.query(Purchase).filter(Purchase.product_id == product.id).all()
+                all_sales_ever = db.query(Sale).filter(Sale.product_id == product.id).all()
+                total_purchases_ever = sum(p.quantity for p in all_purchases_ever)
+                total_sales_ever = sum(s.quantity for s in all_sales_ever)
+
+                opening_stock = product.stock + total_sales_ever - total_purchases_ever
+                calculated_stock = opening_stock + total_purchases_up_to_date - total_sales_up_to_date
+
+            purchase_price = product.purchase_price
+            stock_value = purchase_price * calculated_stock
+
+            snapshots.append(ProductStockSnapshot(
+                product_id=product.id,
+                product_name=product.name,
+                price=purchase_price,
+                stock=calculated_stock,
+                stock_value=stock_value,
+                unit_type=product.unit_type,
+                last_updated=datetime.now(IST)
+            ))
+
+        print(f"✅ Generated {len(snapshots)} stock snapshots")
+        return snapshots
+
+    except Exception as e:
+        print(f"❌ Error generating stock snapshot: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating stock data: {str(e)}")
+
+@app.post("/sales/", response_model=SaleResponse, status_code=status.HTTP_201_CREATED)
+def record_sale(sale: SaleCreate, db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    product = db.query(Product).filter(Product.id == sale.product_id).first()
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    if product.stock < sale.quantity:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not enough stock available")
+
+    selling_price = product.selling_price
+    total_amount = selling_price * sale.quantity
+
+    db_sale = Sale(
+        product_id=sale.product_id,
+        quantity=sale.quantity,
+        total_amount=total_amount,
+        sale_date=datetime.now(IST),
+        created_by=db.query(User).filter(User.username == username).first().id
+    )
+    product.stock -= sale.quantity
+
+    db.add(db_sale)
+    db.commit()
+    db.refresh(db_sale)
+    return db_sale
+
+@app.post("/purchases/", response_model=PurchaseResponse, status_code=status.HTTP_201_CREATED)
+def record_purchase(purchase: PurchaseCreate, db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    product = db.query(Product).filter(Product.id == purchase.product_id).first()
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    total_cost = purchase.unit_cost * purchase.quantity
+    db_purchase = Purchase(
+        product_id=purchase.product_id,
+        quantity=purchase.quantity,
+        total_cost=total_cost,
+        purchase_date=datetime.now(IST),
+        created_by=db.query(User).filter(User.username == username).first().id
+    )
+    product.stock += purchase.quantity
+
+    db.add(db_purchase)
+    db.commit()
+    db.refresh(db_purchase)
+    return db_purchase
+
+# --- Health Check Endpoints ---
+@app.get("/")
+async def root():
+    return {
+        "message": "Kirana Store API is running",
+        "status": "active",
+        "timestamp": datetime.now(IST).isoformat()
+    }
+
+@app.get("/health")
+async def health_check(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": datetime.now(IST).isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e)
+        }
+
+# Add Vercel handler at the end
+from mangum import Mangum
+
+handler = Mangum(app)
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
