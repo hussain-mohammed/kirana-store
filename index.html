@@ -3550,6 +3550,7 @@
                     const userData = await response.json();
                     currentUser = userData;
                     console.log('✅ Token valid, user authenticated:', userData.username);
+                    // Stay on this page and show main app
                     showMainApp();
                     return true;
                 } else {
@@ -3564,7 +3565,7 @@
 
         console.log('🏠 All users must login first - redirecting to login page');
         // Always redirect to login.html - no automatic access allowed
-        window.location.href = 'login.html';
+        window.location.replace('login.html');
         return false;
     }
 
