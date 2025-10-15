@@ -577,7 +577,8 @@ async def get_products(db: Session = Depends(get_db)):
 
 # --- API Endpoints for Products (DB operations) ---
 @app.post("/products/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
-def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+def create_product(product: ProductCreate, db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    check_permission(Permission.CREATE_PRODUCT, db, username)
     db_product = Product(**product.dict())
     db.add(db_product)
     db.commit()
