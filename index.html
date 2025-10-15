@@ -3531,42 +3531,64 @@
     // ===== AUTHENTICATION FUNCTIONS =====
     let currentUser = null;
 
-    // Check if user is already logged in on page load
+    // Simplified authentication check
     async function checkAuthentication() {
         console.log('🔍 Checking authentication...');
         const token = localStorage.getItem('access_token');
 
-        if (token) {
-            try {
-                // Validate the token by checking auth status
-                const response = await fetch(`${backendURL}/auth/me`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'ngrok-skip-browser-warning': 'true'
-                    }
-                });
-
-                if (response.ok) {
-                    const userData = await response.json();
-                    currentUser = userData;
-                    console.log('✅ Token valid, user authenticated:', userData.username);
-                    // Stay on this page and show main app
-                    showMainApp();
-                    return true;
-                } else {
-                    console.log('❌ Token invalid or expired');
-                    localStorage.removeItem('access_token');
-                }
-            } catch (error) {
-                console.log('💥 Error validating token:', error);
-                localStorage.removeItem('access_token');
-            }
+        if (!token) {
+            console.log('🏠 No token found - redirecting to login page');
+            window.location.replace('login.html');
+            return false;
         }
 
-        console.log('🏠 All users must login first - redirecting to login page');
-        // Always redirect to login.html - no automatic access allowed
-        window.location.replace('login.html');
-        return false;
+        try {
+            // Basic token validation
+            const response = await fetch(`${backendURL}/auth/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+
+            if (response.ok) {
+                const userData = await response.json();
+                currentUser = userData;
+                console.log('✅ Token valid, user authenticated:', userData.username);
+
+                // Initialize the app immediately - don't call showMainApp() which tries to manipulate non-existent elements
+                // Just initialize the page as ready
+                initializePage();
+                return true;
+            } else {
+                console.log('❌ Token invalid - redirecting to login');
+                localStorage.removeItem('access_token');
+                window.location.replace('login.html');
+                return false;
+            }
+        } catch (error) {
+            console.log('💥 Token validation error - redirecting to login:', error);
+            localStorage.removeItem('access_token');
+            window.location.replace('login.html');
+            return false;
+        }
+    }
+
+    // Simplified page initialization
+    function initializePage() {
+        // Hide loading page
+        const loadingPage = document.getElementById('page-loading');
+        if (loadingPage) {
+            loadingPage.classList.remove('active');
+        }
+
+        // Initialize user info if needed
+        const welcomeEl = document.getElementById('welcome-message');
+        if (currentUser && currentUser.username && welcomeEl) {
+            welcomeEl.innerHTML = `Welcome, ${currentUser.username}!`;
+        }
+
+        console.log('✅ Page initialized successfully');
     }
 
     function showMainApp() {
