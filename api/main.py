@@ -380,6 +380,16 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
 
+def check_permission(permission: Permission, db, username: str):
+    """Check if user has the required permission"""
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    permission_attr = permission.value
+    if not getattr(user, permission_attr, False):
+        raise HTTPException(status_code=403, detail=f"Permission denied: {permission.value}")
+
 
 # Dependency to get a database session
 def get_db():
@@ -664,6 +674,80 @@ async def get_current_user(username: str = Depends(verify_token), db: Session = 
 async def logout(username: str = Depends(verify_token)):
     return {"message": "Logged out successfully"}
 
+@app.post("/auth/register", response_model=UserResponse)
+async def register_user(
+    user_data: LoginRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        username = user_data.username
+        password = user_data.password
+        email = username + "@example.com"
+
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="Username and password are required")
+
+        if len(password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
+
+        existing_user = db.query(User).filter(
+            (User.username == username) | (User.email == email)
+        ).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username or email already exists")
+
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        new_user = User(
+            username=username,
+            email=email,
+            password_hash=hashed_password.decode('utf-8'),
+            sales=True,
+            purchase=True,
+            create_product=False,
+            delete_product=False,
+            sales_ledger=False,
+            purchase_ledger=False,
+            stock_ledger=False,
+            profit_loss=False,
+            opening_stock=False,
+            user_management=False,
+            is_active=True
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        permissions = [
+            k for k, v in {
+                "sales": new_user.sales,
+                "purchase": new_user.purchase,
+                "create_product": new_user.create_product,
+                "delete_product": new_user.delete_product,
+                "sales_ledger": new_user.sales_ledger,
+                "purchase_ledger": new_user.purchase_ledger,
+                "stock_ledger": new_user.stock_ledger,
+                "profit_loss": new_user.profit_loss,
+                "opening_stock": new_user.opening_stock,
+                "user_management": new_user.user_management,
+            }.items() if v
+        ]
+
+        return UserResponse(
+            id=new_user.id,
+            username=new_user.username,
+            email=new_user.email,
+            is_active=new_user.is_active,
+            permissions=permissions
+        )
+    except HTTPException:
+        db.rollback()
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 # --- API Endpoint to serve products to the frontend ---
 @app.get("/products")
 async def get_products(db: Session = Depends(get_db)):
@@ -807,6 +891,7 @@ def get_products_stock_snapshot(
 
 @app.post("/sales/", response_model=SaleResponse, status_code=status.HTTP_201_CREATED)
 def record_sale(sale: SaleCreate, db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    check_permission(Permission.SALES, db, username)
     product = db.query(Product).filter(Product.id == sale.product_id).first()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
@@ -832,6 +917,7 @@ def record_sale(sale: SaleCreate, db: Session = Depends(get_db), username: str =
 
 @app.post("/purchases/", response_model=PurchaseResponse, status_code=status.HTTP_201_CREATED)
 def record_purchase(purchase: PurchaseCreate, db: Session = Depends(get_db), username: str = Depends(verify_token)):
+    check_permission(Permission.PURCHASE, db, username)
     product = db.query(Product).filter(Product.id == purchase.product_id).first()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
