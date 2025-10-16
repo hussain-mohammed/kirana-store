@@ -28,14 +28,15 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    # For Vercel deployment, this should be set as an environment variable
-    print("❌ ERROR: DATABASE_URL not set in environment variables!")
-    print("Please set your DATABASE_URL environment variable to connect to PostgreSQL")
-    print("Example: postgresql://username:password@hostname:port/database_name")
-    # For serverless deployment, we should fail gracefully
-    raise RuntimeError("DATABASE_URL environment variable is required for deployment")
+    # For Vercel deployment without database, create a fallback local database
+    DATABASE_URL = "sqlite:///./kirana.db"
+    print("⚠️ WARNING: No DATABASE_URL provided, using fallback sqlite database for testing")
+
+    # Set environment variable for runtime
+    os.environ["DATABASE_URL"] = DATABASE_URL
+    print("📡 Using fallback sqlite database")
 else:
-    print("📡 Connecting to database")
+    print("📡 Using configured database")
 
 # Initialize the HTTPBearer instance
 security = HTTPBearer()
