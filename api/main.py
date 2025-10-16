@@ -348,158 +348,84 @@ def get_db():
     finally:
         db.close()
 
-# Lifespan event to create the database tables on startup
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    try:
-        # Create database tables
-        Base.metadata.create_all(bind=engine)
-        print("Database tables created.")
-
-        # Seed with sample data if no products exist
-        db = SessionLocal()
-        try:
-            # Test database connection first
-            db.execute(text("SELECT 1"))
-
-            # Check if the new columns exist by trying to query them
-            try:
-                # Try to access the new columns to see if they exist
-                db.query(Product.purchase_price, Product.selling_price, Product.unit_type).first()
-                print("✅ New database schema detected")
-
-                product_count = db.query(Product).count()
-                if product_count == 0:
-                    print("No products found in database. You can create products through the web interface.")
-                    print("To add sample products, use the 'Create Product' page in the application.")
-                else:
-                    print(f"Database already contains {product_count} products.")
-
-            except Exception as column_error:
-                print(f"⚠️ Schema mismatch detected: {column_error}")
-                print("🔄 Attempting to update database schema...")
-
-                # For PostgreSQL/Render, use a safer approach
-                try:
-                    # First, try to add the missing column without dropping tables
-                    try:
-                        # Check if created_at column exists
-                        result = db.execute(text("SELECT created_at FROM products LIMIT 1"))
-                        print("✅ created_at column already exists")
-                    except Exception:
-                        print("📝 Adding created_at column to products table...")
-                        # Add the missing column
-                        db.execute(text("ALTER TABLE products ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
-                        print("✅ created_at column added successfully")
-
-                    # Update existing records with current timestamp if they don't have created_at
-                    try:
-                        db.execute(text("UPDATE products SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
-                        db.commit()
-                        print("✅ Existing records updated with creation timestamps")
-                    except Exception as update_error:
-                        print(f"⚠️ Could not update existing records: {update_error}")
-                        # This is not critical, so we'll continue
-
-                    print("✅ Database schema updated successfully")
-
-                    # Check if we need sample data
-                    product_count = db.query(Product).count()
-                    if product_count == 0:
-                        # Create default admin user if no users exist
-                        user_count = db.query(User).count()
-                        if user_count == 0:
-                            default_password = "admin123"
-                            hashed_password = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt())
-
-                            default_admin = User(
-                                username="raza123",
-                                email="admin@kirana.store",
-                                password_hash=hashed_password.decode('utf-8'),
-                                # New permission system - give all permissions to default admin
-                                sales=True,
-                                purchase=True,
-                                create_product=True,
-                                delete_product=True,
-                                sales_ledger=True,
-                                purchase_ledger=True,
-                                stock_ledger=True,
-                                profit_loss=True,
-                                opening_stock=True,
-                                user_management=True,
-                                is_active=True
-                            )
-                            db.add(default_admin)
-                            db.commit()
-                            print(f"✅ Default admin user created: username=raza123, password={default_password}")
-                            print("⚠️  PLEASE CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
-
-                        print("Seeding database with sample products...")
-                        sample_products = [
-                            Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
-                            Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
-                            Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
-                            Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
-                            Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
-                            Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
-                            Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
-                            Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
-                        ]
-                        db.add_all(sample_products)
-                        db.commit()
-                        print("✅ Sample products added to database.")
-                    else:
-                        print(f"Database already contains {product_count} products.")
-
-                except Exception as update_error:
-                    print(f"❌ Failed to update schema: {update_error}")
-                    print("🔄 Falling back to table recreation method...")
-
-                    try:
-                        # As a last resort, try the drop/create method
-                        Base.metadata.drop_all(bind=engine)
-                        Base.metadata.create_all(bind=engine)
-                        print("✅ Database schema recreated successfully")
-
-                        # Now add sample data
-                        sample_products = [
-                            Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
-                            Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
-                            Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
-                            Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
-                            Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
-                            Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
-                            Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
-                            Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
-                        ]
-                        db.add_all(sample_products)
-                        db.commit()
-                        print("✅ Sample products added to database.")
-
-                    except Exception as final_error:
-                        print(f"❌ Failed to recreate schema: {final_error}")
-                        print("Please check your DATABASE_URL and ensure the database is accessible")
-
-        except Exception as e:
-            print(f"Database initialization error: {e}")
-            # Don't fail the entire app if seeding fails
-            pass
-        finally:
-            db.close()
-
-    except Exception as e:
-        print(f"❌ Critical database error: {e}")
-        # Don't let database errors crash the entire app
-        pass
-
-    yield
+print("🚀 Starting Kirana Store API initialization...")
 
 # --- FastAPI App Initialization ---
 app = FastAPI(
     title="Kirana Store Management API",
-    description="A backend for managing a local Kirana store's products, sales, and purchases, including an online order simulation.",
-    lifespan=lifespan
+    description="A backend for managing a local Kirana store's products, sales, and purchases, including an online order simulation."
 )
+
+# Global variable to track if DB is initialized
+db_initialized = False
+
+def initialize_database():
+    """Initialize database on first request to avoid serverless issues"""
+    global db_initialized
+    if not db_initialized:
+        try:
+            print("📋 Initializing database...")
+            Base.metadata.create_all(bind=engine)
+            print("✅ Database tables created")
+
+            db = SessionLocal()
+            try:
+                # Check if we need default data
+                if db.query(User).count() == 0:
+                    print("👤 Creating default admin user...")
+                    default_password = "admin123"
+                    hashed_password = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt())
+
+                    default_admin = User(
+                        username="admin",
+                        email="admin@kirana.store",
+                        password_hash=hashed_password.decode('utf-8'),
+                        sales=True,
+                        purchase=True,
+                        create_product=True,
+                        delete_product=True,
+                        sales_ledger=True,
+                        purchase_ledger=True,
+                        stock_ledger=True,
+                        profit_loss=True,
+                        opening_stock=True,
+                        user_management=True,
+                        is_active=True
+                    )
+                    db.add(default_admin)
+                    db.commit()
+                    print("✅ Default admin user created: username=admin, password=admin123")
+
+                if db.query(Product).count() == 0:
+                    print("📦 Adding sample products...")
+                    sample_products = [
+                        Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
+                        Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
+                        Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
+                    ]
+                    db.add_all(sample_products)
+                    db.commit()
+                    print("✅ Sample products added")
+
+                db_initialized = True
+
+            except Exception as e:
+                print(f"⚠️ Database setup warning: {e}")
+                db.rollback()
+            finally:
+                db.close()
+
+        except Exception as e:
+            print(f"❌ Database initialization error: {e}")
+            # Continue anyway - app should still work
+
+print("✅ FastAPI app initialized")
+
+# Dependency to ensure database is initialized before first use
+def ensure_db_init():
+    """Ensure database is initialized before first use"""
+    if not db_initialized:
+        initialize_database()
 
 # === FIXED CORS CONFIGURATION ===
 origins = [
@@ -546,28 +472,36 @@ async def options_handler(path: str):
 
 # --- API Endpoint to serve products to the frontend ---
 @app.get("/products")
-async def get_products(db: Session = Depends(get_db)):
+async def get_products():
     """Returns the list of real products from database for the frontend to display."""
     try:
-        db_products = db.query(Product).all()
-        print(f"📦 Found {len(db_products)} products in database")
+        # Initialize database if needed
+        ensure_db_init()
 
-        frontend_products = []
+        db = SessionLocal()
+        try:
+            db_products = db.query(Product).all()
+            print(f"📦 Found {len(db_products)} products in database")
 
-        for product in db_products:
-            frontend_products.append({
-                "id": product.id,
-                "name": product.name,
-                "price": float(product.selling_price),  # Use selling_price for frontend display
-                "purchase_price": float(product.purchase_price),
-                "selling_price": float(product.selling_price),
-                "unit_type": str(product.unit_type),  # Ensure it's returned as string
-                "imageUrl": "",  # Let frontend generate dynamic images
-                "stock": product.stock
-            })
+            frontend_products = []
 
-        print("✅ Successfully formatted products for frontend")
-        return JSONResponse(content=frontend_products, media_type="application/json")
+            for product in db_products:
+                frontend_products.append({
+                    "id": product.id,
+                    "name": product.name,
+                    "price": float(product.selling_price),  # Use selling_price for frontend display
+                    "purchase_price": float(product.purchase_price),
+                    "selling_price": float(product.selling_price),
+                    "unit_type": str(product.unit_type),  # Ensure it's returned as string
+                    "imageUrl": "",  # Let frontend generate dynamic images
+                    "stock": product.stock
+                })
+
+            print("✅ Successfully formatted products for frontend")
+            return JSONResponse(content=frontend_products, media_type="application/json")
+
+        finally:
+            db.close()
 
     except Exception as e:
         print(f"❌ Error fetching products: {e}")
