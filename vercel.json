@@ -2,17 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/serverless_function.py",
-      "use": "@vercel/python",
-      "config": {
-        "pythonVersion": "3.9"
-      }
+      "src": "api/main.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/serverless_function.py"
+      "dest": "api/main.py"
     },
     {
       "src": "/(.+)",
@@ -33,7 +30,7 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
+          "value": "*"
         }
       ]
     }
