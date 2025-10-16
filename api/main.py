@@ -28,13 +28,14 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-        print("❌ ERROR: DATABASE_URL not set in environment variables!")
-        print("Please set your DATABASE_URL environment variable to connect to PostgreSQL")
-        print("Example: postgresql://username:password@hostname:port/database_name")
-        print("For local development, create a .env file with your DATABASE_URL")
-        # Don't crash the app, but it won't work without database
+    # For Vercel deployment, this should be set as an environment variable
+    print("❌ ERROR: DATABASE_URL not set in environment variables!")
+    print("Please set your DATABASE_URL environment variable to connect to PostgreSQL")
+    print("Example: postgresql://username:password@hostname:port/database_name")
+    # For serverless deployment, we should fail gracefully
+    raise RuntimeError("DATABASE_URL environment variable is required for deployment")
 else:
-        print(f"📡 Connecting to database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'Local database'}")
+    print("📡 Connecting to database")
 
 # Initialize the HTTPBearer instance
 security = HTTPBearer()

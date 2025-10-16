@@ -1,1 +1,2 @@
-# Vercel serverless functions require this file
+# Vercel API handler
+from .main import handler
