@@ -14,11 +14,12 @@ from sqlalchemy import ForeignKey, Enum as SQLEnum
 import enum
 import jwt
 import bcrypt
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from twilio.twiml.messaging_response import MessagingResponse
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
+import os
 
 # JWT Secret Key
 SECRET_KEY_JWT = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
