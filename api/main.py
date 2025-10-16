@@ -2314,6 +2314,11 @@ async def get_users(db: Session = Depends(get_db), username: str = Depends(verif
     check_permission(Permission.USER_MANAGEMENT, db, username)
     # ... existing code ...
 
+# AWS Lambda handler for Vercel
+from mangum import Mangum
+
+handler = Mangum(app, lifespan="off")
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))

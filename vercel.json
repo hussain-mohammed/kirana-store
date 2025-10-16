@@ -1,22 +1,26 @@
 {
   "version": 2,
-  "functions": {
-    "api/main.py": {
-      "runtime": "python3.9"
+  "builds": [
+    {
+      "src": "api/main.py",
+      "use": "@vercel/python",
+      "config": {
+        "pythonVersion": "3.9"
+      }
     }
-  },
-  "rewrites": [
+  ],
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/main"
+      "src": "/api/(.*)",
+      "dest": "api/main.py"
     },
     {
-      "source": "/customer",
-      "destination": "/customer.html"
+      "src": "/customer",
+      "dest": "/customer.html"
     },
     {
-      "source": "/(index|admin)?",
-      "destination": "/index.html"
+      "src": "/(index|admin)?",
+      "dest": "/index.html"
     }
   ],
   "headers": [
