@@ -15,8 +15,7 @@ import enum
 import bcrypt
 from sqlalchemy import text
 
-# Import models from main.py
-from main import Product, Sale, Purchase, User
+from api.main import Product, Sale, Purchase, User
 
 # Load environment variables
 load_dotenv()
