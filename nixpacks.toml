@@ -1,12 +1,11 @@
-[phases.setup]
-nix_pkgs = ["python312", "python312Packages.fastapi", "python312Packages.uvicorn", "python312Packages.sqlalchemy", "python312Packages.pydantic", "python312Packages.psycopg2", "python312Packages.bcrypt", "python312Packages.python-dotenv"]
+phases.setup
+nixPkgs = ["python312", "python312Packages.fastapi", "python312Packages.uvicorn", "python312Packages.sqlalchemy", "python312Packages.pydantic", "python312Packages.psycopg2", "python312Packages.bcrypt", "python312Packages.python-dotenv"]
 
-[phases.install]
+phases.install
 cmds = []
 
-[phases.build]
+phases.build
 cmds = ["chmod +x start.sh"]
 
-[start]
+start
 cmd = "bash start.sh"
-+++++++ REPLACE</diff>
