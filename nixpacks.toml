@@ -1,15 +1,5 @@
 [phases.setup]
-nixPkgs = [
-  "python312",
-  "python312Packages.fastapi",
-  "python312Packages.uvicorn",
-  "python312Packages.sqlalchemy",
-  "python312Packages.pydantic",
-  "python312Packages.psycopg2",
-  "python312Packages.twilio",
-  "python312Packages.bcrypt",
-  "python312Packages.python-dotenv"
-]
+nixPkgs = ["python312", "python312Packages.fastapi", "python312Packages.uvicorn", "python312Packages.sqlalchemy", "python312Packages.pydantic", "python312Packages.psycopg2", "python312Packages.bcrypt", "python312Packages.python-dotenv"]
 
 [phases.install]
 cmds = []
