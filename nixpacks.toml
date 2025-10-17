@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python312", "python312Packages.pip", "python312Packages.psycopg2"]
+nixPkgs = ["python312", "postgresql"]
 depsPath = "requirements.txt"
 
 [phases.install]
