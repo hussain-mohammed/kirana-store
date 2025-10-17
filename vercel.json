@@ -1,35 +1,13 @@
 {
   "version": 2,
-  "name": "kirana-store-backend",
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/main.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": ["requirements.txt"]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/main.py"
+      "source": "/api/(.*)",
+      "destination": "/api/main.py"
     },
     {
-      "src": "/",
-      "dest": "/login.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/(.*)",
+      "destination": "/$1"
     }
-  ],
-  "functions": {
-    "api/main.py": {
-      "maxDuration": 30
-    }
-  },
-  "env": {
-    "VERCEL": "1"
-  }
+  ]
 }
