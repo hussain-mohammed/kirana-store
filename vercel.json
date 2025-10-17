@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "name": "kirana-store-backend",
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "main.py"
+    }
+  ],
+  "env": {
+    "DATABASE_URL": "postgresql://neondb_owner:npg_jnGzJih1a2kL@ep-soft-pond-adm7u4k6-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require"
+  }
+}
