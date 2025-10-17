@@ -3,10 +3,10 @@ nixPkgs = ["python312"]
 depsPath = "requirements.txt"
 
 [phases.install]
-cmds = ["python -m pip install --upgrade pip", "python -m pip install -r requirements.txt"]
+cmds = []
 
 [phases.build]
-cmds = ["chmod +x start.sh", "python --version", "pip --version"]
+cmds = ["python -m ensurepip --upgrade", "python -m pip install --upgrade pip", "python -m pip install -r requirements.txt", "chmod +x start.sh"]
 
 [start]
 cmd = "bash start.sh"
