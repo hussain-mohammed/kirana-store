@@ -1,9 +1,9 @@
-fastapi==0.104.1
-uvicorn==0.24.0.post1
-sqlalchemy==2.0.23
-pydantic==1.10.12
-python-dotenv==1.0.0
+fastapi==0.95.2
+uvicorn[standard]==0.18.3
+sqlalchemy==1.4.46
+pydantic==1.9.2
+python-dotenv==0.21.0
 twilio==8.0.0
-bcrypt==5.0.0
-python-multipart==0.0.6
-mangum==0.17.0
+bcrypt==4.0.1
+python-multipart==0.0.5
+mangum==0.15.0
