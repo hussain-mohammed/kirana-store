@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/serverless_function.py",
+      "src": "api/main.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/serverless_function.py"
+      "dest": "/api/main.py"
     },
     {
       "src": "/(.*)",
