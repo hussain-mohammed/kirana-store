@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "kirana-store-backend",
   "builds": [
     {
       "src": "main.py",
