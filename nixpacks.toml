@@ -9,4 +9,4 @@ cmds = ["chmod +x start.sh"]
 
 [start]
 cmd = "bash start.sh"
-+++++++ REPLACE</diff]
++++++++ REPLACE</diff>
