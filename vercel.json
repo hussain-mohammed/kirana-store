@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "name": "kirana-store-backend",
   "builds": [
     {
       "src": "api/main.py",
@@ -22,5 +23,13 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ]
+  ],
+  "functions": {
+    "api/main.py": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "VERCEL": "1"
+  }
 }
