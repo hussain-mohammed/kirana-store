@@ -2,7 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "pip install -r requirements.txt"
+    "buildCommand": "chmod +x start.sh && pip install -r requirements.txt"
   },
   "deploy": {
     "startCommand": "./start.sh"
@@ -11,7 +11,7 @@
     "production": {
       "build": {
         "builder": "NIXPACKS",
-        "buildCommand": "pip install -r requirements.txt"
+        "buildCommand": "chmod +x start.sh && pip install -r requirements.txt"
       },
       "deploy": {
         "startCommand": "./start.sh"
