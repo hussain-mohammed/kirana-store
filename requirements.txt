@@ -1,5 +1,2 @@
-# All major dependencies now come from Nix packages
-# Keep only dependencies not available in nixpkgs
-python-multipart==0.0.6
-mangum==0.17.0
-# All other packages (fastapi, psycopg2, sqlalchemy, etc.) come from nixpkgs
+# Empty requirements.txt to avoid pip installation conflicts
+# All packages are handled by Nixpacks when depsPath is set
