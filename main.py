@@ -26,7 +26,7 @@ SECRET_KEY_JWT = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-product
 # Load environment variables from .env file for local development
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("\ufeffDATABASE_URL")
 if not DATABASE_URL:
         print("❌ ERROR: DATABASE_URL not set in environment variables!")
         print("Please set your DATABASE_URL environment variable to connect to PostgreSQL")
