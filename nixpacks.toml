@@ -1,12 +1,12 @@
 [phases.setup]
-nixPkgs = ["python39"]
+nixPkgs = ["python312"]
 depsPath = "requirements.txt"
 
 [phases.install]
 cmds = ["pip install --upgrade pip", "pip install -r requirements.txt", "chmod +x start.sh"]
 
 [phases.build]
-cmds = ["echo 'Build complete'", "chmod +x start.sh"]
+cmds = ["echo 'Build complete'"]
 
 [start]
-cmd = "./start.sh"
+cmd = "bash start.sh"
