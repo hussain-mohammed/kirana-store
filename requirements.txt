@@ -3,8 +3,8 @@ uvicorn==0.24.0.post1
 sqlalchemy==2.0.23
 pydantic==1.10.12
 python-dotenv==1.0.0
-psycopg2-binary==2.9.9
 twilio==8.0.0
 bcrypt==5.0.0
 python-multipart==0.0.6
 mangum==0.17.0
+postgresql
