@@ -193,8 +193,79 @@
         <div class="glass-effect rounded-xl p-8 text-white text-center">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
             <h2 class="text-xl font-semibold">Loading Kirana Store...</h2>
-            <p class="text-blue-100">Verifying authentication...</p>
+            <p class="text-blue-100">Please wait...</p>
         </div>
+    </div>
+
+    <!-- ===== LOGIN PAGE ===== -->
+    <div id="page-login" class="page hidden" style="background: linear-gradient(rgba(59, 130, 246, 0.85), rgba(147, 51, 234, 0.438)); background-size: cover; background-position: center; min-height: 100vh;">
+        <main class="w-full max-w-md mx-auto p-4 flex items-center justify-center min-h-screen">
+            <div class="bg-white rounded-lg shadow-xl p-8 w-full">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">🛒 Kirana Store</h1>
+                    <p class="text-gray-600">Raza Wholesale and Retail</p>
+                    <p class="text-sm text-gray-500">Please sign in to continue</p>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                        <input type="text" id="login-username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your username" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="login-password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" id="login-submit-btn" class="w-full bg-blue-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                        Sign In
+                    </button>
+                </form>
+
+                <!-- Registration Link -->
+                <div class="mt-6 text-center">
+                    <button id="show-register-btn" class="text-blue-500 hover:text-blue-600 text-sm">
+                        Don't have an account? Register here
+                    </button>
+                </div>
+
+                <!-- Registration Form (Hidden by default) -->
+                <div id="register-form" class="mt-8 hidden">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Create Account</h2>
+                    <form id="registration-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                            <input type="text" id="register-username" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Choose a username" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="register-email" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="your@email.com" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="register-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Choose a password" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                            <input type="password" id="register-confirm-password" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Confirm your password" required>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" id="register-submit-btn" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                                Register
+                            </button>
+                            <button type="button" id="back-to-login-btn" class="flex-1 bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                                Back
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Login Status Messages -->
+                <div id="login-status" class="mt-4 hidden">
+                    <div id="login-status-message" class="text-center p-3 rounded-lg"></div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <!-- ===== LANDING PAGE ===== -->
