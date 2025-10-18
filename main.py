@@ -1641,6 +1641,7 @@ async def health_check(db: Session = Depends(get_db)):
             "error": str(e)
         }
 
+# --- DEBUG ENDPOINT REMOVED ---
 # --- USER AUTHENTICATION ENDPOINTS ---
 
 @app.post("/auth/register", response_model=UserResponse)
