@@ -2,21 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "index.html",
-      "use": "@vercel/static"
+      "src": "main.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "index.html"
+      "dest": "main.py"
     }
   ],
-  "functions": {
-    "index.html": {
-      "maxDuration": 10
-    }
-  },
   "regions": ["sin1"],
-  "buildCommand": "echo 'Static build complete'"
+  "buildCommand": "pip install -r requirements.txt",
+  "devCommand": "python main.py",
+  "installCommand": "pip install -r requirements.txt"
 }
