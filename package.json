@@ -1,0 +1,8 @@
+{
+  "name": "kirana-store",
+  "version": "1.0.0",
+  "description": "Kirana Store Management System",
+  "scripts": {
+    "dev": "echo 'Deploy to Vercel'"
+  }
+}
