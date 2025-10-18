@@ -147,13 +147,6 @@
 
         // ===== EVENT LISTENERS =====
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if already logged in and redirect to app
-            const token = localStorage.getItem('access_token');
-            if (token) {
-                // Optional: You could verify the token here, but for now just redirect
-                redirectToApp();
-            }
-
             // Login form submission
             document.getElementById('login-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
