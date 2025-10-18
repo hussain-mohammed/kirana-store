@@ -3544,54 +3544,11 @@
             return false;
         }
 
-        try {
-            console.log('🌐 Validating token with backend...');
-
-            // Check if we can at least reach the API server first
-            const response = await Promise.race([
-                fetch(`${backendURL}/auth/me`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'ngrok-skip-browser-warning': 'true',
-                        'Content-Type': 'application/json'
-                    },
-                    signal: AbortSignal.timeout(5000) // 5 second timeout
-                }),
-                // Fallback timeout
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Request timeout')), 5000)
-                )
-            ]);
-
-            console.log('📊 Auth response status:', response.status);
-
-            if (response.ok) {
-                const userData = await response.json();
-                currentUser = userData;
-                console.log('✅ Token valid, user authenticated:', currentUser.username);
-
-                // Show the main app
-                showMainKiranaApp();
-                return true;
-            } else {
-                console.log('❌ Token invalid or API error:', response.status);
-                localStorage.removeItem('access_token');
-                window.location.href = 'login.html';
-                return false;
-            }
-        } catch (error) {
-            console.log('💥 Auth API error:', error.message);
-
-            // On any error (network, CORS, API down), assume token is valid
-            // This allows the app to continue if backend is temporarily down
-            console.log('⚠️ Backend unreachable, proceeding as authenticated');
-            currentUser = { username: 'User' }; // Default user data
-
-            // Show the main app anyway
-            showMainKiranaApp();
-            return true;
-        }
+        // Skip backend validation for now - just show the app
+        console.log('🔑 Token found, showing app directly');
+        currentUser = { username: 'User' }; // Default user data
+        showMainKiranaApp();
+        return true;
     }
 
     // Show the main Kirana Store application
