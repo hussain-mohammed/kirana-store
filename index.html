@@ -3536,6 +3536,13 @@
     async function checkAuthentication() {
         console.log('🔍 Checking authentication...');
         const token = localStorage.getItem('access_token');
+        const currentPath = window.location.pathname;
+
+        // If we're on login.html, don't redirect
+        if (currentPath.includes('login.html')) {
+            console.log('📍 On login page, skipping auth check');
+            return false;
+        }
 
         // If no token, redirect immediately to login
         if (!token) {

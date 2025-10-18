@@ -26,21 +26,28 @@ SECRET_KEY_JWT = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-product
 # Load environment variables from .env file for local development
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("\ufeffDATABASE_URL")
-if not DATABASE_URL:
+# Use SQLite for local development, PostgreSQL for production
+USE_SQLITE = os.getenv("USE_SQLITE", "true").lower() == "true"
+
+if USE_SQLITE:
+    DATABASE_URL = "sqlite:///./kirana_store.db"
+    print("📱 Using SQLite database for local development")
+else:
+    DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("\ufeffDATABASE_URL")
+    if not DATABASE_URL:
         print("❌ ERROR: DATABASE_URL not set in environment variables!")
         print("Please set your DATABASE_URL environment variable to connect to PostgreSQL")
         print("Example: postgresql://username:password@hostname:port/database_name")
         print("For local development, create a .env file with your DATABASE_URL")
         # Don't crash the app, but it won't work without database
-else:
+    else:
         print(f"📡 Connecting to database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'Local database'}")
 
 # Initialize the HTTPBearer instance
 security = HTTPBearer()
 
 # Create a SQLAlchemy engine
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if USE_SQLITE else {})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base class for declarative models
