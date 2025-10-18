@@ -1747,10 +1747,12 @@ def authenticate_user(db: Session, username: str, password: str):
 
         # Try bcrypt verification first (for modern hashed passwords)
         try:
+            # stored_password is already a string (decoded), so we need to encode it back to bytes
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                 print(f"✅ Authenticated '{username}' with bcrypt hash")
                 return user
         except (ValueError, TypeError) as e:
+            print(f"⚠️ bcrypt verification failed: {e}")
             # If bcrypt verification fails, it might be plain text (legacy support)
             pass
 
