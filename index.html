@@ -1064,6 +1064,18 @@
         let currentUser = null;
 
         // ===== UTILITY FUNCTIONS =====
+        function showRegistrationForm() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+            document.getElementById('show-register-btn').classList.add('hidden');
+        }
+
+        function hideRegistrationForm() {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('show-register-btn').classList.remove('hidden');
+        }
+
         function formatDateTime(dateString) {
             if (!dateString) {
                 return { date: 'N/A', time: 'N/A', full: 'N/A' };
