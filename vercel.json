@@ -2,18 +2,15 @@
   "version": 2,
   "builds": [
     {
-      "src": "main.py",
-      "use": "@vercel/python"
+      "src": "index.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "main.py"
+      "dest": "index.html"
     }
   ],
-  "regions": ["sin1"],
-  "buildCommand": "pip install -r requirements.txt",
-  "devCommand": "python main.py",
-  "installCommand": "pip install -r requirements.txt"
+  "regions": ["sin1"]
 }
