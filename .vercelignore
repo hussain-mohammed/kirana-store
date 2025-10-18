@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local development
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Python files (if not needed for frontend)
+*.py
+__pycache__/
+*.pyc
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Build outputs (if any)
+dist/
+build/
+
+# Logs
+*.log
+
+# Runtime
+runtime.txt
+
+# Requirements
+requirements.txt
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Deployment configs (not needed for Vercel)
+vercel.json
+.nixpacks.toml
+
+# Test files
+test_*.py
+*_test.py
+
+# Keep only essential files for frontend deployment
+!index.html
+!package.json

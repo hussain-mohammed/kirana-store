@@ -2660,32 +2660,38 @@
 
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize pages
-            pages = {
-                home: document.getElementById('page-home'),
-                sales: document.getElementById('page-sales'),
-                purchase: document.getElementById('page-purchase'),
-                create: document.getElementById('page-create'),
-                'delete-product': document.getElementById('page-delete-product'),
-                'all-products-ledger': document.getElementById('page-all-products-ledger'),
-                'sales-ledger': document.getElementById('page-sales-ledger'),
-                'purchase-ledger': document.getElementById('page-purchase-ledger'),
-                'profit-loss': document.getElementById('page-profit-loss'),
-                'opening-stock': document.getElementById('page-opening-stock'),
-                settings: document.getElementById('page-settings'),
-                loading: document.getElementById('page-loading'),
-            };
+            try {
+                // Initialize pages
+                pages = {
+                    home: document.getElementById('page-home'),
+                    sales: document.getElementById('page-sales'),
+                    purchase: document.getElementById('page-purchase'),
+                    create: document.getElementById('page-create'),
+                    'delete-product': document.getElementById('page-delete-product'),
+                    'all-products-ledger': document.getElementById('page-all-products-ledger'),
+                    'sales-ledger': document.getElementById('page-sales-ledger'),
+                    'purchase-ledger': document.getElementById('page-purchase-ledger'),
+                    'profit-loss': document.getElementById('page-profit-loss'),
+                    'opening-stock': document.getElementById('page-opening-stock'),
+                    settings: document.getElementById('page-settings'),
+                    loading: document.getElementById('page-loading'),
+                };
 
-            backButton = document.getElementById('back-to-home');
+                backButton = document.getElementById('back-to-home');
 
-            // Set up event listeners
-            setupEventListeners();
+                // Set up event listeners
+                setupEventListeners();
 
-            // Show home page after a brief loading period
-            setTimeout(() => {
-                document.getElementById('page-loading').classList.remove('active');
-                document.getElementById('page-home').classList.add('active');
-            }, 1000);
+                // Show home page after a brief loading period
+                setTimeout(() => {
+                    const loadingPage = document.getElementById('page-loading');
+                    const homePage = document.getElementById('page-home');
+                    if (loadingPage) loadingPage.classList.remove('active');
+                    if (homePage) homePage.classList.add('active');
+                }, 500);
+            } catch (error) {
+                console.error('Initialization error:', error);
+            }
         });
 
         function setupEventListeners() {

@@ -11,5 +11,12 @@
       "src": "/(.*)",
       "dest": "index.html"
     }
-  ]
+  ],
+  "functions": {
+    "index.html": {
+      "maxDuration": 10
+    }
+  },
+  "regions": ["sin1"],
+  "buildCommand": "echo 'Static build complete'"
 }
