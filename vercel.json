@@ -2,17 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "main.py",
-      "use": "@vercel/python"
+      "src": "index.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "main.py"
+      "dest": "index.html"
     }
-  ],
-  "env": {
-    "DATABASE_URL": "postgresql://neondb_owner:npg_jnGzJih1a2kL@ep-soft-pond-adm7u4k6-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require"
-  }
+  ]
 }
