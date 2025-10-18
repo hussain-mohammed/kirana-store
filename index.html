@@ -1076,6 +1076,111 @@
             document.getElementById('show-register-btn').classList.remove('hidden');
         }
 
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            // Basic validation
+            if (!username || !password) {
+                showNotification('❌ Please enter both username and password');
+                return;
+            }
+
+            const submitBtn = document.getElementById('login-submit-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Signing In...';
+            submitBtn.disabled = true;
+
+            try {
+                console.log('🔐 Attempting to login user:', username);
+
+                const response = await fetch(`${backendURL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                console.log(`📊 Login response status: ${response.status}`);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Login successful:', result);
+
+                    // Store token and user info
+                    localStorage.setItem('authToken', result.access_token);
+                    localStorage.setItem('currentUser', JSON.stringify(result.user));
+                    currentUser = result.user;
+
+                    showNotification(`✅ Welcome back, ${result.user.username}!`);
+
+                    // Clear login form
+                    document.getElementById('login-username').value = '';
+                    document.getElementById('login-password').value = '';
+
+                    // Hide login page and show main app
+                    document.getElementById('page-login').classList.remove('active');
+                    document.getElementById('page-homes').classList.add('active');
+
+                    // Show user controls in header
+                    showUserControls(result.user);
+
+                } else {
+                    let errorMessage = 'Login failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorData.message || errorMessage;
+                    } catch (parseError) {
+                        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                    }
+
+                    console.error('❌ Login failed:', errorMessage);
+                    showNotification(`❌ ${errorMessage}`);
+                }
+
+            } catch (error) {
+                console.error('❌ Network error during login:', error);
+                showNotification('❌ Network error. Please check your connection and try again.');
+            } finally {
+                // Reset button
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function showUserControls(user) {
+            const userControls = document.getElementById('user-controls');
+            const welcomeMessage = document.getElementById('welcome-message');
+
+            if (userControls && welcomeMessage) {
+                welcomeMessage.textContent = `Welcome, ${user.username}!`;
+                userControls.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            // Clear stored data
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            currentUser = null;
+
+            // Hide user controls
+            document.getElementById('user-controls').classList.add('hidden');
+
+            // Show login page
+            document.getElementById('page-homes').classList.remove('active');
+            document.getElementById('page-login').classList.add('active');
+
+            showNotification('👋 Logged out successfully!');
+        }
+
         async function handleRegistration(e) {
             e.preventDefault();
 
@@ -2802,6 +2907,12 @@
                 backToLoginBtn.addEventListener('click', hideRegistrationForm);
             }
 
+            // Login form submission
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+            }
+
             // Registration form submission
             const registrationForm = document.getElementById('registration-form');
             if (registrationForm) {
@@ -2811,6 +2922,12 @@
             // Back to home button
             if (backButton) {
                 backButton.addEventListener('click', backToHome);
+            }
+
+            // Logout button
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
             }
 
             // WhatsApp checkout button
