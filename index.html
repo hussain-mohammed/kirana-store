@@ -1076,6 +1076,81 @@
             document.getElementById('show-register-btn').classList.remove('hidden');
         }
 
+        async function handleRegistration(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('register-username').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+
+            // Basic validation
+            if (!username || !email || !password || !confirmPassword) {
+                showNotification('❌ Please fill in all fields');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showNotification('❌ Passwords do not match');
+                return;
+            }
+
+            if (password.length < 6) {
+                showNotification('❌ Password must be at least 6 characters long');
+                return;
+            }
+
+            try {
+                console.log('📝 Attempting to register user:', username);
+
+                const response = await fetch(`${backendURL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                console.log(`📊 Registration response status: ${response.status}`);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ User registered successfully:', result);
+
+                    showNotification('✅ Registration successful! Please login with your credentials.');
+
+                    // Clear form
+                    document.getElementById('register-username').value = '';
+                    document.getElementById('register-email').value = '';
+                    document.getElementById('register-password').value = '';
+                    document.getElementById('register-confirm-password').value = '';
+
+                    // Switch back to login form
+                    hideRegistrationForm();
+
+                } else {
+                    let errorMessage = 'Registration failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorData.message || errorMessage;
+                    } catch (parseError) {
+                        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                    }
+
+                    console.error('❌ Registration failed:', errorMessage);
+                    showNotification(`❌ ${errorMessage}`);
+                }
+
+            } catch (error) {
+                console.error('❌ Network error during registration:', error);
+                showNotification('❌ Network error. Please check your connection and try again.');
+            }
+        }
+
         function formatDateTime(dateString) {
             if (!dateString) {
                 return { date: 'N/A', time: 'N/A', full: 'N/A' };
