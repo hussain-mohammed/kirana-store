@@ -3532,7 +3532,7 @@
     // ===== AUTHENTICATION FUNCTIONS =====
     let currentUser = null;
 
-    // Simplified authentication check with robust error handling
+    // Proper authentication check with backend validation
     async function checkAuthentication() {
         console.log('🔍 Checking authentication...');
         const token = localStorage.getItem('access_token');
@@ -3547,15 +3547,45 @@
         // If no token, redirect immediately to login
         if (!token) {
             console.log('🏠 No token found - redirecting to login page');
+            console.log('🔄 Redirecting to login.html...');
             window.location.href = 'login.html';
             return false;
         }
 
-        // Skip backend validation for now - just show the app
-        console.log('🔑 Token found, showing app directly');
-        currentUser = { username: 'User' }; // Default user data
-        showMainKiranaApp();
-        return true;
+        // Verify token with backend
+        try {
+            console.log('🔑 Verifying token with backend...');
+            const response = await fetch(`${backendURL}/auth/me`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+
+            if (response.ok) {
+                const userData = await response.json();
+                console.log('✅ Token verified, user authenticated:', userData);
+                currentUser = userData;
+                showMainKiranaApp();
+                return true;
+            } else {
+                console.log('❌ Token verification failed:', response.status);
+                console.log('🗑️ Removing invalid token and redirecting to login');
+                // Token is invalid, remove it and redirect to login
+                localStorage.removeItem('access_token');
+                window.location.href = 'login.html';
+                return false;
+            }
+        } catch (error) {
+            console.error('💥 Error verifying token:', error);
+            console.log('🌐 Network error - removing token and redirecting to login');
+            // Network error or server unavailable, remove token and redirect to login
+            localStorage.removeItem('access_token');
+            window.location.href = 'login.html';
+            return false;
+        }
     }
 
     // Show the main Kirana Store application
