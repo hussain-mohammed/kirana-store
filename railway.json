@@ -1,19 +1,6 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
-  "build": {
-    "builder": "NIXPACKS"
-  },
   "deploy": {
-    "startCommand": "bash start.sh"
-  },
-  "environments": {
-    "production": {
-      "build": {
-        "builder": "NIXPACKS"
-      },
-      "deploy": {
-        "startCommand": "bash start.sh"
-      }
-    }
+    "startCommand": "sh start.sh"
   }
 }
