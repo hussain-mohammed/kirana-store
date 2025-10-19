@@ -528,8 +528,12 @@
         </main>
     </div>
 
-<<<<<<< HEAD
+    <!-- UPDATED: All Products Stock Ledger Page with Filters -->
+>>>>>>> 9a4217ef2991b6cc84fa31108c41427254dedcf0
+    <div id="page-all-products-ledger" class="page stock-bg">
+======mv
     <!-- All Products Stock Ledger Page with Filters -->
+    <div id="page-all-products-ledger" class="page stock-bg">
 =======
     <!-- UPDATED: All Products Stock Ledger Page with Filters -->
 >>>>>>> 9a4217ef2991b6cc84fa31108c41427254dedcf0
@@ -1545,55 +1549,122 @@
         }
 
         function addToCart(productId) {
+            // Input validation
+            if (!productId || isNaN(parseInt(productId))) {
+                showNotification("Invalid product selection!");
+                return;
+            }
+
+            if (!products || products.length === 0) {
+                showNotification("No products available!");
+                return;
+            }
+
             const product = products.find(p => p.id === parseInt(productId));
-            
+
             if (!product) {
                 showNotification("Product not found!");
                 return;
             }
-            
-            if (product.stock <= 0) {
+
+            if (!product.name || product.name.trim() === '') {
+                showNotification("Invalid product data!");
+                return;
+            }
+
+            if (product.stock === undefined || product.stock === null || product.stock <= 0) {
                 showNotification(`Sorry, ${product.name} is out of stock!`);
                 return;
             }
-            
+
             const currentCartQuantity = cart[productId] || 0;
             if (currentCartQuantity + 1 > product.stock) {
                 showNotification(`Sorry, only ${product.stock} units of ${product.name} are available!`);
                 return;
             }
-            
+
             cart[productId] = currentCartQuantity + 1;
             updateCartUI();
             showNotification(`Added ${product.name} to cart!`);
         }
 
         function increaseQuantity(productId) {
+            // Input validation
+            if (!productId || isNaN(parseInt(productId))) {
+                showNotification("Invalid product selection!");
+                return;
+            }
+
+            if (!cart[productId] || cart[productId] <= 0) {
+                showNotification("Item not in cart!");
+                return;
+            }
+
+            if (!products || products.length === 0) {
+                showNotification("No products available!");
+                return;
+            }
+
             const product = products.find(p => p.id === parseInt(productId));
-            
+
             if (!product) {
                 showNotification("Product not found!");
                 return;
             }
-            
+
+            if (!product.name || product.name.trim() === '') {
+                showNotification("Invalid product data!");
+                return;
+            }
+
+            if (product.stock === undefined || product.stock === null) {
+                showNotification("Invalid stock information!");
+                return;
+            }
+
             const currentCartQuantity = cart[productId] || 0;
             if (currentCartQuantity + 1 > product.stock) {
                 showNotification(`Sorry, only ${product.stock} units of ${product.name} are available!`);
                 return;
             }
-            
+
             cart[productId] = currentCartQuantity + 1;
             updateCartUI();
         }
 
         function decreaseQuantity(productId) {
-            if (cart[productId] > 1) {
-                cart[productId] -= 1;
-                updateCartUI();
+            // Input validation
+            if (!productId || isNaN(parseInt(productId))) {
+                showNotification("Invalid product selection!");
+                return;
             }
+
+            if (!cart[productId] || cart[productId] <= 0) {
+                showNotification("Item not in cart!");
+                return;
+            }
+
+            if (cart[productId] <= 1) {
+                showNotification("Cannot decrease quantity below 1. Use remove button instead!");
+                return;
+            }
+
+            cart[productId] -= 1;
+            updateCartUI();
         }
 
         function removeFromCart(productId) {
+            // Input validation
+            if (!productId || isNaN(parseInt(productId))) {
+                showNotification("Invalid product selection!");
+                return;
+            }
+
+            if (!cart[productId] || cart[productId] <= 0) {
+                showNotification("Item not in cart!");
+                return;
+            }
+
             delete cart[productId];
             updateCartUI();
             showNotification("Item removed from cart!");
@@ -1637,29 +1708,74 @@
         }
 
         function generateWhatsAppOrder() {
-            const phoneNumber = WHATSAPP_NUMBER; 
+            // Input validation
+            if (!cart || Object.keys(cart).length === 0) {
+                showNotification("Cart is empty!");
+                return;
+            }
+
+            if (!products || products.length === 0) {
+                showNotification("No products available!");
+                return;
+            }
+
+            const phoneNumber = WHATSAPP_NUMBER;
+            if (!phoneNumber || phoneNumber.trim() === '') {
+                showNotification("WhatsApp number not configured!");
+                return;
+            }
+
             let message = "Hi, I would like to place an order:%0a%0a";
             let total = 0;
             const saleItems = [];
+            let hasValidItems = false;
 
             for (const productId in cart) {
                 if (cart[productId] > 0) {
                     const product = products.find(p => p.id === parseInt(productId));
                     if (product) {
+                        if (!product.name || product.name.trim() === '') {
+                            showNotification("Invalid product data found in cart!");
+                            return;
+                        }
+
                         const quantity = cart[productId];
-                        const itemTotal = quantity * product.price;
+                        if (isNaN(quantity) || quantity <= 0) {
+                            showNotification("Invalid quantity in cart!");
+                            return;
+                        }
+
+                        const price = product.price;
+                        if (isNaN(price) || price <= 0) {
+                            showNotification("Invalid price for product in cart!");
+                            return;
+                        }
+
+                        const itemTotal = quantity * price;
                         total += itemTotal;
                         message += `• ${quantity}x ${product.name} - ₹${itemTotal.toFixed(2)}%0a`;
-                        
+
                         saleItems.push({
                             product_id: product.id,
                             product_name: product.name,
                             quantity: quantity,
-                            price: product.price,
+                            price: price,
                             total: itemTotal
                         });
+
+                        hasValidItems = true;
                     }
                 }
+            }
+
+            if (!hasValidItems) {
+                showNotification("No valid items in cart!");
+                return;
+            }
+
+            if (total <= 0) {
+                showNotification("Invalid order total!");
+                return;
             }
 
             message += `%0a*Total: ₹${total.toFixed(2)}*%0a%0aPlease confirm my order. Thank you!`;
@@ -1674,9 +1790,9 @@
                 });
             }
 
-            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
-            
+
             cart = {};
             updateCartUI();
             document.getElementById('cart-modal').classList.add('hidden');
@@ -1930,15 +2046,29 @@
         }
 
         async function deleteProduct(productId, productName) {
+            // Input validation
+            if (!productId || isNaN(parseInt(productId))) {
+                showNotification("Invalid product ID!");
+                return;
+            }
+
+            if (!productName || productName.trim() === '') {
+                showNotification("Invalid product name!");
+                return;
+            }
+
+            productId = parseInt(productId);
+            productName = productName.trim();
+
             if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone and will remove all associated sales and purchase records.`)) {
                 return;
             }
-            
+
             try {
                 const deleteURL = `${backendURL}/products/${productId}`;
-                
+
                 console.log(`🗑️ Attempting to delete product from: ${deleteURL}`);
-                
+
                 const response = await fetch(deleteURL, {
                     method: 'DELETE',
                     headers: {
@@ -1946,22 +2076,179 @@
                         'ngrok-skip-browser-warning': 'true'
                     }
                 });
-                
+
                 console.log(`📊 Delete response status: ${response.status}`);
-                
+
                 if (response.ok) {
                     const result = await response.json();
                     showNotification(result.message || `Product "${productName}" deleted successfully!`);
-                    
+
                     await loadDeleteProductPage();
                 } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || `Server returned ${response.status}`);
+                    let errorMessage = `Failed to delete product: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.detail) {
+                            errorMessage = errorData.detail;
+                        }
+                    } catch (e) {
+                        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
                 }
-                
+
             } catch (error) {
                 console.error('Error deleting product:', error);
-                alert(`❌ Error deleting product: ${error.message}`);
+                showNotification(`❌ Error deleting product: ${error.message}`);
+            }
+        }
+
+        async function handleCreateProduct(e) {
+            e.preventDefault();
+
+            // Get form values
+            const name = document.getElementById('product-name').value.trim();
+            const purchasePrice = parseFloat(document.getElementById('product-purchase-price').value);
+            const sellingPrice = parseFloat(document.getElementById('product-selling-price').value);
+            const unitType = document.getElementById('product-unit-type').value;
+            const stock = parseInt(document.getElementById('product-stock').value) || 0;
+
+            // Validation
+            if (!name) {
+                showNotification('❌ Product name is required');
+                return;
+            }
+
+            if (isNaN(purchasePrice) || purchasePrice < 0.01) {
+                showNotification('❌ Please enter a valid purchase price (minimum ₹0.01)');
+                return;
+            }
+
+            if (isNaN(sellingPrice) || sellingPrice < 0.01) {
+                showNotification('❌ Please enter a valid selling price (minimum ₹0.01)');
+                return;
+            }
+
+            if (!unitType) {
+                showNotification('❌ Please select a unit type');
+                return;
+            }
+
+            if (stock < 0) {
+                showNotification('❌ Initial stock cannot be negative');
+                return;
+            }
+
+            // Disable submit button to prevent double submission
+            const submitBtn = document.getElementById('create-product-form').querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Creating...';
+            submitBtn.disabled = true;
+
+            try {
+                console.log('➕ Creating product:', { name, purchasePrice, sellingPrice, unitType, stock });
+
+                const productData = {
+                    name: name,
+                    purchase_price: purchasePrice,
+                    selling_price: sellingPrice,
+                    unit_type: unitType,
+                    stock: stock
+                };
+
+                const result = await createProduct(productData);
+
+                showNotification(`✅ Product "${name}" created successfully!`);
+
+                // Clear form
+                document.getElementById('product-name').value = '';
+                document.getElementById('product-purchase-price').value = '';
+                document.getElementById('product-selling-price').value = '';
+                document.getElementById('product-unit-type').value = '';
+                document.getElementById('product-stock').value = '0';
+
+                // Refresh existing products list
+                await loadExistingProducts();
+
+            } catch (error) {
+                console.error('❌ Error creating product:', error);
+                showNotification(`❌ Failed to create product: ${error.message}`);
+            } finally {
+                // Reset button
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function handlePurchase(e) {
+            e.preventDefault();
+
+            const productId = document.getElementById('purchase-product').value;
+            const quantity = parseInt(document.getElementById('purchase-quantity').value);
+            const unitCost = parseFloat(document.getElementById('purchase-unit-cost').value);
+
+            if (!productId) {
+                showNotification('❌ Please select a product');
+                return;
+            }
+
+            if (isNaN(quantity) || quantity <= 0) {
+                showNotification('❌ Please enter a valid quantity (minimum 1)');
+                return;
+            }
+
+            if (isNaN(unitCost) || unitCost < 0.01) {
+                showNotification('❌ Please ensure unit cost is set correctly');
+                return;
+            }
+
+            const submitBtn = document.getElementById('purchase-form').querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Recording...';
+            submitBtn.disabled = true;
+
+            try {
+                console.log('📦 Recording purchase:', { productId, quantity, unitCost });
+
+                const response = await fetch(`${backendURL}/purchases/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({
+                        product_id: parseInt(productId),
+                        quantity: quantity
+                    })
+                });
+
+                console.log(`📊 Purchase response: ${response.status}`);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || errorData.message || 'Failed to record purchase');
+                }
+
+                const result = await response.json();
+                console.log('✅ Purchase recorded:', result);
+
+                showNotification(`✅ Purchase recorded successfully for ${quantity} units!`);
+
+                // Clear form
+                document.getElementById('purchase-product').value = '';
+                document.getElementById('purchase-quantity').value = '';
+                document.getElementById('purchase-unit-cost').value = '';
+                document.getElementById('purchase-unit-type').value = '';
+
+                // Refresh purchase history
+                await loadPurchaseHistory();
+
+            } catch (error) {
+                console.error('❌ Error recording purchase:', error);
+                showNotification(`❌ Failed to record purchase: ${error.message}`);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         }
 
@@ -2854,20 +3141,20 @@
         document.addEventListener('DOMContentLoaded', function() {
             try {
                 // Initialize pages
-                pages = {
-                    home: document.getElementById('page-home'),
-                    sales: document.getElementById('page-sales'),
-                    purchase: document.getElementById('page-purchase'),
-                    create: document.getElementById('page-create'),
-                    'delete-product': document.getElementById('page-delete-product'),
-                    'all-products-ledger': document.getElementById('page-all-products-ledger'),
-                    'sales-ledger': document.getElementById('page-sales-ledger'),
-                    'purchase-ledger': document.getElementById('page-purchase-ledger'),
-                    'profit-loss': document.getElementById('page-profit-loss'),
-                    'opening-stock': document.getElementById('page-opening-stock'),
-                    settings: document.getElementById('page-settings'),
-                    loading: document.getElementById('page-loading'),
-                };
+pages = {
+    homes: document.getElementById('page-homes'),
+    sales: document.getElementById('page-sales'),
+    purchase: document.getElementById('page-purchase'),
+    create: document.getElementById('page-create'),
+    'delete-product': document.getElementById('page-delete-product'),
+    'all-products-ledger': document.getElementById('page-all-products-ledger'),
+    'sales-ledger': document.getElementById('page-sales-ledger'),
+    'purchase-ledger': document.getElementById('page-purchase-ledger'),
+    'profit-loss': document.getElementById('page-profit-loss'),
+    'opening-stock': document.getElementById('page-opening-stock'),
+    settings: document.getElementById('page-settings'),
+    loading: document.getElementById('page-loading'),
+};
 
                 backButton = document.getElementById('back-to-home');
 
@@ -2877,7 +3164,7 @@
                 // Show home page after a brief loading period
                 setTimeout(() => {
                     const loadingPage = document.getElementById('page-loading');
-                    const homePage = document.getElementById('page-home');
+                    const homePage = document.getElementById('page-homes');
                     if (loadingPage) loadingPage.classList.remove('active');
                     if (homePage) homePage.classList.add('active');
                 }, 500);
@@ -2939,20 +3226,15 @@
             // Purchase form submission
             const purchaseForm = document.getElementById('purchase-form');
             if (purchaseForm) {
-                purchaseForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    // Purchase form submission logic would go here
-                    showNotification('Purchase functionality would be implemented here');
-                });
+                purchaseForm.addEventListener('submit', handlePurchase);
             }
 
             // Create product form submission
             const createProductForm = document.getElementById('create-product-form');
             if (createProductForm) {
-                createProductForm.addEventListener('submit', function(e) {
+                createProductForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    // Create product form submission logic would go here
-                    showNotification('Product creation functionality would be implemented here');
+                    await handleCreateProduct(e);
                 });
             }
 
