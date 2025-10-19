@@ -2554,10 +2554,20 @@ function backToHome() {
                 loadingEl.classList.add('hidden');
                 contentEl.classList.remove('hidden');
 
+                // Force display styles as fallback
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'none';
+                contentEl.style.display = 'block';
+
+                console.log('✅ Sales ledger UI states set - content should be visible');
+
             } catch (error) {
                 console.error('❌ Error loading sales ledger:', error);
                 loadingEl.classList.add('hidden');
+                contentEl.classList.add('hidden');
+                contentEl.style.display = 'none';
                 errorEl.classList.remove('hidden');
+                errorEl.style.display = 'block';
                 errorEl.innerHTML = `<div class="text-center">
                     <p class="text-red-500 font-semibold">Error Loading Sales Data</p>
                     <p class="text-gray-600 mt-2">${error.message}</p>
