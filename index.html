@@ -1381,11 +1381,11 @@
             loadPageData(pageName);
         }
 
-        function backToHome() {
-            Object.values(pages).forEach(page => page.classList.remove('active'));
-            pages.home.classList.add('active');
-            backButton.classList.add('hidden');
-        }
+function backToHome() {
+    Object.values(pages).forEach(page => page.classList.remove('active'));
+    pages.homes.classList.add('active');
+    backButton.classList.add('hidden');
+}
 
         function loadPageData(pageName) {
             switch(pageName) {
@@ -3219,6 +3219,8 @@ pages = {
     settings: document.getElementById('page-settings'),
     loading: document.getElementById('page-loading'),
 };
+
+page = pages.homes; // Alias for backward compatibility
 
                 backButton = document.getElementById('back-to-home');
 
