@@ -7,7 +7,7 @@ from typing import List, Optional, Any, Dict
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, status, Depends, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from sqlalchemy import ForeignKey, Enum as SQLEnum
