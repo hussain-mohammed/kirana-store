@@ -1068,6 +1068,15 @@
         let currentUser = null;
 
         // ===== UTILITY FUNCTIONS =====
+        function getAuthHeaders() {
+            const token = localStorage.getItem('authToken');
+            return {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
+        }
+
         function showRegistrationForm() {
             document.getElementById('login-form').classList.add('hidden');
             document.getElementById('register-form').classList.remove('hidden');
@@ -1401,10 +1410,7 @@
 
             try {
                 const response = await fetch(`${backendURL}/products`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    }
+                    headers: getAuthHeaders()
                 });
 
                 console.log(`📊 Status: ${response.status}`);
@@ -1690,17 +1696,14 @@
             
             try {
                 for (const item of saleItems) {
-                    const response = await fetch(`${backendURL}/sales/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'ngrok-skip-browser-warning': 'true'
-                        },
-                        body: JSON.stringify({
-                            product_id: item.product_id,
-                            quantity: item.quantity
-                        })
-                    });
+                const response = await fetch(`${backendURL}/sales/`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        product_id: item.product_id,
+                        quantity: item.quantity
+                    })
+                });
 
                     console.log(`📊 Response for product ${item.product_id}: ${response.status}`);
                     
@@ -1829,9 +1832,7 @@
 
             try {
                 const response = await fetch(`${backendURL}/products`, {
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true'
-                    }
+                    headers: getAuthHeaders()
                 });
 
                 if (response.ok) {
@@ -1862,9 +1863,7 @@
 
             try {
                 const response = await fetch(`${backendURL}/ledger/purchases`, {
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true'
-                    }
+                    headers: getAuthHeaders()
                 });
                 
                 if (!response.ok) throw new Error('Failed to fetch products');
@@ -1909,9 +1908,7 @@
 
             try {
                 const response = await fetch(`${backendURL}/products`, {
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true'
-                    }
+                    headers: getAuthHeaders()
                 });
 
                 if (!response.ok) throw new Error('Failed to fetch products');
@@ -1952,10 +1949,7 @@
             try {
                 const response = await fetch(`${backendURL}/products/`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(productData)
                 });
 
@@ -2086,10 +2080,7 @@
 
                 const response = await fetch(deleteURL, {
                     method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    }
+                    headers: getAuthHeaders()
                 });
 
                 console.log(`📊 Delete response status: ${response.status}`);
@@ -2894,7 +2885,7 @@
             }
 
             fetch(`${backendURL}/products`, {
-                headers: { 'ngrok-skip-browser-warning': 'true' }
+                headers: getAuthHeaders()
             })
             .then(response => response.json())
             .then(productsData => {
@@ -2914,7 +2905,7 @@
             document.getElementById('pl-product-filter').value = '';
 
             fetch(`${backendURL}/products`, {
-                headers: { 'ngrok-skip-browser-warning': 'true' }
+                headers: getAuthHeaders()
             })
             .then(response => response.json())
             .then(productsData => {
