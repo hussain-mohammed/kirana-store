@@ -2569,51 +2569,88 @@ function backToHome() {
         }
 
         function displayFilteredSalesData(salesData) {
+            console.log('📍 displayFilteredSalesData called with', salesData.length, 'records');
+
             const tableBodyEl = document.getElementById('sales-ledger-table-body');
             const totalAmountEl = document.getElementById('sales-total-amount');
-            
-            if (salesData.length === 0) {
-                tableBodyEl.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="border border-gray-200 px-4 py-4 text-center text-gray-500">
-                            No sales records found
-                        </td>
-                    </tr>
-                `;
-                totalAmountEl.textContent = '₹0.00';
+
+            console.log('🗂️ Table body element:', tableBodyEl);
+            console.log('💰 Total amount element:', totalAmountEl);
+
+            if (!salesData || salesData.length === 0) {
+                console.log('⚠️ No sales data to display');
+                if (tableBodyEl) {
+                    tableBodyEl.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="border border-gray-200 px-4 py-4 text-center text-gray-500">
+                                No sales records found
+                            </td>
+                        </tr>
+                    `;
+                }
+                if (totalAmountEl) {
+                    totalAmountEl.textContent = '₹0.00';
+                }
                 return;
             }
-            
+
             let totalAmount = 0;
-            
-            tableBodyEl.innerHTML = salesData.map(sale => {
-                const formatted = formatDateTime(sale.date);
-                const saleId = sale.sale_id || sale.id;
-                const price = sale.unit_price || (sale.total_amount / sale.quantity) || 0;
-                totalAmount += sale.total_amount;
-                
-                return `
-                    <tr class="hover:bg-gray-50">
-                        <td class="border border-gray-200 px-4 py-2">
-                            <div class="text-sm font-medium">${formatted.date}</div>
-                            <div class="text-xs text-gray-500">${formatted.time}</div>
-                        </td>
-                        <td class="border border-gray-200 px-4 py-2 text-sm">${saleId}</td>
-                        <td class="border border-gray-200 px-4 py-2 font-medium">${sale.product_name}</td>
-                        <td class="border border-gray-200 px-4 py-2">${sale.quantity}</td>
-                        <td class="border border-gray-200 px-4 py-2">₹${price.toFixed(2)}</td>
-                        <td class="border border-gray-200 px-4 py-2 font-medium">₹${sale.total_amount.toFixed(2)}</td>
-                        <td class="border border-gray-200 px-4 py-2">
-                            <button class="delete-sale text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors" 
-                                    data-id="${saleId}">
-                                Delete
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-            
-            totalAmountEl.textContent = `₹${totalAmount.toFixed(2)}`;
+            let htmlContent = '';
+
+            console.log('📝 Processing', salesData.length, 'sales records...');
+
+            try {
+                salesData.forEach(sale => {
+                    console.log('🔄 Processing sale:', sale);
+                    const formatted = formatDateTime(sale.date);
+                    const saleId = sale.sale_id || sale.id;
+                    const price = sale.unit_price || (sale.total_amount / sale.quantity) || 0;
+                    totalAmount += sale.total_amount;
+
+                    const rowHtml = `
+                        <tr class="hover:bg-gray-50">
+                            <td class="border border-gray-200 px-4 py-2">
+                                <div class="text-sm font-medium">${formatted.date}</div>
+                                <div class="text-xs text-gray-500">${formatted.time}</div>
+                            </td>
+                            <td class="border border-gray-200 px-4 py-2 text-sm">${saleId}</td>
+                            <td class="border border-gray-200 px-4 py-2 font-medium">${sale.product_name}</td>
+                            <td class="border border-gray-200 px-4 py-2">${sale.quantity}</td>
+                            <td class="border border-gray-200 px-4 py-2">₹${price.toFixed(2)}</td>
+                            <td class="border border-gray-200 px-4 py-2 font-medium">₹${sale.total_amount.toFixed(2)}</td>
+                            <td class="border border-gray-200 px-4 py-2">
+                                <button class="delete-sale text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors"
+                                        data-id="${saleId}">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    htmlContent += rowHtml;
+                });
+
+                console.log('✅ Generated HTML content for table');
+
+                if (tableBodyEl) {
+                    tableBodyEl.innerHTML = htmlContent;
+                    console.log('📝 Set table body innerHTML');
+                } else {
+                    console.error('❌ sales-ledger-table-body element not found');
+                }
+
+                if (totalAmountEl) {
+                    totalAmountEl.textContent = `₹${totalAmount.toFixed(2)}`;
+                    console.log('💰 Set total amount:', totalAmountEl.textContent);
+                } else {
+                    console.error('❌ sales-total-amount element not found');
+                }
+
+                console.log('✅ displayFilteredSalesData completed successfully');
+
+            } catch (error) {
+                console.error('❌ Error in displayFilteredSalesData:', error);
+                console.error('Stack trace:', error.stack);
+            }
         }
 
         function applySalesFilters() {
