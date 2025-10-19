@@ -1382,9 +1382,25 @@
         }
 
 function backToHome() {
-    Object.values(pages).forEach(page => page.classList.remove('active'));
-    pages.homes.classList.add('active');
-    backButton.classList.add('hidden');
+    console.log('🔄 backToHome called');
+    console.log('📄 Available pages:', Object.keys(pages));
+
+    // Remove active class from all pages (with null check)
+    Object.values(pages).forEach(page => {
+        if (page && page.classList) {
+            page.classList.remove('active');
+            console.log('🚫 Removed active from page:', page.id);
+        }
+    });
+
+    // Add active class to homes page (with null check)
+    if (pages.homes && pages.homes.classList) {
+        pages.homes.classList.add('active');
+        console.log('✅ Added active to homes page:', pages.homes.id);
+        backButton.classList.add('hidden');
+    } else {
+        console.error('❌ Homes page not found in pages object');
+    }
 }
 
         function loadPageData(pageName) {
