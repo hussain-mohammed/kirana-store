@@ -15,12 +15,27 @@
     <style>
         body {
             font-family: "Inter", sans-serif;
+            overflow-x: hidden;
         }
         .page {
             display: none;
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            min-height: 100vh;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
         }
         .page.active {
             display: block;
+            visibility: visible;
+            opacity: 1;
+            position: static;
+            z-index: 10;
+            pointer-events: auto;
         }
         /* Beautiful gradient backgrounds */
         .gradient-bg {
@@ -3143,8 +3158,51 @@
             }
         }
 
+        // ===== AUTHENTICATION CHECK =====
+        async function checkExistingAuthentication() {
+            const token = localStorage.getItem('authToken');
+            const storedUser = localStorage.getItem('currentUser');
+
+            if (token && storedUser) {
+                try {
+                    console.log('🔐 Checking existing authentication...');
+
+                    // Verify token with server
+                    const response = await fetch(`${backendURL}/auth/me`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'ngrok-skip-browser-warning': 'true'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const user = await response.json();
+                        console.log('✅ Token valid, user authenticated:', user.username);
+
+                        // Update stored user data and set global state
+                        localStorage.setItem('currentUser', JSON.stringify(user));
+                        currentUser = user;
+
+                        // Show authenticated state
+                        showUserControls(user);
+                        return true; // Authenticated
+                    } else {
+                        console.log('⚠️ Token invalid, clearing stored data');
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('currentUser');
+                    }
+                } catch (error) {
+                    console.error('❌ Error checking authentication:', error);
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('currentUser');
+                }
+            }
+            return false; // Not authenticated
+        }
+
         // ===== INITIALIZATION =====
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             try {
                 // Initialize pages
 pages = {
@@ -3167,15 +3225,31 @@ pages = {
                 // Set up event listeners
                 setupEventListeners();
 
-                // Show home page after a brief loading period
-                setTimeout(() => {
-                    const loadingPage = document.getElementById('page-loading');
-                    const homePage = document.getElementById('page-homes');
-                    if (loadingPage) loadingPage.classList.remove('active');
+                // Check authentication before showing any content
+                const isAuthenticated = await checkExistingAuthentication();
+
+                // Show appropriate page based on authentication status
+                const loginPage = document.getElementById('page-login');
+                const homePage = document.getElementById('page-homes');
+
+                if (isAuthenticated) {
+                    // User is authenticated - show main app
+                    console.log('👤 Showing authenticated main page');
+                    if (loginPage) loginPage.classList.remove('active');
                     if (homePage) homePage.classList.add('active');
-                }, 500);
+                } else {
+                    // User is not authenticated - show login page
+                    console.log('🔒 Showing login page');
+                    if (homePage) homePage.classList.remove('active');
+                    if (loginPage) loginPage.classList.add('active');
+                }
             } catch (error) {
                 console.error('Initialization error:', error);
+                // Fallback to login page on error
+                const loginPage = document.getElementById('page-login');
+                const homePage = document.getElementById('page-homes');
+                if (loginPage) loginPage.classList.add('active');
+                if (homePage) homePage.classList.remove('active');
             }
         });
 
