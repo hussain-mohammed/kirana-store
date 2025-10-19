@@ -516,11 +516,13 @@ origins = [
     "http://nonnitric-ably-candra.ngrok-free.dev",
     "https://*.ngrok-free.dev",
     "http://*.ngrok-free.dev",
-      "https://kirana-store-seven.vercel.app",  # Add your Vercel frontend
+    "https://kirana-store-seven.vercel.app",  # Add your Vercel frontend
     "https://*.vercel.app",
     "https://kirana-store-backend.onrender.com",
     "https://kirana-store-maoc.onrender.com",
     "https://kirana-store-docker.onrender.com",
+    "https://kirana-store-backend-production.up.railway.app",  # Add Railway production backend
+    "https://*.railway.app",  # Allow all Railway domains
     "*"
 ]
 
