@@ -2554,12 +2554,21 @@ function backToHome() {
                 loadingEl.classList.add('hidden');
                 contentEl.classList.remove('hidden');
 
-                // Force display styles as fallback
-                loadingEl.style.display = 'none';
-                errorEl.style.display = 'none';
-                contentEl.style.display = 'block';
+                // Force display styles as fallback with high specificity
+                loadingEl.style.display = 'none !important';
+                errorEl.style.display = 'none !important';
+                contentEl.style.display = 'block !important';
+                contentEl.style.visibility = 'visible !important';
+                contentEl.style.opacity = '1 !important';
 
-                console.log('✅ Sales ledger UI states set - content should be visible');
+                console.log('✅ Sales ledger UI states set - content forced visible');
+
+                // Force table visibility
+                const table = contentEl.querySelector('table');
+                if (table) {
+                    table.style.display = 'table !important';
+                    table.style.visibility = 'visible !important';
+                }
 
             } catch (error) {
                 console.error('❌ Error loading sales ledger:', error);
