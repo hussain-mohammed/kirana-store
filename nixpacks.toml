@@ -1,11 +1,23 @@
 [phases.setup]
-nixPkgs = ["python311", "python311Packages.pip"]
+nixPkgs = ["python311", "python311Packages.pip", "python311Packages.virtualenv", "postgresql", "libpqxx"]
 
 [phases.install]
-cmds = ["pip install --no-cache-dir --upgrade pip", "pip install --no-cache-dir -r requirements.txt"]
+cmds = [
+  "python -m venv /opt/venv",
+  "source /opt/venv/bin/activate && pip install --no-cache-dir --upgrade pip setuptools wheel",
+  "source /opt/venv/bin/activate && pip install --no-cache-dir -r requirements.txt"
+]
 
 [phases.build]
-cmds = ["chmod +x start.sh"]
+cmds = [
+  "chmod +x start.sh"
+]
 
 [start]
-cmd = "bash start.sh"
+cmd = "source /opt/venv/bin/activate && bash start.sh"
+
+# Environment variables
+[vars]
+USE_SQLITE = "false"
+PYTHONUNBUFFERED = "1"
+PYTHONDONTWRITEBYTECODE = "1"
