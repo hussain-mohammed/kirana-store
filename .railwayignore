@@ -60,6 +60,7 @@ vercel.json
 .vercelignore
 render.yaml
 railway.json
+nixpacks.toml
 
 # Keep scripts that are needed
 # But exclude descriptive/test files
