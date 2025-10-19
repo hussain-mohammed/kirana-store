@@ -51,3 +51,5 @@ SECRET_KEY_JWT=your-secret-key
 ## API Documentation
 
 Once deployed, visit `/docs` for interactive API documentation.
+
+## Update 10/19/2025
