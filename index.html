@@ -2532,12 +2532,9 @@ function backToHome() {
             try {
                 console.log('📊 Fetching sales ledger from:', `${backendURL}/ledger/sales`);
 
-                const response = await fetch(`${backendURL}/ledger/sales`, {
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true',
-                        'Content-Type': 'application/json'
-                    }
-                });
+        const response = await fetch(`${backendURL}/ledger/sales`, {
+            headers: getAuthHeaders()
+        });
 
                 console.log('📊 Sales response status:', response.status);
 
@@ -2668,10 +2665,7 @@ function backToHome() {
                 console.log('📊 Fetching purchase ledger from:', `${backendURL}/ledger/purchases`);
 
                 const response = await fetch(`${backendURL}/ledger/purchases`, {
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true',
-                        'Content-Type': 'application/json'
-                    }
+                    headers: getAuthHeaders()
                 });
 
                 console.log('📊 Purchase response status:', response.status);
@@ -2802,13 +2796,13 @@ function backToHome() {
             try {
                 const [salesResponse, purchasesResponse, productsResponse] = await Promise.all([
                     fetch(`${backendURL}/ledger/sales`, {
-                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                        headers: getAuthHeaders()
                     }),
                     fetch(`${backendURL}/ledger/purchases`, {
-                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                        headers: getAuthHeaders()
                     }),
                     fetch(`${backendURL}/products`, {
-                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                        headers: getAuthHeaders()
                     })
                 ]);
 
