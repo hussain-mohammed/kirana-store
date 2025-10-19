@@ -33,7 +33,7 @@ if USE_SQLITE:
     DATABASE_URL = "sqlite:///./kirana_store.db"
     print("📱 Using SQLite database for local development")
 else:
-    DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("\ufeffDATABASE_URL")
+    DATABASE_URL = os.getenv("DATABASE_URL")
     if not DATABASE_URL:
         print("❌ ERROR: DATABASE_URL not set in environment variables!")
         print("Please set your DATABASE_URL environment variable to connect to PostgreSQL")
