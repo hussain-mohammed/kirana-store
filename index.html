@@ -1336,9 +1336,24 @@
 
         // ===== NAVIGATION FUNCTIONS =====
         function showContentPage(pageName) {
-            Object.values(pages).forEach(page => page.classList.remove('active'));
-            pages[pageName].classList.add('active');
-            backButton.classList.remove('hidden');
+            // Remove active class from all pages (with null check)
+            Object.values(pages).forEach(page => {
+                if (page) page.classList.remove('active');
+            });
+
+            // Add active class to target page (with null check)
+            if (pages[pageName]) {
+                pages[pageName].classList.add('active');
+            } else {
+                console.error(`Page '${pageName}' not found in pages object`);
+                return;
+            }
+
+            // Show back button (with null check)
+            if (backButton) {
+                backButton.classList.remove('hidden');
+            }
+
             loadPageData(pageName);
         }
 
