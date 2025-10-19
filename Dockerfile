@@ -20,5 +20,5 @@ RUN chmod +x start.sh
 # Railway will set PORT automatically
 EXPOSE 8000
 
-# Start with the script
-CMD ["bash", "start.sh"]
+# Start with sh (Alpine doesn't have bash by default)
+CMD ["sh", "start.sh"]
