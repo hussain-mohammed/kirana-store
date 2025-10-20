@@ -17,6 +17,7 @@ import bcrypt
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from twilio.twiml.messaging_response import MessagingResponse
+from twilio.rest import Client
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -25,6 +26,38 @@ SECRET_KEY_JWT = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-product
 
 # Load environment variables from .env file for local development
 load_dotenv()
+
+# Twilio WhatsApp credentials
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_WHATSAPP_FROM = os.getenv("TWILIO_WHATSAPP_FROM")  # Should be like "whatsapp:+14155238886"
+
+# WhatsApp message sending function
+def send_whatsapp_message(to_number: str, message: str):
+    """Send WhatsApp message using Twilio API"""
+    try:
+        if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not TWILIO_WHATSAPP_FROM:
+            print(f"⚠️ WhatsApp credentials not configured - skipping message to {to_number}")
+            return False
+
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+        # Ensure phone number is in proper format
+        if not to_number.startswith('whatsapp:'):
+            to_number = f'whatsapp:+{to_number.lstrip("+")}'
+
+        message = client.messages.create(
+            from_=TWILIO_WHATSAPP_FROM,
+            to=to_number,
+            body=message
+        )
+
+        print(f"✅ WhatsApp message sent successfully to {to_number}")
+        return True
+
+    except Exception as e:
+        print(f"❌ Failed to send WhatsApp message: {e}")
+        return False
 
 # Use SQLite for local development, PostgreSQL for production
 USE_SQLITE = os.getenv("USE_SQLITE", "true").lower() == "true"
@@ -1008,17 +1041,45 @@ def process_whatsapp_order(order_request: WhatsAppOrderRequest, db: Session = De
         items_sold.append(item.product_name)
     
     db.commit()
-    
+
+    # Send WhatsApp confirmation message to customer
+    whatsapp_message = (
+        f"🎉 Order Confirmed!\n\n"
+        f"Hi {order_request.customer_name},\n\n"
+        f"Thank you for your order! Here are the details:\n\n"
+        f"🛒 Items Ordered:\n"
+    )
+
+    # Add item details with prices
+    item_details = []
+    for item in order_request.items:
+        product = db.query(Product).filter(Product.name.ilike(item.product_name)).first()
+        if product:
+            item_line = f"• {item.quantity}x {product.name} - ₹{product.selling_price * item.quantity:.2f}"
+            item_details.append(item_line)
+            whatsapp_message += item_line + "\n"
+        else:
+            item_details.append(f"• {item.quantity}x {item.product_name}")
+            whatsapp_message += f"• {item.quantity}x {item.product_name}\n"
+
+    whatsapp_message += f"\n💰 Total Amount: ₹{total_bill:.2f}\n\n"
+    whatsapp_message += "✅ Payment: Please confirm your payment method.\n"
+    whatsapp_message += "🚚 We will deliver your order soon!\n\n"
+    whatsapp_message += "*Thank you for shopping with Kirana Store!*"
+
+    # Send WhatsApp message
+    whatsapp_sent = send_whatsapp_message(order_request.phone_number, whatsapp_message)
+
     response_message = (
         f"Thank you, {order_request.customer_name}! Your order for {', '.join(items_sold)} "
-        f"has been placed. Your total bill is Rs. {total_bill:.2f}. "
-        "We will notify you once the payment is confirmed and the delivery is on its way."
+        f"has been placed. Total bill: Rs. {total_bill:.2f}. "
+        f"WhatsApp confirmation {'sent' if whatsapp_sent else 'failed to send'}."
     )
-    
-    print(f"Online order received from {order_request.customer_name} ({order_request.phone_number}). "
-          f"Total bill: Rs. {total_bill:.2f}")
 
-    return {"status": "success", "message": response_message, "total_bill": total_bill}
+    print(f"Online order received from {order_request.customer_name} ({order_request.phone_number}). "
+          f"Total bill: Rs. {total_bill:.2f}, WhatsApp: {'✅' if whatsapp_sent else '❌'}")
+
+    return {"status": "success", "message": response_message, "total_bill": total_bill, "whatsapp_sent": whatsapp_sent}
 
 # --- Dummy product data for SMS handler ---
 PRODUCTS_DB = {
