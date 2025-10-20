@@ -2277,6 +2277,57 @@ function backToHome() {
             }
         }
 
+        async function deletePurchase(purchaseId) {
+            // Input validation
+            if (!purchaseId || isNaN(parseInt(purchaseId))) {
+                showNotification("Invalid purchase ID!");
+                return;
+            }
+
+            purchaseId = parseInt(purchaseId);
+
+            if (!confirm("Are you sure you want to delete this purchase record? This will reduce the product stock by the purchased quantity. This action cannot be undone.")) {
+                return;
+            }
+
+            try {
+                const deleteURL = `${backendURL}/purchases/${purchaseId}`;
+
+                console.log(`🛒 Attempting to delete purchase from: ${deleteURL}`);
+
+                const response = await fetch(deleteURL, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                console.log(`📊 Delete response status: ${response.status}`);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Purchase deleted successfully:', result);
+                    showNotification(result.message || `Purchase record deleted successfully!`);
+
+                    // Refresh the purchase ledger
+                    loadPurchaseLedger();
+                } else {
+                    let errorMessage = `Failed to delete purchase: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.detail) {
+                            errorMessage = errorData.detail;
+                        }
+                    } catch (e) {
+                        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+            } catch (error) {
+                console.error('Error deleting purchase:', error);
+                showNotification(`❌ Error deleting purchase: ${error.message}`);
+            }
+        }
+
         // ===== ALL PRODUCTS STOCK LEDGER FUNCTIONS =====
         async function loadAllProductsLedger() {
             const loadingEl = document.getElementById('all-products-ledger-loading');
@@ -3413,7 +3464,7 @@ page = pages.homes; // Alias for backward compatibility
                 // Delete purchase buttons
                 if (e.target && e.target.classList.contains('delete-purchase')) {
                     const purchaseId = e.target.getAttribute('data-id');
-                    showNotification(`Purchase deletion would be implemented for ID: ${purchaseId}`);
+                    deletePurchase(purchaseId);
                 }
             });
 
