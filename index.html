@@ -2941,15 +2941,26 @@ function backToHome() {
             const overallStatusEl = document.getElementById('overall-status');
 
             try {
-                // This is a simplified version - you would need to implement the actual profit/loss calculation
-                // based on your business logic and available API endpoints
-                
                 let totalSales = 0;
                 let totalPurchases = 0;
-                
-                salesData.forEach(sale => totalSales += sale.total_amount || 0);
-                purchasesData.forEach(purchase => totalPurchases += purchase.total_cost || 0);
-                
+
+                // Filter data by date range if specified
+                let filteredSales = salesData;
+                let filteredPurchases = purchasesData;
+
+                if (dateFrom) {
+                    filteredSales = filteredSales.filter(sale => new Date(sale.date).toISOString().split('T')[0] >= dateFrom);
+                    filteredPurchases = filteredPurchases.filter(purchase => new Date(purchase.date).toISOString().split('T')[0] >= dateFrom);
+                }
+
+                if (dateTo) {
+                    filteredSales = filteredSales.filter(sale => new Date(sale.date).toISOString().split('T')[0] <= dateTo);
+                    filteredPurchases = filteredPurchases.filter(purchase => new Date(purchase.date).toISOString().split('T')[0] <= dateTo);
+                }
+
+                filteredSales.forEach(sale => totalSales += sale.total_amount || 0);
+                filteredPurchases.forEach(purchase => totalPurchases += purchase.total_cost || 0);
+
                 const grossProfit = totalSales - totalPurchases;
                 const profitMargin = totalSales > 0 ? (grossProfit / totalSales) * 100 : 0;
 
@@ -2979,12 +2990,65 @@ function backToHome() {
                     </div>
                 `;
 
-                // Simple product-wise breakdown (you would need to implement the actual calculation)
+                // Calculate opening and closing stock values
+                let openingStockData = productsData;
+                let closingStockData = productsData;
+
+                // Fetch opening stock as of date_from if specified
+                if (dateFrom && dateFrom.trim() !== '') {
+                    try {
+                        const openingParams = new URLSearchParams();
+                        openingParams.append('date_to', dateFrom);
+
+                        const openingResponse = await fetch(`${backendURL}/products/stock-snapshot?${openingParams.toString()}`, {
+                            headers: getAuthHeaders()
+                        });
+
+                        if (openingResponse.ok) {
+                            openingStockData = await openingResponse.json();
+                        } else {
+                            console.warn('Could not fetch opening stock data, using current data');
+                        }
+                    } catch (error) {
+                        console.warn('Error fetching opening stock data:', error);
+                    }
+                }
+
+                // Fetch closing stock as of date_to if specified
+                if (dateTo && dateTo.trim() !== '') {
+                    try {
+                        const closingParams = new URLSearchParams();
+                        closingParams.append('date_to', dateTo);
+
+                        const closingResponse = await fetch(`${backendURL}/products/stock-snapshot?${closingParams.toString()}`, {
+                            headers: getAuthHeaders()
+                        });
+
+                        if (closingResponse.ok) {
+                            closingStockData = await closingResponse.json();
+                        } else {
+                            console.warn('Could not fetch closing stock data, using current data');
+                        }
+                    } catch (error) {
+                        console.warn('Error fetching closing stock data:', error);
+                    }
+                }
+
+                // Product-wise breakdown
                 tableBodyEl.innerHTML = productsData.map(product => {
-                    const productSales = salesData.filter(s => s.product_id === product.id)
+                    const productSales = filteredSales.filter(s => s.product_id === product.id)
                         .reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
-                    const productPurchases = purchasesData.filter(p => p.product_id === product.id)
+                    const productPurchases = filteredPurchases.filter(p => p.product_id === product.id)
                         .reduce((sum, purchase) => sum + (purchase.total_cost || 0), 0);
+
+                    // Find opening stock for this product
+                    const openingProduct = openingStockData.find(p => p.id === product.id);
+                    const openingStockValue = openingProduct ? (openingProduct.stock || 0) * (product.purchase_price || 0) : (product.stock || 0) * (product.purchase_price || 0);
+
+                    // Find closing stock for this product
+                    const closingProduct = closingStockData.find(p => p.id === product.id);
+                    const closingStockValue = closingProduct ? (closingProduct.stock || 0) * (product.purchase_price || 0) : (product.stock || 0) * (product.purchase_price || 0);
+
                     const productProfit = productSales - productPurchases;
                     const productMargin = productSales > 0 ? (productProfit / productSales) * 100 : 0;
 
@@ -2994,16 +3058,51 @@ function backToHome() {
                     return `
                         <tr class="hover:bg-gray-50">
                             <td class="border border-gray-200 px-4 py-2 font-medium">${product.name}</td>
-                            <td class="border border-gray-200 px-4 py-2">-</td>
-                            <td class="border border-gray-200 px-4 py-2 text-gray-600">-</td>
+                            <td class="border border-gray-200 px-4 py-2 text-center text-gray-600">${(filteredSales.filter(s => s.product_id === product.id).reduce((sum, sale) => sum + (sale.quantity || 0), 0)) || 0}</td>
+                            <td class="border border-gray-200 px-4 py-2 text-gray-600">₹${openingStockValue.toFixed(2)}</td>
                             <td class="border border-gray-200 px-4 py-2 text-blue-600">₹${productPurchases.toFixed(2)}</td>
                             <td class="border border-gray-200 px-4 py-2 text-green-600">₹${productSales.toFixed(2)}</td>
-                            <td class="border border-gray-200 px-4 py-2 text-purple-600">-</td>
+                            <td class="border border-gray-200 px-4 py-2 text-purple-600">₹${closingStockValue.toFixed(2)}</td>
                             <td class="border border-gray-200 px-4 py-2 font-medium ${profitClass}">₹${productProfit.toFixed(2)}</td>
                             <td class="border border-gray-200 px-4 py-2 font-medium ${marginClass}">${productMargin.toFixed(2)}%</td>
                         </tr>
                     `;
                 }).join('') || '<tr><td colspan="8" class="border border-gray-200 px-4 py-4 text-center text-gray-500">No transaction data found for the selected period</td></tr>';
+
+                // Update footer totals
+                let totalOpeningStock = 0;
+                let totalPurchasesFooter = 0;
+                let totalSalesFooter = 0;
+                let totalClosingStock = 0;
+                let totalProfit = 0;
+
+                productsData.forEach(product => {
+                    const openingProduct = openingStockData.find(p => p.id === product.id);
+                    const openingValue = openingProduct ? (openingProduct.stock || 0) * (product.purchase_price || 0) : (product.stock || 0) * (product.purchase_price || 0);
+
+                    const closingProduct = closingStockData.find(p => p.id === product.id);
+                    const closingValue = closingProduct ? (closingProduct.stock || 0) * (product.purchase_price || 0) : (product.stock || 0) * (product.purchase_price || 0);
+
+                    const productSales = filteredSales.filter(s => s.product_id === product.id)
+                        .reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+                    const productPurchases = filteredPurchases.filter(p => p.product_id === product.id)
+                        .reduce((sum, purchase) => sum + (purchase.total_cost || 0), 0);
+
+                    totalOpeningStock += openingValue;
+                    totalPurchasesFooter += productPurchases;
+                    totalSalesFooter += productSales;
+                    totalClosingStock += closingValue;
+                    totalProfit += (productSales - productPurchases);
+                });
+
+                const totalProfitMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+
+                document.getElementById('total-opening-stock-footer').textContent = `₹${totalOpeningStock.toFixed(2)}`;
+                document.getElementById('total-purchases-footer').textContent = `₹${totalPurchases.toFixed(2)}`;
+                document.getElementById('total-sales-footer').textContent = `₹${totalSales.toFixed(2)}`;
+                document.getElementById('total-closing-stock-footer').textContent = `₹${totalClosingStock.toFixed(2)}`;
+                document.getElementById('total-profit-footer').textContent = `₹${totalProfit.toFixed(2)}`;
+                document.getElementById('total-margin-footer').textContent = `${totalProfitMargin.toFixed(2)}%`;
 
             } catch (error) {
                 console.error('Error calculating profit/loss:', error);
