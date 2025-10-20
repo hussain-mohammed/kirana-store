@@ -3758,18 +3758,201 @@ function backToHome() {
             contentEl.classList.add('hidden');
 
             try {
-                // In a real app, this would be a separate API endpoint for getting all users
-                // For now, we'll simulate with what we have
-                showNotification('📝 User editing feature coming soon');
+                // Fetch users from API
+                const response = await fetch(`${backendURL}/users`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Failed to fetch users';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorData.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const usersList = await response.json();
+                console.log('👥 Fetched users for editing:', usersList);
+
+                displayUsersForEditing(usersList);
 
                 loadingEl.classList.add('hidden');
                 contentEl.classList.remove('hidden');
+
+                showNotification('✅ Edit user permissions loaded');
 
             } catch (error) {
                 console.error('Error loading users for editing:', error);
                 loadingEl.classList.add('hidden');
                 errorEl.classList.remove('hidden');
                 errorEl.innerHTML = `<p class="text-red-500">Error loading users: ${error.message}</p>`;
+            }
+        }
+
+        function displayUsersForEditing(users) {
+            const listEl = document.getElementById('edit-users-list');
+
+            if (users.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-4 text-gray-500">
+                        No users found
+                    </div>
+                `;
+                return;
+            }
+
+            // Define all permission features with their display names
+            const permissionFeatures = {
+                sales: 'Sales',
+                purchase: 'Purchase',
+                create_product: 'Create Product',
+                delete_product: 'Delete Product',
+                sales_ledger: 'Sales Ledger',
+                purchase_ledger: 'Purchase Ledger',
+                stock_ledger: 'Stock Ledger',
+                profit_loss: 'Profit & Loss',
+                opening_stock: 'Opening Stock',
+                user_management: 'User Management'
+            };
+
+            listEl.innerHTML = users.map(user => {
+                // Get user's current permissions, defaulting to empty array if not available
+                const userPermissions = user.permissions || [];
+
+                // Create permission checkboxes HTML
+                const permissionsHtml = Object.entries(permissionFeatures).map(([key, displayName]) => {
+                    const isChecked = userPermissions.includes(key);
+                    return `
+                        <label class="flex items-center">
+                            <input type="checkbox"
+                                   class="permission-checkbox mr-2"
+                                   data-user-id="${user.id}"
+                                   data-permission="${key}"
+                                   ${isChecked ? 'checked' : ''}>
+                            <span class="text-sm">${displayName}</span>
+                        </label>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h5 class="font-medium text-lg">${user.username}</h5>
+                                <p class="text-sm text-gray-600">User ID: ${user.id}</p>
+                                <p class="text-xs text-gray-500">Status: ${user.is_active ? 'Active' : 'Inactive'}</p>
+                            </div>
+                            <button class="toggle-permissions-btn bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
+                                    data-user-id="${user.id}">
+                                Edit Permissions
+                            </button>
+                        </div>
+
+                        <!-- Permissions Section - Initially Hidden -->
+                        <div id="permissions-${user.id}" class="permissions-section hidden border-t pt-3">
+                            <h6 class="text-sm font-medium text-gray-700 mb-2">Set Permissions:</h6>
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                                ${permissionsHtml}
+                            </div>
+                            <div class="mt-3 flex gap-2">
+                                <button class="save-permissions-btn bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm"
+                                        data-user-id="${user.id}">
+                                    💾 Save
+                                </button>
+                                <button class="cancel-permissions-btn bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 text-sm"
+                                        data-user-id="${user.id}">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Event handling for permission editing
+        document.addEventListener('click', function(e) {
+            // Toggle permissions dropdown
+            if (e.target && e.target.classList.contains('toggle-permissions-btn')) {
+                const userId = e.target.getAttribute('data-user-id');
+                const permissionsSection = document.getElementById(`permissions-${userId}`);
+                const isHidden = permissionsSection.classList.contains('hidden');
+
+                // Hide all permission sections first
+                document.querySelectorAll('.permissions-section').forEach(section => {
+                    section.classList.add('hidden');
+                });
+
+                // Show/hide the clicked one
+                if (isHidden) {
+                    permissionsSection.classList.remove('hidden');
+                }
+            }
+
+            // Cancel permissions editing
+            if (e.target && e.target.classList.contains('cancel-permissions-btn')) {
+                const userId = e.target.getAttribute('data-user-id');
+                const permissionsSection = document.getElementById(`permissions-${userId}`);
+                permissionsSection.classList.add('hidden');
+            }
+
+            // Save permissions
+            if (e.target && e.target.classList.contains('save-permissions-btn')) {
+                const userId = e.target.getAttribute('data-user-id');
+                saveUserPermissions(userId);
+
+                // Hide the permissions section after saving
+                const permissionsSection = document.getElementById(`permissions-${userId}`);
+                permissionsSection.classList.add('hidden');
+            }
+        });
+
+        async function saveUserPermissions(userId) {
+            console.log('💾 Saving permissions for user:', userId);
+
+            // Collect all checkboxes for this user
+            const checkboxes = document.querySelectorAll(`.permission-checkbox[data-user-id="${userId}"]`);
+            const permissions = {};
+
+            checkboxes.forEach(checkbox => {
+                const permission = checkbox.getAttribute('data-permission');
+                permissions[permission] = checkbox.checked;
+            });
+
+            console.log('🔧 Permissions to save:', permissions);
+
+            try {
+                const response = await fetch(`${backendURL}/users/${userId}`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(permissions)
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Failed to update user permissions';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorData.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const updatedUser = await response.json();
+                console.log('✅ User permissions updated:', updatedUser);
+
+                showNotification(`✅ Permissions updated successfully for ${updatedUser.username}!`);
+
+                // Reload the edit users section to reflect changes
+                loadEditUsersSection();
+
+            } catch (error) {
+                console.error('❌ Error saving permissions:', error);
+                showNotification(`❌ Failed to update permissions: ${error.message}`);
             }
         }
 
