@@ -277,76 +277,17 @@
     <!-- ===== LANDING PAGE ===== -->
     <div id="page-homes" class="page gradient-bg">
         <main class="w-full max-w-6xl mx-auto p-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button onclick="showContentPage('sales')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">🛍️ Sales</div>
-                        <p class="text-blue-100">Sell products to customers and process orders</p>
-                    </div>
-                </button>
-                
-                <button onclick="showContentPage('purchase')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">📦 Purchase</div>
-                        <p class="text-green-100">Record product purchases from suppliers</p>
-                    </div>
-                </button>
-                
-                <button onclick="showContentPage('create')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">➕ Create Product</div>
-                        <p class="text-purple-100">Add new products to your store inventory</p>
-                    </div>
-                </button>
+            <div id="main-page-buttons" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Buttons will be dynamically generated based on permissions -->
+            </div>
 
-                <button onclick="showContentPage('delete-product')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">🗑️ Delete Product</div>
-                        <p class="text-red-100">Remove products from your store inventory</p>
-                    </div>
-                </button>
-
-                <button onclick="showContentPage('all-products-ledger')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">📋 All Products Stock</div>
-                        <p class="text-teal-100">View complete stock details with filters</p>
-                    </div>
-                </button>
-
-                <button onclick="showContentPage('sales-ledger')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">📋 Sales Ledger</div>
-                        <p class="text-red-100">View and manage all sales records</p>
-                    </div>
-                </button>
-
-                <button onclick="showContentPage('purchase-ledger')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">📋 Purchase Ledger</div>
-                        <p class="text-indigo-100">View and manage all purchase records</p>
-                    </div>
-                </button>
-
-                <button onclick="showContentPage('profit-loss')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">💰 Profit & Loss</div>
-                        <p class="text-emerald-100">View shop profit and loss analysis with date filters</p>
-                    </div>
-                </button>
-
-                <button onclick="showContentPage('opening-stock')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">📊 Opening Stock</div>
-                        <p class="text-yellow-100">View opening stock register with all created products</p>
-                    </div>
-                </button>
-
-                <button onclick="showContentPage('settings')" class="w-full p-6 glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20">
-                    <div class="text-left">
-                        <div class="text-xl font-bold mb-2">⚙️ Settings</div>
-                        <p class="text-purple-100">Manage users and their permissions</p>
-                    </div>
-                </button>
+            <!-- Fallback message if no permissions -->
+            <div id="no-permissions-message" class="hidden text-center py-12">
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-8 max-w-md mx-auto">
+                    <div class="text-6xl mb-4">🔒</div>
+                    <h3 class="text-xl font-semibold text-yellow-800 mb-2">Access Limited</h3>
+                    <p class="text-yellow-700">Your account doesn't have permissions to access any features. Please contact an administrator.</p>
+                </div>
             </div>
         </main>
     </div>
@@ -1282,6 +1223,9 @@
                     // Show user controls in header
                     showUserControls(result.user);
 
+                    // Load home page buttons based on user permissions
+                    loadHomePageButtons();
+
                 } else {
                     let errorMessage = 'Login failed';
                     try {
@@ -1520,6 +1464,9 @@ function backToHome() {
         pages.homes.classList.add('active');
         console.log('✅ Added active to homes page:', pages.homes.id);
         backButton.classList.add('hidden');
+
+        // Load home page buttons based on user permissions
+        loadHomePageButtons();
     } else {
         console.error('❌ Homes page not found in pages object');
     }
@@ -4061,6 +4008,132 @@ function backToHome() {
         }
 
         // Update loadPageData to include settings
+        function loadHomePageButtons() {
+            const buttonsContainer = document.getElementById('main-page-buttons');
+            const noPermissionsMessage = document.getElementById('no-permissions-message');
+
+            if (!currentUser || !currentUser.permissions || !Array.isArray(currentUser.permissions)) {
+                console.error('❌ No user permissions available');
+                showNoPermissionsMessage();
+                return;
+            }
+
+            const userPermissions = currentUser.permissions;
+
+            // Define button configurations with permission mapping
+            const buttonConfigs = [
+                {
+                    permission: 'sales',
+                    page: 'sales',
+                    icon: '🛍️',
+                    title: 'Sales',
+                    description: 'Sell products to customers and process orders',
+                    bgClass: 'glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20'
+                },
+                {
+                    permission: 'purchase',
+                    page: 'purchase',
+                    icon: '📦',
+                    title: 'Purchase',
+                    description: 'Record product purchases from suppliers',
+                    bgClass: 'glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20'
+                },
+                {
+                    permission: 'create_product',
+                    page: 'create',
+                    icon: '➕',
+                    title: 'Create Product',
+                    description: 'Add new products to your store inventory',
+                    bgClass: 'glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20'
+                },
+                {
+                    permission: 'delete_product',
+                    page: 'delete-product',
+                    icon: '🗑️',
+                    title: 'Delete Product',
+                    description: 'Remove products from your store inventory',
+                    bgClass: 'glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20'
+                },
+                {
+                    permission: 'stock_ledger',
+                    page: 'all-products-ledger',
+                    icon: '📋',
+                    title: 'All Products Stock',
+                    description: 'View complete stock details with filters',
+                    bgClass: 'glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20'
+                },
+                {
+                    permission: 'sales_ledger',
+                    page: 'sales-ledger',
+                    icon: '📋',
+                    title: 'Sales Ledger',
+                    description: 'View and manage all sales records',
+                    bgClass: 'glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20'
+                },
+                {
+                    permission: 'purchase_ledger',
+                    page: 'purchase-ledger',
+                    icon: '📋',
+                    title: 'Purchase Ledger',
+                    description: 'View and manage all purchase records',
+                    bgClass: 'glass-effect text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20'
+                },
+                {
+                    permission: 'profit_loss',
+                    page: 'profit-loss',
+                    icon: '💰',
+                    title: 'Profit & Loss',
+                    description: 'View shop profit and loss analysis with date filters',
+                    bgClass: 'text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20',
+                    customBg: 'style="background: linear-gradient(rgba(16, 185, 129, 0.85), rgba(245, 158, 11, 0.438));"'
+                },
+                {
+                    permission: 'opening_stock',
+                    page: 'opening-stock',
+                    icon: '📊',
+                    title: 'Opening Stock',
+                    description: 'View opening stock register with all created products',
+                    bgClass: 'text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20',
+                    customBg: 'style="background: linear-gradient(rgba(255, 193, 7, 0.85), rgba(255, 152, 0, 0.438));"'
+                },
+                {
+                    permission: 'user_management',
+                    page: 'settings',
+                    icon: '⚙️',
+                    title: 'Settings',
+                    description: 'Manage users and their permissions',
+                    bgClass: 'text-white rounded-xl shadow-lg card-hover border border-white border-opacity-20',
+                    customBg: 'style="background: linear-gradient(rgba(147, 51, 234, 0.85), rgba(59, 130, 246, 0.438));"'
+                }
+            ];
+
+            // Filter buttons based on user permissions
+            const allowedButtons = buttonConfigs.filter(config => userPermissions.includes(config.permission));
+
+            // Generate HTML for allowed buttons
+            if (allowedButtons.length === 0) {
+                showNoPermissionsMessage();
+                return;
+            }
+
+            const buttonsHtml = allowedButtons.map(config => `
+                <button onclick="showContentPage('${config.page}')" class="w-full p-6 ${config.bgClass}" ${config.customBg || ''}>
+                    <div class="text-left">
+                        <div class="text-xl font-bold mb-2">${config.icon} ${config.title}</div>
+                        <p class="${config.icon === '💰' || config.icon === '📊' || config.icon === '⚙️' ? 'text-blue-100' : 'text-blue-100'}">${config.description}</p>
+                    </div>
+                </button>
+            `).join('');
+
+            buttonsContainer.innerHTML = buttonsHtml;
+            noPermissionsMessage.classList.add('hidden');
+        }
+
+        function showNoPermissionsMessage() {
+            document.getElementById('main-page-buttons').innerHTML = '';
+            document.getElementById('no-permissions-message').classList.remove('hidden');
+        }
+
         function loadPageData(pageName) {
             switch(pageName) {
                 case 'sales':
