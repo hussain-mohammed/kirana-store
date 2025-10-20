@@ -3288,19 +3288,18 @@ function backToHome() {
             contentEl.classList.add('hidden');
 
             try {
-                const response = await fetch(`${backendURL}/products`, {
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true'
-                    }
+                // Use the dedicated opening stock register endpoint
+                const response = await fetch(`${backendURL}/opening-stock-register`, {
+                    headers: getAuthHeaders()
                 });
 
-                if (!response.ok) throw new Error('Failed to fetch products');
+                if (!response.ok) throw new Error('Failed to fetch opening stock register');
 
                 const products = await response.json();
-                console.log('📦 Products received:', products);
+                console.log('📦 Opening stock register received:', products);
 
                 if (!Array.isArray(products) || products.length === 0) {
-                    throw new Error('No products found');
+                    throw new Error('No products found in opening stock register');
                 }
 
                 displayOpeningStockData(products);
@@ -3312,7 +3311,7 @@ function backToHome() {
                 console.error('Error loading opening stock data:', error);
                 loadingEl.classList.add('hidden');
                 errorEl.classList.remove('hidden');
-                errorEl.innerHTML = `<p class="text-red-500">Error loading opening stock data: ${error.message}</p>`;
+                errorEl.innerHTML = `<p class="text-red-500">Error loading opening stock register: ${error.message}</p>`;
             }
         }
 

@@ -138,7 +138,8 @@ class Product(Base):
     purchase_price = Column(Float, nullable=False)  # Cost price when buying from supplier
     selling_price = Column(Float, nullable=False)   # Selling price to customers
     unit_type = Column(String, nullable=False)      # Unit type: kgs, ltr, or pcs
-    stock = Column(Integer, default=0)
+    stock = Column(Float, default=0)                # Current stock level (changes with sales/purchases)
+    initial_stock = Column(Float, default=0)        # Initial stock when product was created (immutable)
     created_at = Column(DateTime, default=lambda: datetime.now(IST))
 
 class Sale(Base):
@@ -588,7 +589,10 @@ async def get_products(db: Session = Depends(get_db)):
 @app.post("/products/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_product(product: ProductCreate, db: Session = Depends(get_db), username: str = Depends(verify_token)):
     check_permission(Permission.CREATE_PRODUCT, db, username)
-    db_product = Product(**product.dict())
+    # Create product with both current stock and initial stock set to the provided stock value
+    product_data = product.dict()
+    product_data['initial_stock'] = product.stock  # Set initial stock to the created stock amount
+    db_product = Product(**product_data)
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
@@ -596,7 +600,18 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db), userna
 
 # 2. ADD THE STOCK-SNAPSHOT ENDPOINT HERE (BEFORE THE DYNAMIC ROUTE)
 # --- API Endpoint for Opening Stock Register ---
-@app.get("/opening-stock-register", response_model=List[ProductResponse])
+# Custom model for opening stock register response
+class OpeningStockResponse(BaseModel):
+    id: int
+    name: str
+    purchase_price: float
+    selling_price: float
+    unit_type: str
+    initial_stock: int  # The actual initial stock quantity
+    stock_value: float  # Pre-calculated stock value using purchase_price
+    created_at: datetime
+
+@app.get("/opening-stock-register", response_model=List[OpeningStockResponse])
 def get_opening_stock_register(db: Session = Depends(get_db)):
     """
     Get opening stock register showing all products with their creation dates and initial stock values.
@@ -607,21 +622,10 @@ def get_opening_stock_register(db: Session = Depends(get_db)):
 
         opening_stock_data = []
         for product in products:
-            # Calculate what the opening stock should be by looking at all transactions
-            # Opening Stock = Current Stock + Total Sales - Total Purchases
-            # This gives us the stock level when the product was first created
-
-            # Get all purchases for this product
-            purchases = db.query(Purchase).filter(Purchase.product_id == product.id).all()
-            total_purchases = sum(p.quantity for p in purchases)
-
-            # Get all sales for this product
-            sales = db.query(Sale).filter(Sale.product_id == product.id).all()
-            total_sales = sum(s.quantity for s in sales)
-
-            # Calculate opening stock: Current Stock + Total Sales - Total Purchases
-            # This represents the stock level when the product was first created
-            initial_stock = product.stock + total_sales - total_purchases
+            # Use initial_stock directly for opening stock display
+            initial_stock = max(0, product.initial_stock)  # Ensure non-negative
+            # Pre-calculate stock value using current purchase price
+            stock_value = initial_stock * product.purchase_price
 
             opening_stock_data.append({
                 "id": product.id,
@@ -629,7 +633,8 @@ def get_opening_stock_register(db: Session = Depends(get_db)):
                 "purchase_price": product.purchase_price,
                 "selling_price": product.selling_price,
                 "unit_type": product.unit_type,
-                "stock": max(0, initial_stock),  # Ensure non-negative opening stock
+                "initial_stock": initial_stock,
+                "stock_value": stock_value,
                 "created_at": product.created_at
             })
 
