@@ -442,28 +442,17 @@ async def lifespan(app: FastAPI):
 
                     print("✅ Database schema updated successfully")
 
-                    # Fix initial_stock for existing products
-                    # Opening stock = total purchases quantity OR initial product stock if no purchases recorded
+                    # Fix initial_stock for existing products - SIMPLY use current stock value
+                    # Opening stock = whatever the product's current stock column contains
                     products_to_fix = db.query(Product).filter(Product.initial_stock <= 0).all()
                     if products_to_fix:
-                        print(f"📝 Fixing initial_stock for {len(products_to_fix)} existing products...")
+                        print(f"📝 Setting initial_stock = current stock for {len(products_to_fix)} existing products...")
                         for product in products_to_fix:
-                            # Opening stock = sum of all purchase quantities for this product
-                            all_purchases = db.query(Purchase).filter(Purchase.product_id == product.id).all()
-                            total_purchased = sum(p.quantity for p in all_purchases)
-
-                            if total_purchased > 0:
-                                # If purchases exist, use total purchased as opening stock
-                                opening_stock = total_purchased
-                            else:
-                                # If no purchases, use the current stock (products were likely created with initial stock)
-                                opening_stock = product.stock
-
-                            product.initial_stock = opening_stock
-                            print(f"  Fixed {product.name}: total_purchases={total_purchased}, current_stock={product.stock}, opening_stock={opening_stock}")
+                            product.initial_stock = product.stock
+                            print(f"  Set {product.name}: current_stock={product.stock}, initial_stock={product.stock}")
 
                         db.commit()
-                        print(f"✅ Fixed initial_stock values for {len(products_to_fix)} products.")
+                        print(f"✅ Set initial_stock values for {len(products_to_fix)} products.")
 
                     # Check if we need sample data
                     product_count = db.query(Product).count()
