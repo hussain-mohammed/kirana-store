@@ -697,6 +697,42 @@ def get_opening_stock_register(db: Session = Depends(get_db)):
         print(f"❌ Error generating opening stock register: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating opening stock register: {str(e)}")
 
+# Debug endpoint to check initial_stock calculations
+@app.get("/debug/initial-stock/{product_id}")
+def debug_initial_stock(product_id: int, db: Session = Depends(get_db)):
+    """
+    Debug endpoint to check what would be calculated for initial_stock for a product
+    """
+    try:
+        product = db.query(Product).filter(Product.id == product_id).first()
+        if not product:
+            return {"error": "Product not found"}
+
+        # Get all sales and purchases for this product
+        all_purchases = db.query(Purchase).filter(Purchase.product_id == product_id).all()
+        all_sales = db.query(Sale).filter(Sale.product_id == product_id).all()
+
+        total_purchases = sum(p.quantity for p in all_purchases)
+        total_sales = sum(s.quantity for s in all_sales)
+
+        calculated_opening_stock = product.stock + total_sales - total_purchases
+        calculated_opening_stock = max(0, calculated_opening_stock)
+
+        return {
+            "product_id": product.id,
+            "product_name": product.name,
+            "current_stock": product.stock,
+            "current_initial_stock_field": product.initial_stock,
+            "total_sales": total_sales,
+            "total_purchases": total_purchases,
+            "calculated_opening_stock": calculated_opening_stock,
+            "sales_records": [{"id": s.id, "quantity": s.quantity, "date": s.sale_date} for s in all_sales],
+            "purchase_records": [{"id": p.id, "quantity": p.quantity, "date": p.purchase_date} for p in all_purchases]
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/products/stock-snapshot", response_model=List[ProductStockSnapshot])
 def get_products_stock_snapshot(
     date_from: Optional[str] = None,
