@@ -373,14 +373,6 @@ async def lifespan(app: FastAPI):
                 # Try to access the new columns to see if they exist
                 db.query(Product.purchase_price, Product.selling_price, Product.unit_type).first()
                 print("✅ New database schema detected")
-
-                product_count = db.query(Product).count()
-                if product_count == 0:
-                    print("No products found in database. You can create products through the web interface.")
-                    print("To add sample products, use the 'Create Product' page in the application.")
-                else:
-                    print(f"Database already contains {product_count} products.")
-
             except Exception as column_error:
                 print(f"⚠️ Schema mismatch detected: {column_error}")
                 print("🔄 Attempting to update database schema...")
@@ -409,54 +401,6 @@ async def lifespan(app: FastAPI):
 
                     print("✅ Database schema updated successfully")
 
-                    # Check if we need sample data
-                    product_count = db.query(Product).count()
-                    if product_count == 0:
-                        # Create default admin user if no users exist
-                        user_count = db.query(User).count()
-                        if user_count == 0:
-                            default_password = "admin123"
-                            hashed_password = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt())
-
-                            default_admin = User(
-                                username="raza123",
-                                email="admin@kirana.store",
-                                password_hash=hashed_password.decode('utf-8'),
-                                # New permission system - give all permissions to default admin
-                                sales=True,
-                                purchase=True,
-                                create_product=True,
-                                delete_product=True,
-                                sales_ledger=True,
-                                purchase_ledger=True,
-                                stock_ledger=True,
-                                profit_loss=True,
-                                opening_stock=True,
-                                user_management=True,
-                                is_active=True
-                            )
-                            db.add(default_admin)
-                            db.commit()
-                            print(f"✅ Default admin user created: username=raza123, password={default_password}")
-                            print("⚠️  PLEASE CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
-
-                        print("Seeding database with sample products...")
-                        sample_products = [
-                            Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
-                            Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
-                            Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
-                            Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
-                            Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
-                            Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
-                            Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
-                            Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
-                        ]
-                        db.add_all(sample_products)
-                        db.commit()
-                        print("✅ Sample products added to database.")
-                    else:
-                        print(f"Database already contains {product_count} products.")
-
                 except Exception as update_error:
                     print(f"❌ Failed to update schema: {update_error}")
                     print("🔄 Falling back to table recreation method...")
@@ -467,24 +411,45 @@ async def lifespan(app: FastAPI):
                         Base.metadata.create_all(bind=engine)
                         print("✅ Database schema recreated successfully")
 
-                        # Now add sample data
-                        sample_products = [
-                            Product(name="Apple", purchase_price=80.00, selling_price=100.00, unit_type="kgs", stock=50),
-                            Product(name="Banana", purchase_price=40.00, selling_price=50.00, unit_type="kgs", stock=30),
-                            Product(name="Orange", purchase_price=60.00, selling_price=80.00, unit_type="kgs", stock=25),
-                            Product(name="Milk", purchase_price=50.00, selling_price=65.00, unit_type="ltr", stock=20),
-                            Product(name="Bread", purchase_price=30.00, selling_price=40.00, unit_type="pcs", stock=15),
-                            Product(name="Eggs", purchase_price=70.00, selling_price=90.00, unit_type="pcs", stock=40),
-                            Product(name="Rice", purchase_price=100.00, selling_price=120.00, unit_type="kgs", stock=60),
-                            Product(name="Sugar", purchase_price=45.00, selling_price=55.00, unit_type="kgs", stock=35),
-                        ]
-                        db.add_all(sample_products)
-                        db.commit()
-                        print("✅ Sample products added to database.")
-
                     except Exception as final_error:
                         print(f"❌ Failed to recreate schema: {final_error}")
                         print("Please check your DATABASE_URL and ensure the database is accessible")
+
+            # Check if we need to create default admin user
+            user_count = db.query(User).count()
+            if user_count == 0:
+                default_password = "admin123"
+                hashed_password = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt())
+
+                default_admin = User(
+                    username="raza123",
+                    email="admin@kirana.store",
+                    password_hash=hashed_password.decode('utf-8'),
+                    # New permission system - give all permissions to default admin
+                    sales=True,
+                    purchase=True,
+                    create_product=True,
+                    delete_product=True,
+                    sales_ledger=True,
+                    purchase_ledger=True,
+                    stock_ledger=True,
+                    profit_loss=True,
+                    opening_stock=True,
+                    user_management=True,
+                    is_active=True
+                )
+                db.add(default_admin)
+                db.commit()
+                print(f"✅ Default admin user created: username=raza123, password={default_password}")
+                print("⚠️  PLEASE CHANGE THE DEFAULT PASSWORD AFTER FIRST LOGIN!")
+            else:
+                print(f"Database already contains {user_count} users.")
+
+            product_count = db.query(Product).count()
+            if product_count == 0:
+                print("No products found in database. You can create products through the web interface.")
+            else:
+                print(f"Database already contains {product_count} products.")
 
         except Exception as e:
             print(f"Database initialization error: {e}")
