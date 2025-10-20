@@ -443,23 +443,18 @@ async def lifespan(app: FastAPI):
                     print("✅ Database schema updated successfully")
 
                     # Fix initial_stock for existing products
+                    # Opening stock = total purchases quantity (purely from purchase records, no sales involved)
                     products_to_fix = db.query(Product).filter(Product.initial_stock <= 0).all()
                     if products_to_fix:
                         print(f"📝 Fixing initial_stock for {len(products_to_fix)} existing products...")
                         for product in products_to_fix:
-                            # Calculate opening stock: Current Stock + Total Sales - Total Purchases
-                            # This gives us the stock that would have been there at the beginning
+                            # Opening stock = sum of all purchase quantities for this product
                             all_purchases = db.query(Purchase).filter(Purchase.product_id == product.id).all()
-                            all_sales = db.query(Sale).filter(Sale.product_id == product.id).all()
+                            total_purchased = sum(p.quantity for p in all_purchases)
 
-                            total_purchases = sum(p.quantity for p in all_purchases)
-                            total_sales = sum(s.quantity for s in all_sales)
-
-                            opening_stock = product.stock + total_sales - total_purchases
-                            opening_stock = max(0, opening_stock)  # Ensure non-negative
-
+                            opening_stock = total_purchased
                             product.initial_stock = opening_stock
-                            print(f"  Fixed {product.name}: current_stock={product.stock}, sales={total_sales}, purchases={total_purchases}, opening_stock={opening_stock}")
+                            print(f"  Fixed {product.name}: total_purchases={total_purchased}, opening_stock={opening_stock}")
 
                         db.commit()
                         print(f"✅ Fixed initial_stock values for {len(products_to_fix)} products.")
