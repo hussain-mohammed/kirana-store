@@ -4192,6 +4192,52 @@ function backToHome() {
             }
         }
 
+        // ===== AUTOMATIC LOGOUT ON APP CLOSE/CLOSE =====
+        window.addEventListener('beforeunload', function(e) {
+            // Clear authentication data when app is closed/navigated away from
+            // This provides security by ensuring users must login again
+            console.log('🔒 Auto-logging out due to app closure/navigation away');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            currentUser = null;
+        });
+
+        // ===== SESSION TIMEOUT (logout after 2 hours of inactivity) =====
+        let sessionTimeout;
+
+        function resetSessionTimeout() {
+            // Clear any existing timeout
+            if (sessionTimeout) {
+                clearTimeout(sessionTimeout);
+            }
+
+            // Set new timeout for 2 hours (7200000 ms)
+            sessionTimeout = setTimeout(function() {
+                console.log('⏰ Session expired due to inactivity - auto-logging out');
+                logout();
+                alert('Your session has expired due to inactivity. Please login again.');
+            }, 7200000); // 2 hours
+        }
+
+        function startSessionTracking() {
+            // Reset timeout on user activity
+            ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+                document.addEventListener(event, resetSessionTimeout, true);
+            });
+
+            // Start initial timeout
+            resetSessionTimeout();
+        }
+
+        function stopSessionTracking() {
+            if (sessionTimeout) {
+                clearTimeout(sessionTimeout);
+            }
+            ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+                document.removeEventListener(event, resetSessionTimeout, true);
+            });
+        }
+
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', async function() {
             try {
@@ -4230,6 +4276,9 @@ page = pages.homes; // Alias for backward compatibility
                     console.log('👤 Showing authenticated main page');
                     if (loginPage) loginPage.classList.remove('active');
                     if (homePage) homePage.classList.add('active');
+
+                    // Start session tracking for authenticated users
+                    startSessionTracking();
                 } else {
                     // User is not authenticated - show login page
                     console.log('🔒 Showing login page');
