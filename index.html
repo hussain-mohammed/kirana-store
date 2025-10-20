@@ -2277,6 +2277,57 @@ function backToHome() {
             }
         }
 
+        async function deleteSale(saleId) {
+            // Input validation
+            if (!saleId || isNaN(parseInt(saleId))) {
+                showNotification("Invalid sale ID!");
+                return;
+            }
+
+            saleId = parseInt(saleId);
+
+            if (!confirm("Are you sure you want to delete this sale record? This will restore the product stock by the sold quantity. This action cannot be undone.")) {
+                return;
+            }
+
+            try {
+                const deleteURL = `${backendURL}/sales/${saleId}`;
+
+                console.log(`🛒 Attempting to delete sale from: ${deleteURL}`);
+
+                const response = await fetch(deleteURL, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                console.log(`📊 Delete response status: ${response.status}`);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Sale deleted successfully:', result);
+                    showNotification(result.message || `Sale record deleted successfully!`);
+
+                    // Refresh the sales ledger
+                    loadSalesLedger();
+                } else {
+                    let errorMessage = `Failed to delete sale: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.detail) {
+                            errorMessage = errorData.detail;
+                        }
+                    } catch (e) {
+                        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+            } catch (error) {
+                console.error('Error deleting sale:', error);
+                showNotification(`❌ Error deleting sale: ${error.message}`);
+            }
+        }
+
         async function deletePurchase(purchaseId) {
             // Input validation
             if (!purchaseId || isNaN(parseInt(purchaseId))) {
@@ -3458,7 +3509,7 @@ page = pages.homes; // Alias for backward compatibility
                 // Delete sale buttons
                 if (e.target && e.target.classList.contains('delete-sale')) {
                     const saleId = e.target.getAttribute('data-id');
-                    showNotification(`Sale deletion would be implemented for ID: ${saleId}`);
+                    deleteSale(saleId);
                 }
 
                 // Delete purchase buttons
