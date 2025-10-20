@@ -3599,28 +3599,36 @@ function backToHome() {
 
         async function saveStoreDetails() {
             const name = document.getElementById('store-name').value.trim();
+            const subtitle = document.getElementById('store-subtitle').value.trim();
             const location = document.getElementById('store-location').value.trim();
             const contact = document.getElementById('store-contact').value.trim();
+            const deliveryNote = document.getElementById('store-delivery-note').value.trim();
 
-            if (!name || !location || !contact) {
-                showNotification('❌ All fields are required');
+            if (!name || !contact) {
+                showNotification('❌ Store name and contact are required');
                 return;
             }
 
             // Save to localStorage (in a real app, this would save to server)
             localStorage.setItem('storeName', name);
+            localStorage.setItem('storeSubtitle', subtitle);
             localStorage.setItem('storeLocation', location);
             localStorage.setItem('storeContact', contact);
+            localStorage.setItem('storeDeliveryNote', deliveryNote);
 
             // Update display
             document.getElementById('display-store-name').textContent = name;
-            document.getElementById('display-store-location').textContent = location;
+            document.getElementById('display-store-subtitle').textContent = subtitle || 'Kirana Store';
+            document.getElementById('display-store-location').textContent = location || 'Tolichowki, Hyderabad';
             document.getElementById('display-store-contact').textContent = contact;
+            document.getElementById('display-delivery-note').textContent = deliveryNote || 'Order on WhatsApp - We deliver to your doorstep';
 
             // Also update header logo
             document.getElementById('header-store-name').textContent = name;
-            document.getElementById('header-store-location').textContent = location;
+            document.getElementById('header-store-subtitle').textContent = subtitle || 'Kirana Store';
+            document.getElementById('header-store-location').textContent = location || 'Tolichowki, Hyderabad';
             document.getElementById('header-store-contact').textContent = contact;
+            document.getElementById('header-delivery-note').textContent = deliveryNote || 'Order on WhatsApp - We deliver to your doorstep';
 
             showNotification('✅ Store details saved successfully!');
 
