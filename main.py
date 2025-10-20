@@ -579,11 +579,8 @@ async def get_products(db: Session = Depends(get_db)):
 
     except Exception as e:
         print(f"❌ Error fetching products: {e}")
-        fallback_products = [
-            {"id": 1, "name": "Apple", "price": 100.00, "imageUrl": "https://placehold.co/400x400/81c784/ffffff?text=Apple", "stock": 50},
-            {"id": 2, "name": "Banana", "price": 50.00, "imageUrl": "https://placehold.co/400x400/fff176/ffffff?text=Banana", "stock": 30},
-        ]
-        return JSONResponse(content=fallback_products, media_type="application/json")
+        # Return empty list on error, no dummy products
+        return JSONResponse(content=[], media_type="application/json")
 
 # --- API Endpoints for Products (DB operations) ---
 @app.post("/products/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
